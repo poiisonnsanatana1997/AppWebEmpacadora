@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Caja principal -->
+    <path d="M40 60 L160 60 L160 140 L40 140 Z" fill="#E8F5E9" stroke="#388E3C" stroke-width="4"/>
+    
+    <!-- Líneas de la caja -->
+    <path d="M40 60 L40 140" stroke="#388E3C" stroke-width="4"/>
+    <path d="M160 60 L160 140" stroke="#388E3C" stroke-width="4"/>
+    
+    <!-- Ventanas de la caja -->
+    <rect x="60" y="80" width="40" height="40" fill="#FFFFFF" stroke="#4CAF50" stroke-width="2"/>
+    <rect x="100" y="80" width="40" height="40" fill="#FFFFFF" stroke="#4CAF50" stroke-width="2"/>
+    
+    <!-- Jitomate estilizado -->
+    <circle cx="100" cy="100" r="15" fill="#C62828"/>
+    <path d="M100 85 L100 95 L105 90 Z" fill="#388E3C"/>
+    
+    <!-- Elementos tecnológicos -->
+    <path d="M50 70 L70 70" stroke="#4CAF50" stroke-width="2"/>
+    <path d="M130 70 L150 70" stroke="#4CAF50" stroke-width="2"/>
+    <path d="M50 130 L70 130" stroke="#4CAF50" stroke-width="2"/>
+    <path d="M130 130 L150 130" stroke="#4CAF50" stroke-width="2"/>
+</svg> 
