@@ -30,7 +30,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { Loader2, UserPlus, AlertCircle } from 'lucide-react'
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -43,11 +42,15 @@ const formSchema = z.object({
     .min(2, { message: "El nombre debe tener al menos 2 caracteres." })
     .max(50, { message: "El nombre no puede tener más de 50 caracteres." })
     .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, { message: "El nombre solo puede contener letras y espacios." }),
+  username: z.string()
+    .min(3, { message: "El nombre de usuario debe tener al menos 3 caracteres." })
+    .max(20, { message: "El nombre de usuario no puede tener más de 20 caracteres." })
+    .regex(/^[a-zA-Z0-9_]+$/, { message: "El nombre de usuario solo puede contener letras, números y guiones bajos." }),
   email: z.string()
     .email({ message: "Por favor ingresa un email válido." })
     .min(5, { message: "El email debe tener al menos 5 caracteres." })
     .max(100, { message: "El email no puede tener más de 100 caracteres." }),
-  role: z.enum(["admin", "manager", "user"], {
+  roleId: z.string({
     required_error: "Por favor selecciona un rol.",
   }),
   password: z.string()
@@ -59,10 +62,10 @@ const formSchema = z.object({
   confirmPassword: z.string(),
   isActive: z.boolean(),
   phoneNumber: z.string()
+    .min(1, { message: "El número de teléfono es requerido." })
     .regex(/^\+?[1-9]\d{1,14}$/, {
       message: "Por favor ingresa un número de teléfono válido.",
-    })
-    .optional(),
+    }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden",
   path: ["confirmPassword"],
@@ -84,8 +87,9 @@ export function NewUserForm({ open, onOpenChange, onSuccess }: NewUserFormProps)
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
+      username: "",
       email: "",
-      role: "user",
+      roleId: "3",
       password: "",
       confirmPassword: "",
       isActive: true,
@@ -98,23 +102,14 @@ export function NewUserForm({ open, onOpenChange, onSuccess }: NewUserFormProps)
       setIsSubmitting(true);
       setError(null);
       
-      // Validación adicional
-      if (!values.name.trim()) {
-        throw new Error("El nombre no puede estar vacío");
-      }
-      
-      if (!values.email.trim()) {
-        throw new Error("El email no puede estar vacío");
-      }
-
-      // Crear el usuario usando el servicio
       const userData = {
         name: values.name,
+        username: values.username,
         email: values.email,
-        role: values.role,
+        roleId: Number(values.roleId),
         password: values.password,
         isActive: values.isActive,
-        phoneNumber: values.phoneNumber || undefined,
+        phoneNumber: values.phoneNumber,
       };
 
       const createdUser = await usersService.createUser(userData);
@@ -143,7 +138,7 @@ export function NewUserForm({ open, onOpenChange, onSuccess }: NewUserFormProps)
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] p-0">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] p-0 overflow-visible">
         <ScrollArea className="max-h-[90vh]">
           <div className="p-6">
             <DialogHeader>
@@ -171,12 +166,29 @@ export function NewUserForm({ open, onOpenChange, onSuccess }: NewUserFormProps)
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium">Nombre Completo *</FormLabel>
+                        <FormLabel>Nombre Completo *</FormLabel>
                         <FormControl>
                           <Input 
                             placeholder="Juan Pérez" 
                             {...field} 
-                            className="w-full"
+                            disabled={isSubmitting}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nombre de usuario *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="juanperez" 
+                            {...field} 
                             disabled={isSubmitting}
                           />
                         </FormControl>
@@ -190,12 +202,11 @@ export function NewUserForm({ open, onOpenChange, onSuccess }: NewUserFormProps)
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium">Email *</FormLabel>
+                        <FormLabel>Email *</FormLabel>
                         <FormControl>
                           <Input 
                             placeholder="juan@ejemplo.com" 
                             {...field}
-                            className="w-full"
                             type="email"
                             disabled={isSubmitting}
                           />
@@ -207,26 +218,25 @@ export function NewUserForm({ open, onOpenChange, onSuccess }: NewUserFormProps)
 
                   <FormField
                     control={form.control}
-                    name="role"
+                    name="roleId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium">Rol *</FormLabel>
-                        <FormControl>
-                          <Select 
-                            onValueChange={field.onChange} 
-                            defaultValue={field.value}
-                            disabled={isSubmitting}
-                          >
+                        <FormLabel>Rol *</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
                             <SelectTrigger className="w-full">
                               <SelectValue placeholder="Selecciona un rol" />
                             </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="admin">Administrador</SelectItem>
-                              <SelectItem value="manager">Gerente</SelectItem>
-                              <SelectItem value="user">Usuario</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
+                          </FormControl>
+                          <SelectContent position="popper" sideOffset={4} className="z-[9999] w-full min-w-[var(--radix-select-trigger-width)]">
+                            <SelectItem value="1">Administrador</SelectItem>
+                            <SelectItem value="2">Gerente</SelectItem>
+                            <SelectItem value="3">Usuario</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -237,17 +247,16 @@ export function NewUserForm({ open, onOpenChange, onSuccess }: NewUserFormProps)
                     name="phoneNumber"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium">Teléfono</FormLabel>
+                        <FormLabel>Teléfono</FormLabel>
                         <FormControl>
                           <Input 
                             placeholder="+1234567890" 
                             {...field}
-                            className="w-full"
                             type="tel"
                             disabled={isSubmitting}
                           />
                         </FormControl>
-                        <FormDescription className="text-xs">
+                        <FormDescription>
                           Formato internacional (ejemplo: +1234567890)
                         </FormDescription>
                         <FormMessage />
@@ -260,17 +269,16 @@ export function NewUserForm({ open, onOpenChange, onSuccess }: NewUserFormProps)
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium">Contraseña *</FormLabel>
+                        <FormLabel>Contraseña *</FormLabel>
                         <FormControl>
                           <Input 
                             type="password" 
                             placeholder="********" 
                             {...field}
-                            className="w-full"
                             disabled={isSubmitting}
                           />
                         </FormControl>
-                        <FormDescription className="text-xs">
+                        <FormDescription>
                           Mínimo 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial
                         </FormDescription>
                         <FormMessage />
@@ -283,13 +291,12 @@ export function NewUserForm({ open, onOpenChange, onSuccess }: NewUserFormProps)
                     name="confirmPassword"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium">Confirmar Contraseña *</FormLabel>
+                        <FormLabel>Confirmar Contraseña *</FormLabel>
                         <FormControl>
                           <Input 
                             type="password" 
                             placeholder="********" 
                             {...field}
-                            className="w-full"
                             disabled={isSubmitting}
                           />
                         </FormControl>
@@ -311,10 +318,10 @@ export function NewUserForm({ open, onOpenChange, onSuccess }: NewUserFormProps)
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel className="text-sm font-medium">
+                          <FormLabel>
                             Usuario Activo
                           </FormLabel>
-                          <FormDescription className="text-xs">
+                          <FormDescription>
                             Desactiva esta opción para crear un usuario inactivo
                           </FormDescription>
                         </div>

@@ -1,40 +1,35 @@
-import { useState, useCallback } from 'react';
+// ----------------------
+// Importaciones principales de React, librerías de UI, iconos y utilidades
+// ----------------------
+import { useState, useCallback, useEffect } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users,
-  Plus,
   Search,
-  MoreVertical,
   Filter,
   Download,
   HelpCircle,
-  ChevronDown,
   UserPlus,
-  UserCheck,
-  UserX,
-  Menu,
-  X,
-  ChevronUp,
-  Trash2,
   Edit2,
   Eye,
-  Mail,
   Lock,
   Unlock,
-  ArrowUpDown
+  ArrowUpDown,
+  ChevronUp,
+  ChevronDown,
+  X,
+  Menu,
+  Trash2,
+  Loader2
 } from 'lucide-react';
-
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
-
-// Importar los componentes de la tabla
+import api from '@/api/axios';
+import { User } from '@/api/users';
 import {
   Table,
   TableBody,
@@ -43,30 +38,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-
 import { NewUserForm } from '@/components/forms/NewUserForm';
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
+import { EditUserDialog } from '@/components/forms/EditUserDialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import UsersHeader from './UsersHeader';
+import UsersTable from '@/components/users/UsersTable';
+import UsersPagination from '@/components/users/UsersPagination';
+import UsersFilters from '@/components/users/UsersFilters';
+// ----------------------
+// Componentes estilizados y variantes de animación para la UI
+// ----------------------
+// Estos componentes definen la estructura visual y responsiva de la página
+// con styled-components y animaciones de framer-motion
 
-const UsersContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background: #F8FAFC;
-  position: relative;
-  padding: 1rem;
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
-
-  @media (min-width: 768px) {
-    padding: 1.5rem;
-  }
-
-  @media (min-width: 1024px) {
-    padding: 2rem;
-  }
-`;
-
+// Header principal de la página
 const Header = styled.header`
   display: flex;
   flex-direction: column;
@@ -86,12 +72,14 @@ const Header = styled.header`
   }
 `;
 
+// Contenido del header (título y subtítulo)
 const HeaderContent = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
 `;
 
+// Título del header
 const HeaderTitle = styled.h1`
   font-size: 1.25rem;
   font-weight: 600;
@@ -103,12 +91,14 @@ const HeaderTitle = styled.h1`
   }
 `;
 
+// Subtítulo del header
 const HeaderSubtitle = styled.p`
   font-size: 0.875rem;
   color: #64748B;
   margin: 0;
 `;
 
+// Acciones del header (botones)
 const HeaderActions = styled.div`
   display: flex;
   flex-wrap: wrap;
@@ -144,19 +134,6 @@ const itemVariants = {
   }
 }
 
-const filterVariants = {
-  hidden: { opacity: 0, y: -20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      type: "spring",
-      stiffness: 300,
-      damping: 30
-    }
-  }
-}
-
 const tagVariants = {
   initial: { scale: 0.8, opacity: 0 },
   animate: { scale: 1, opacity: 1 },
@@ -165,8 +142,8 @@ const tagVariants = {
 
 const cardVariants = {
   initial: { scale: 0.95, opacity: 0 },
-  animate: { 
-    scale: 1, 
+  animate: {
+    scale: 1,
     opacity: 1,
     transition: {
       type: "spring",
@@ -174,7 +151,7 @@ const cardVariants = {
       damping: 30
     }
   },
-  hover: { 
+  hover: {
     scale: 1.02,
     transition: {
       type: "spring",
@@ -184,92 +161,6 @@ const cardVariants = {
   },
   tap: { scale: 0.98 }
 }
-
-const StatsCard = styled(motion.div)`
-  background: white;
-  border-radius: 1rem;
-  padding: 1.25rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid #E2E8F0;
-  width: 100%;
-  cursor: pointer;
-
-  h3 {
-    color: #64748B;
-    font-size: 0.875rem;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    line-height: 20px;
-    font-weight: 500;
-
-    svg {
-      width: 20px;
-      height: 20px;
-      stroke-width: 1.5;
-    }
-  }
-
-  .value {
-    font-size: 1.75rem;
-    font-weight: 600;
-    color: #1E293B;
-    line-height: 1.2;
-    margin-bottom: 0.25rem;
-  }
-
-  .change {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.5rem;
-
-    &.positive {
-      color: #059669;
-      background: #ECFDF5;
-    }
-
-    &.negative {
-      color: #DC2626;
-      background: #FEF2F2;
-    }
-  }
-`;
-
-const FilterSection = styled(motion.div)`
-  background: white;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid #E2E8F0;
-`;
-
-const FilterHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-`;
-
-const FilterTitle = styled.h3`
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1E293B;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  svg {
-    width: 20px;
-    height: 20px;
-    color: #64748B;
-  }
-`;
 
 const FilterGrid = styled.div`
   display: grid;
@@ -320,14 +211,6 @@ const FilterTag = styled.div`
   }
 `;
 
-const FilterActions = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #E2E8F0;
-`;
-
 const UsersTableContainer = styled(motion.div)`
   background: white;
   border-radius: 1rem;
@@ -361,28 +244,6 @@ const TableContentSection = styled.div`
   padding: 1.5rem;
   overflow-x: auto;
 `
-
-const TableHeaderCell = TableHead;
-const DataTable = Table;
-const IconButton = Button;
-
-const StatusBadge = styled.span<{ status: 'active' | 'inactive' }>`
-  padding: 0.25rem 0.75rem;
-  border-radius: 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  display: inline-block;
-
-  ${({ status }) => status === 'active' && `
-    background: #ECFDF5;
-    color: #059669;
-  `}
-
-  ${({ status }) => status === 'inactive' && `
-    background: #FEF2F2;
-    color: #DC2626;
-  `}
-`;
 
 const MobileMenuButton = styled(motion.button)`
   display: none;
@@ -453,113 +314,116 @@ const SearchInput = styled.input`
   }
 `
 
+// ----------------------
+// Tipos e interfaces para filtros, estado y ordenamiento
+// ----------------------
+// Estructura de un filtro activo
 interface Filter {
   id: string;
   type: string;
   value: string;
   label: string;
 }
-
+// Estado de los filtros
 interface FilterState {
-  role: string;
+  roleName: string;
   status: string;
   dateRange: string;
 }
-
+// Configuración de ordenamiento de la tabla
 interface SortConfig {
   key: keyof typeof sortOptions;
   direction: 'asc' | 'desc';
 }
 
+// ----------------------
+// Opciones de ordenamiento para la tabla de usuarios
+// ----------------------
 const sortOptions = {
-  name: (a: any, b: any, direction: 'asc' | 'desc') => 
+  name: (a: any, b: any, direction: 'asc' | 'desc') =>
     direction === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name),
-  email: (a: any, b: any, direction: 'asc' | 'desc') => 
+  username: (a: any, b: any, direction: 'asc' | 'desc') =>
+    direction === 'asc' ? a.username.localeCompare(b.username) : b.username.localeCompare(a.username),
+  email: (a: any, b: any, direction: 'asc' | 'desc') =>
     direction === 'asc' ? a.email.localeCompare(b.email) : b.email.localeCompare(a.email),
-  role: (a: any, b: any, direction: 'asc' | 'desc') => 
-    direction === 'asc' ? a.role.localeCompare(b.role) : b.role.localeCompare(a.role),
-  status: (a: any, b: any, direction: 'asc' | 'desc') => 
-    direction === 'asc' ? a.status.localeCompare(b.status) : b.status.localeCompare(a.status)
+  roleName: (a: any, b: any, direction: 'asc' | 'desc') =>
+    direction === 'asc' ? a.roleName.localeCompare(b.roleName) : b.roleName.localeCompare(a.roleName),
+  isActive: (a: any, b: any, direction: 'asc' | 'desc') =>
+    direction === 'asc' ? (a.isActive === b.isActive ? 0 : a.isActive ? -1 : 1) : (a.isActive === b.isActive ? 0 : a.isActive ? 1 : -1),
+  createdAt: (a: any, b: any, direction: 'asc' | 'desc') =>
+    direction === 'asc' ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime() : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+};
+
+// ----------------------
+// Función utilitaria para mostrar el nombre legible del rol
+// ----------------------
+function getRoleLabel(roleName: string) {
+  switch (roleName) {
+    case 'admin': return 'Administrador';
+    case 'manager': return 'Gerente';
+    case 'user': return 'Usuario';
+    default: return roleName;
+  }
 }
 
-const TableActions = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  justify-content: space-between;
-  align-items: center;
-`
-
-const BatchActions = styled.div`
-  display: flex;
-  gap: 0.5rem;
-`
-
-const TableFooter = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-top: 1px solid #E2E8F0;
-`
-
-const Pagination = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-`
-
-const PageInfo = styled.span`
-  color: #64748B;
-  font-size: 0.875rem;
-`
-
-const SortButton = styled.button`
-  background: none;
-  border: none;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  color: #64748B;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 0.875rem;
-
-  &:hover {
-    color: #1E293B;
-  }
-
-  svg {
-    width: 1rem;
-    height: 1rem;
-  }
-`
-
+// ----------------------
+// Componente principal de la página de gestión de usuarios
+// ----------------------
 export default function UsersPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [showNewUserForm, setShowNewUserForm] = useState(false);
-  const [filters, setFilters] = useState<FilterState>({
-    role: "",
-    status: "",
-    dateRange: ""
-  });
-
+  // ----------------------
+  // Estados principales para búsqueda, filtros, usuarios, carga, errores, selección, paginación y ordenamiento
+  // ----------------------
+  const [searchQuery, setSearchQuery] = useState(""); // Búsqueda
+  const [showMobileMenu, setShowMobileMenu] = useState(false); // Menú móvil
+  const [showNewUserForm, setShowNewUserForm] = useState(false); // Modal de nuevo usuario
+  const [filters, setFilters] = useState<FilterState>({ roleName: "", status: "", dateRange: "" });
+  const [users, setUsers] = useState<User[]>([]); // Lista de usuarios
+  const [loading, setLoading] = useState(true); // Estado de carga
+  const [, setError] = useState<string | null>(null); // Error de carga
+  // Filtros activos y selección múltiple
   const [activeFilters, setActiveFilters] = useState<Filter[]>([]);
-
   const [selectedUsers, setSelectedUsers] = useState<number[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'name', direction: 'asc' })
-  const [showActions, setShowActions] = useState<number | null>(null)
+  // Estados para los modales de edición, eliminación y vista de usuario
+  const [editUser, setEditUser] = useState<User | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [viewUser, setViewUser] = useState<User | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
 
+  // ----------------------
+  // Efecto para cargar los usuarios al montar el componente
+  // ----------------------
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get<User[]>('/users');
+        setUsers(response.data);
+        setError(null);
+      } catch (err) {
+        setError('Error al cargar los usuarios');
+        console.error('Error fetching users:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  // ----------------------
+  // Funciones para manejar filtros, búsqueda, selección y ordenamiento
+  // ----------------------
+  // Maneja el cambio de filtros (rol, estado, etc.)
   const handleFilterChange = (type: keyof FilterState, value: string) => {
     if (!value) return;
-
     setFilters(prev => ({ ...prev, [type]: value }));
-    
+    // Etiquetas legibles para los filtros
     const filterLabels: Record<keyof FilterState, Record<string, string>> = {
-      role: {
+      roleName: {
         admin: "Administrador",
         manager: "Gerente",
         user: "Usuario"
@@ -575,442 +439,211 @@ export default function UsersPage() {
         year: "Este año"
       }
     };
-
     const newFilter: Filter = {
       id: `${type}-${value}`,
       type,
       value,
       label: filterLabels[type][value]
     };
-
     setActiveFilters(prev => [...prev.filter(f => f.type !== type), newFilter]);
   };
-
+  // Elimina un filtro activo
   const removeFilter = (filterId: string) => {
     setActiveFilters(prev => prev.filter(f => f.id !== filterId))
     const [type] = filterId.split("-")
     setFilters(prev => ({ ...prev, [type]: "" }))
   }
-
-  const clearFilters = () => {
-    setFilters({ role: "", status: "", dateRange: "" })
-    setActiveFilters([])
-  }
-
-  const applyFilters = () => {
-    // Aquí iría la lógica para aplicar los filtros
-    console.log("Filtros aplicados:", filters)
-  }
-
+  // Maneja el cambio en la barra de búsqueda
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value)
   }
-
-  // Datos de ejemplo
-  const users = [
-    { id: 1, name: 'Juan Pérez', email: 'juan@example.com', role: 'admin', status: 'active' },
-    { id: 2, name: 'María García', email: 'maria@example.com', role: 'manager', status: 'active' },
-    { id: 3, name: 'Carlos López', email: 'carlos@example.com', role: 'user', status: 'inactive' },
-  ];
-
+  // Paginación y ordenamiento
   const itemsPerPage = 10
   const totalPages = Math.ceil(users.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
-
+  // Ordena la tabla por la columna seleccionada
   const handleSort = (key: keyof typeof sortOptions) => {
     setSortConfig(prev => ({
       key,
       direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
     }))
   }
-
-  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.checked) {
-      setSelectedUsers(users.map(user => user.id))
-    } else {
-      setSelectedUsers([])
-    }
-  }
-
-  const handleSelectUser = (userId: number) => {
-    setSelectedUsers(prev => 
-      prev.includes(userId) 
-        ? prev.filter(id => id !== userId)
-        : [...prev, userId]
-    )
-  }
-
+  // Acciones en lote (activar, desactivar, eliminar, exportar)
   const handleBatchAction = (action: string) => {
     console.log(`Acción ${action} aplicada a usuarios:`, selectedUsers)
     setSelectedUsers([])
   }
 
-  const sortedUsers = [...users].sort((a, b) => 
+  // ----------------------
+  // Filtrado y búsqueda avanzada
+  // ----------------------
+  // Aplica los filtros y búsqueda sobre la lista de usuarios
+  const filteredUsers = users.filter((user) => {
+    // Filtro por rol
+    if (filters.roleName && user.roleName !== filters.roleName) return false;
+    // Filtro por estado
+    if (filters.status) {
+      if (filters.status === 'active' && !user.isActive) return false;
+      if (filters.status === 'inactive' && user.isActive) return false;
+    }
+    // Búsqueda por nombre, usuario o email
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      if (
+        !user.name.toLowerCase().includes(q) &&
+        !user.username.toLowerCase().includes(q) &&
+        !user.email.toLowerCase().includes(q)
+      ) {
+        return false;
+      }
+    }
+    return true;
+  });
+  // Ordena los usuarios filtrados
+  const sortedUsers = [...filteredUsers].sort((a, b) =>
     sortOptions[sortConfig.key](a, b, sortConfig.direction)
-  )
-
-  const currentUsers = sortedUsers.slice(startIndex, endIndex)
-
-  const handleUserCreated = useCallback((values: any) => {
-    // Aquí iría la lógica para actualizar la lista de usuarios
-    console.log('Usuario creado:', values);
+  );
+  // Usuarios de la página actual
+  const currentUsers = sortedUsers.slice(startIndex, endIndex);
+  // Callback para agregar un usuario nuevo a la lista
+  const handleUserCreated = useCallback((newUser: User) => {
+    setUsers(prevUsers => [...prevUsers, newUser]);
+    setShowNewUserForm(false);
   }, []);
 
+  // ----------------------
+  // Renderizado principal de la página
+  // ----------------------
   return (
     <>
+      {/* Toasts para feedback visual */}
       <Toaster richColors position="top-right" />
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={containerVariants}
-      >
-        <Header>
-          <HeaderContent>
-            <motion.div variants={itemVariants}>
-              <HeaderTitle>Gestión de Usuarios</HeaderTitle>
-              <HeaderSubtitle>Administra los usuarios y sus permisos</HeaderSubtitle>
-            </motion.div>
-          </HeaderContent>
-          <HeaderActions>
-            <MobileMenuButton 
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              variants={cardVariants}
-              initial="initial"
-              animate="animate"
-              whileHover="hover"
-              whileTap="tap"
-            >
-              <Menu />
-            </MobileMenuButton>
-            <motion.button
-              variants={cardVariants}
-              initial="initial"
-              animate="animate"
-              whileHover="hover"
-              whileTap="tap"
-            >
-              <Filter />
-            </motion.button>
-            <motion.button
-              variants={cardVariants}
-              initial="initial"
-              animate="animate"
-              whileHover="hover"
-              whileTap="tap"
-            >
-              <Download />
-            </motion.button>
-            <motion.button
-              variants={cardVariants}
-              initial="initial"
-              animate="animate"
-              whileHover="hover"
-              whileTap="tap"
-            >
-              <HelpCircle />
-            </motion.button>
-            <PrimaryButton
-              variants={cardVariants}
-              initial="initial"
-              animate="animate"
-              whileHover="hover"
-              whileTap="tap"
-              onClick={() => setShowNewUserForm(true)}
-            >
-              <UserPlus size={18} />
-              Nuevo Usuario
-            </PrimaryButton>
-          </HeaderActions>
-        </Header>
+      {/* Animación de entrada */}
+      <motion.div initial="hidden" animate="visible" variants={containerVariants}>
+        {/* Header principal de la página */}
 
-        <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <motion.div
-            variants={cardVariants}
-            initial="initial"
-            animate="animate"
-            whileHover="hover"
-            whileTap="tap"
-          >
-            <StatsCard>
-              <h3><Users /> Total de Usuarios</h3>
-              <div className="value">24</div>
-              <span className="change positive">+3 este mes</span>
-            </StatsCard>
-          </motion.div>
-
-          <motion.div
-            variants={cardVariants}
-            initial="initial"
-            animate="animate"
-            whileHover="hover"
-            whileTap="tap"
-          >
-            <StatsCard>
-              <h3><UserCheck /> Usuarios Activos</h3>
-              <div className="value">18</div>
-              <span className="change positive">+2 este mes</span>
-            </StatsCard>
-          </motion.div>
-
-          <motion.div
-            variants={cardVariants}
-            initial="initial"
-            animate="animate"
-            whileHover="hover"
-            whileTap="tap"
-          >
-            <StatsCard>
-              <h3><UserX /> Usuarios Inactivos</h3>
-              <div className="value">6</div>
-              <span className="change negative">-1 este mes</span>
-            </StatsCard>
-          </motion.div>
-        </motion.div>
+        <UsersHeader
+          onNewUser={() => setShowNewUserForm(true)}
+          onToggleMenu={() => setShowMobileMenu(!showMobileMenu)}
+          showMobileMenu={showMobileMenu}
+        />
 
         <UsersTableContainer variants={itemVariants}>
+
           <TableHeaderSection>
-            <TableTitleSection>
-              <h2>
-                <Users size={24} className="text-slate-400" />
-                Lista de Usuarios
-              </h2>
-              <div className="flex items-center gap-2">
-                <SearchContainer>
-                  <Search size={18} color="#94A3B8" />
-                  <SearchInput
-                    placeholder="Buscar usuarios..."
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                  />
-                </SearchContainer>
-                <Button onClick={() => setShowNewUserForm(true)}>
-                  <UserPlus size={18} />
-                  Nuevo Usuario
-                </Button>
-              </div>
-            </TableTitleSection>
-
-            <FilterGrid>
-              <FilterGroup>
-                <Label>Rol</Label>
-                <Select
-                  value={filters.role}
-                  onValueChange={(value) => handleFilterChange("role", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar rol" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Administrador</SelectItem>
-                    <SelectItem value="manager">Gerente</SelectItem>
-                    <SelectItem value="user">Usuario</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FilterGroup>
-
-              <FilterGroup>
-                <Label>Estado</Label>
-                <Select
-                  value={filters.status}
-                  onValueChange={(value) => handleFilterChange("status", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar estado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Activo</SelectItem>
-                    <SelectItem value="inactive">Inactivo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FilterGroup>
-
-              <FilterGroup>
-                <Label>Período</Label>
-                <Select
-                  value={filters.dateRange}
-                  onValueChange={(value) => handleFilterChange("dateRange", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar período" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="today">Hoy</SelectItem>
-                    <SelectItem value="week">Esta semana</SelectItem>
-                    <SelectItem value="month">Este mes</SelectItem>
-                    <SelectItem value="year">Este año</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FilterGroup>
-            </FilterGrid>
-
-            <AnimatePresence>
-              {activeFilters.length > 0 && (
-                <ActiveFilters>
-                  {activeFilters.map((filter) => (
-                    <motion.div
-                      key={filter.id}
-                      variants={tagVariants}
-                      initial="initial"
-                      animate="animate"
-                      exit="exit"
-                      layout
-                    >
-                      <FilterTag>
-                        {filter.label}
-                        <button onClick={() => removeFilter(filter.id)}>
-                          <X size={14} />
-                        </button>
-                      </FilterTag>
-                    </motion.div>
-                  ))}
-                </ActiveFilters>
-              )}
-            </AnimatePresence>
-
-            {selectedUsers.length > 0 && (
-              <TableActions>
-                <BatchActions>
-                  <Button variant="outline" onClick={() => handleBatchAction('activate')}>
-                    <Unlock size={16} />
-                    Activar Seleccionados
-                  </Button>
-                  <Button variant="outline" onClick={() => handleBatchAction('deactivate')}>
-                    <Lock size={16} />
-                    Desactivar Seleccionados
-                  </Button>
-                  <Button variant="outline" onClick={() => handleBatchAction('delete')}>
-                    <Trash2 size={16} />
-                    Eliminar Seleccionados
-                  </Button>
-                </BatchActions>
-                <Button variant="outline" onClick={() => handleBatchAction('export')}>
-                  <Download size={16} />
-                  Exportar Seleccionados
-                </Button>
-              </TableActions>
-            )}
+            <UsersFilters
+              searchQuery={searchQuery}
+              handleSearchChange={handleSearchChange}
+              filters={filters}
+              handleFilterChange={handleFilterChange}
+              activeFilters={activeFilters}
+              removeFilter={removeFilter}
+            />
           </TableHeaderSection>
+          
+          <UsersTable
+            currentUsers={currentUsers}
+            loading={loading}
+            selectedUsers={selectedUsers}
+            setSelectedUsers={setSelectedUsers}
+            handleSort={handleSort}
+            sortConfig={sortConfig}
+            getRoleLabel={getRoleLabel}
+            onViewUser={user => { setViewUser(user); setViewDialogOpen(true); }}
+            onEditUser={user => { setEditUser(user); setEditDialogOpen(true); }}
+            onDeleteUser={user => { setUserToDelete(user); setDeleteDialogOpen(true); }}
+            onToggleActive={user => {/* Aquí puedes implementar activar/desactivar */ }}
+          />
+          <UsersPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            setCurrentPage={setCurrentPage}
+            startIndex={startIndex}
+            endIndex={endIndex}
+            totalItems={users.length}
+          />
 
-          <TableContentSection>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>
-                    <Checkbox
-                      checked={selectedUsers.length === users.length}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setSelectedUsers(users.map(user => user.id))
-                        } else {
-                          setSelectedUsers([])
-                        }
-                      }}
-                    />
-                  </TableHead>
-                  <TableHead>
-                    <Button variant="ghost" onClick={() => handleSort('name')}>
-                      Nombre
-                      <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </Button>
-                  </TableHead>
-                  <TableHead>
-                    <Button variant="ghost" onClick={() => handleSort('email')}>
-                      Email
-                      <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </Button>
-                  </TableHead>
-                  <TableHead>
-                    <Button variant="ghost" onClick={() => handleSort('role')}>
-                      Rol
-                      <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </Button>
-                  </TableHead>
-                  <TableHead>
-                    <Button variant="ghost" onClick={() => handleSort('status')}>
-                      Estado
-                      <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </Button>
-                  </TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {currentUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedUsers.includes(user.id)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setSelectedUsers(prev => [...prev, user.id])
-                          } else {
-                            setSelectedUsers(prev => prev.filter(id => id !== user.id))
-                          }
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>{user.name}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.role}</TableCell>
-                    <TableCell>
-                      <Badge variant={user.status === 'active' ? 'default' : 'destructive'}>
-                        {user.status === 'active' ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="icon">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon">
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon">
-                          <Mail className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon">
-                          {user.status === 'active' ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContentSection>
-
-          <TableFooter>
-            <PageInfo>
-              Mostrando {startIndex + 1} a {Math.min(endIndex, users.length)} de {users.length} usuarios
-            </PageInfo>
-            <Pagination>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-              >
-                Anterior
-              </Button>
-              <PageInfo>{currentPage} de {totalPages}</PageInfo>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-              >
-                Siguiente
-              </Button>
-            </Pagination>
-          </TableFooter>
         </UsersTableContainer>
 
-        <NewUserForm 
-          open={showNewUserForm} 
+        <NewUserForm
+          open={showNewUserForm}
           onOpenChange={setShowNewUserForm}
           onSuccess={handleUserCreated}
         />
+
+        {editUser && (
+          <EditUserDialog
+            open={editDialogOpen}
+            onOpenChange={(open: boolean) => {
+              setEditDialogOpen(open);
+              if (!open) setEditUser(null);
+            }}
+            user={editUser}
+            onSuccess={(updatedUser: User) => {
+              setUsers((prev) => prev.map((u) => (u.id === updatedUser.id ? updatedUser : u)));
+              setEditDialogOpen(false);
+              setEditUser(null);
+            }}
+          />
+        )}
+
+        {userToDelete && (
+          <Dialog open={deleteDialogOpen} onOpenChange={(open) => { setDeleteDialogOpen(open); if (!open) setUserToDelete(null); }}>
+            <DialogContent className="sm:max-w-[400px]">
+              <DialogHeader>
+                <DialogTitle>¿Eliminar usuario?</DialogTitle>
+                <DialogDescription>
+                  ¿Estás seguro de que deseas eliminar a <b>{userToDelete.name}</b>? Esta acción no se puede deshacer.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button variant="outline" onClick={() => { setDeleteDialogOpen(false); setUserToDelete(null); }} disabled={isDeleting}>Cancelar</Button>
+                <Button variant="destructive" onClick={async () => {
+                  setIsDeleting(true);
+                  try {
+                    await api.delete(`/users/${userToDelete.id}`);
+                    setUsers(prev => prev.filter(u => u.id !== userToDelete.id));
+                    setDeleteDialogOpen(false);
+                    setUserToDelete(null);
+                    setIsDeleting(false);
+                    toast.success('Usuario eliminado correctamente');
+                  } catch (error: any) {
+                    setIsDeleting(false);
+                    toast.error(error.message || 'Error al eliminar el usuario');
+                  }
+                }} disabled={isDeleting}>
+                  {isDeleting ? 'Eliminando...' : 'Eliminar'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {viewUser && (
+          <Dialog open={viewDialogOpen} onOpenChange={(open) => { setViewDialogOpen(open); if (!open) setViewUser(null); }}>
+            <DialogContent className="sm:max-w-[400px]">
+              <DialogHeader>
+                <DialogTitle>Detalle de usuario</DialogTitle>
+                <DialogDescription>
+                  Información detallada del usuario.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-2 py-2">
+                <div><b>Nombre:</b> {viewUser.name}</div>
+                <div><b>Usuario:</b> {viewUser.username}</div>
+                <div><b>Email:</b> {viewUser.email}</div>
+                <div><b>Rol:</b> {getRoleLabel(viewUser.roleName)}</div>
+                <div><b>Teléfono:</b> {viewUser.phoneNumber}</div>
+                <div><b>Estado:</b> {viewUser.isActive ? 'Activo' : 'Inactivo'}</div>
+                <div><b>Creado:</b> {new Date(viewUser.createdAt).toLocaleString()}</div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => { setViewDialogOpen(false); setViewUser(null); }}>Cerrar</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </motion.div>
     </>
   );

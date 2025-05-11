@@ -1,23 +1,30 @@
 import api from './axios';
 
 export interface LoginCredentials {
-  email: string;
+  username: string;
   password: string;
+}
+
+export interface User {
+  id: number;
+  name: string;
+  username: string;
+  email: string;
+  phoneNumber: string;
+  roleName: string;
+  isActive: boolean;
+  createdAt: string;
 }
 
 export interface LoginResponse {
   token: string;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-  };
+  expiration: string;
+  user: User;
 }
 
 export interface AuthError {
   message: string;
-  code?: string;
+  code: string;
   status?: number;
 }
 
@@ -34,6 +41,7 @@ const authService = {
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
     try {
       const response = await api.post<LoginResponse>('/auth/login', credentials);
+      console.log('Respuesta del servidor:', response.data);
       return response.data;
     } catch (error: any) {
       // Manejar diferentes tipos de errores
@@ -44,7 +52,7 @@ const authService = {
         
         if (status === 401) {
           throw { 
-            message: "Credenciales inválidas. Por favor, verifica tu correo y contraseña", 
+            message: "Credenciales inválidas. Por favor, verifica tu usuario y contraseña", 
             code: "INVALID_CREDENTIALS",
             status 
           };
@@ -95,6 +103,7 @@ const authService = {
    */
   logout: () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     // La navegación debe manejarse desde el contexto o componente, no aquí
   },
 

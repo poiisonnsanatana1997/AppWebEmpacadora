@@ -1,11 +1,121 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { colors } from '../styles/colors'
+import styled from 'styled-components'
+
+const HeaderContainer = styled.header`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4rem;
+  background: ${colors.primary};
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  z-index: 1000;
+  box-shadow: 0 2px 4px ${colors.shadow.medium};
+`
+
+const Logo = styled.div`
+  color: ${colors.background.light};
+  font-size: 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.9;
+  }
+`
+
+const UserButton = styled.button`
+  background: none;
+  border: none;
+  color: ${colors.background.light};
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.9;
+  }
+`
+
+const UserAvatar = styled.div`
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${colors.background.light};
+  font-size: 1.1rem;
+  box-shadow: 0 2px 8px ${colors.shadow.medium};
+`
+
+const UserInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+`
+
+const UserName = styled.span`
+  font-weight: 500;
+  color: ${colors.background.light};
+`
+
+const UserRole = styled.span`
+  font-size: 0.875rem;
+  opacity: 0.8;
+  color: ${colors.background.light};
+`
+
+const Dropdown = styled.div`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: ${colors.background.light};
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 16px ${colors.shadow.medium};
+  border: 1px solid ${colors.border.light};
+  min-width: 180px;
+  overflow: hidden;
+  z-index: 2000;
+`
+
+const DropdownButton = styled.button`
+  width: 100%;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  background: none;
+  border: none;
+  color: ${colors.text.primary};
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+
+  &:hover {
+    background: rgba(74, 107, 87, 0.08);
+  }
+`
 
 const Header = () => {
   const [showDropdown, setShowDropdown] = useState(false)
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    console.log('Usuario en Header:', user);
+  }, [user]);
 
   const handleLogout = () => {
     logout()
@@ -14,99 +124,29 @@ const Header = () => {
   }
 
   return (
-    <header style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      height: '4rem',
-      backgroundColor: '#2E7D32',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 1.5rem',
-      zIndex: 1000,
-      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
-    }}>
-      <div 
-        style={{
-          color: 'white',
-          fontSize: '1.5rem',
-          fontWeight: 600,
-          cursor: 'pointer'
-        }}
-        onClick={() => navigate('/home')}
-      >
+    <HeaderContainer>
+      <Logo onClick={() => navigate('/home')}>
         AgroPack
-      </div>
+      </Logo>
       <div style={{ position: 'relative' }}>
-        <button
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'white',
-            cursor: 'pointer',
-            padding: '0.5rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}
-          onClick={() => setShowDropdown(!showDropdown)}
-        >
-          <div style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #2E7D32 0%, #4CAF50 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontSize: '1.1rem',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
-          }}>
+        <UserButton onClick={() => setShowDropdown(!showDropdown)}>
+          <UserAvatar>
             {user?.name?.charAt(0) || 'U'}
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-            <span style={{ fontWeight: 500, color: 'white' }}>{user?.name || 'Usuario'}</span>
-            <span style={{ fontSize: '0.875rem', opacity: 0.8, color: 'white' }}>{user?.role || 'Rol'}</span>
-          </div>
-        </button>
+          </UserAvatar>
+          <UserInfo>
+            <UserName>{user?.name || 'Usuario'}</UserName>
+            <UserRole>{user?.roleName || 'Rol'}</UserRole>
+          </UserInfo>
+        </UserButton>
         {showDropdown && (
-          <div style={{
-            position: 'absolute',
-            top: '100%',
-            right: 0,
-            background: 'white',
-            borderRadius: '0.75rem',
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
-            border: '1px solid #E0E0E0',
-            minWidth: '180px',
-            overflow: 'hidden',
-            zIndex: 2000
-          }}>
-            <button
-              style={{
-                width: '100%',
-                padding: '0.75rem 1rem',
-                textAlign: 'left',
-                background: 'none',
-                border: 'none',
-                color: '#212121',
-                cursor: 'pointer',
-                transition: 'background-color 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.7rem'
-              }}
-              onClick={handleLogout}
-            >
+          <Dropdown>
+            <DropdownButton onClick={handleLogout}>
               Cerrar sesión
-            </button>
-          </div>
+            </DropdownButton>
+          </Dropdown>
         )}
       </div>
-    </header>
+    </HeaderContainer>
   )
 }
 

@@ -6,6 +6,7 @@ import Users from './pages/Users'
 import Settings from './pages/Settings'
 import Reports from './pages/Reports'
 import Inventory from './pages/Inventory'
+import Products from './pages/Products'
 import { useAuth } from './contexts/AuthContext'
 import Layout from './components/Layout'
 
@@ -74,6 +75,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <Inventory />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/products" 
+              element={
+                <PrivateRoute>
+                  <Products />
                 </PrivateRoute>
               } 
             />

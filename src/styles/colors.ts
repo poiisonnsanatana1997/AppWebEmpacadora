@@ -1,38 +1,38 @@
 export const colors = {
   // Colores principales
-  primary: '#388E3C', // Verde medio
-  secondary: '#4CAF50', // Verde claro
-  accent: '#81C784', // Verde muy claro
+  primary: '#4A6B57', // Verde grisáceo suave
+  secondary: '#6B8C7D', // Verde grisáceo medio
+  accent: '#8BA99D', // Verde grisáceo claro
   
   // Colores de fondo
   background: {
-    main: '#E8F5E9', // Verde muy claro
+    main: '#F5F7F6', // Gris muy claro con tinte verde
     light: '#FFFFFF', // Blanco
-    dark: '#2E7D32' // Verde medio
+    dark: '#2C3E34' // Verde grisáceo oscuro
   },
   
   // Colores de texto
   text: {
-    primary: '#1B2631', // Azul oscuro
-    secondary: '#455A64', // Gris azulado
-    disabled: '#90A4AE' // Gris claro
+    primary: '#2C3E34', // Verde grisáceo oscuro
+    secondary: '#5D6D63', // Verde grisáceo medio
+    disabled: '#8A9A8F' // Verde grisáceo claro
   },
   
   // Colores de estado
-  success: '#4CAF50', // Verde claro
-  error: '#C62828', // Rojo
-  warning: '#F57F17', // Ámbar
-  info: '#1565C0', // Azul
+  success: '#4A6B57', // Verde grisáceo suave
+  error: '#B56576', // Rojo suave
+  warning: '#E6A278', // Ámbar suave
+  info: '#6B8C7D', // Verde grisáceo medio
   
   // Colores de bordes y sombras
   border: {
-    light: '#C8E6C9', // Verde muy claro
-    dark: '#81C784' // Verde claro
+    light: '#E5E9E7', // Gris muy claro con tinte verde
+    dark: '#D1D9D4' // Gris claro con tinte verde
   },
   
   shadow: {
-    light: 'rgba(56, 142, 60, 0.1)',
-    medium: 'rgba(56, 142, 60, 0.2)',
-    dark: 'rgba(56, 142, 60, 0.3)'
+    light: 'rgba(44, 62, 52, 0.05)',
+    medium: 'rgba(44, 62, 52, 0.1)',
+    dark: 'rgba(44, 62, 52, 0.15)'
   }
 } 

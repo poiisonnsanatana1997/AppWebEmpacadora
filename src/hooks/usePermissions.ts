@@ -7,26 +7,26 @@ export function usePermissions() {
     if (!user) return false;
     
     if (Array.isArray(requiredRole)) {
-      return requiredRole.includes(user.role);
+      return requiredRole.includes(user.roleName);
     }
     
-    return user.role === requiredRole;
+    return user.roleName === requiredRole;
   };
 
   const hasAnyPermission = (roles: string[]): boolean => {
     if (!user) return false;
-    return roles.includes(user.role);
+    return roles.includes(user.roleName);
   };
 
   const hasAllPermissions = (roles: string[]): boolean => {
     if (!user) return false;
-    return roles.every(role => user.role === role);
+    return roles.every(role => user.roleName === role);
   };
 
   return {
     hasPermission,
     hasAnyPermission,
     hasAllPermissions,
-    userRole: user?.role
+    userRole: user?.roleName
   };
 } 

@@ -1,4 +1,4 @@
-import {BrowserRouter as Router, Routes, Route} from 'react-router-dom';
+import {BrowserRouter as Router, Routes, Route, Outlet} from 'react-router-dom';
 import { AuthProvider } from '../contexts/AuthContext';
 import Login from '../pages/Login';
 import Layout from '../components/Layout';
@@ -10,7 +10,7 @@ const AppRouter = () => {
             <Router>
                 <Routes>
                     <Route path="/login" element={<Login />} />
-                    <Route path="/home" element={<Layout />}>
+                    <Route path="/home" element={<Layout><Outlet /></Layout>}>
                         <Route index element={<Home />} />
                     </Route>
                 </Routes>

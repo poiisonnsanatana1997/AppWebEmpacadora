@@ -11,21 +11,23 @@ import {
   Menu,
   X,
   ChevronLeft,
-  LogOut} from "lucide-react"
+  LogOut,
+  Package} from "lucide-react"
 import { useAuth } from "../contexts/AuthContext"
+import { colors } from "../styles/colors"
 
 const LayoutContainer = styled.div`
   display: flex;
   min-height: 100vh;
-  background: #F8FAFC;
+  background: ${colors.background.main};
   position: relative;
   overflow-x: hidden;
 `
 
 const Sidebar = styled(motion.div)<{ $isOpen: boolean; $isCompact: boolean }>`
   width: ${props => props.$isCompact ? '80px' : '280px'};
-  background: white;
-  border-right: 1px solid #E2E8F0;
+  background: ${colors.background.light};
+  border-right: 1px solid ${colors.border.light};
   padding: 0;
   height: 100vh;
   position: fixed;
@@ -34,7 +36,7 @@ const Sidebar = styled(motion.div)<{ $isOpen: boolean; $isCompact: boolean }>`
   overflow-y: auto;
   z-index: 1000;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px ${colors.shadow.light};
 
   @media (max-width: 1024px) {
     width: ${props => props.$isCompact ? '80px' : '240px'};
@@ -43,7 +45,7 @@ const Sidebar = styled(motion.div)<{ $isOpen: boolean; $isCompact: boolean }>`
   @media (max-width: 768px) {
     width: 280px;
     transform: ${props => props.$isOpen ? 'translateX(0)' : 'translateX(-100%)'};
-    box-shadow: ${props => props.$isOpen ? '0 4px 12px rgba(0, 0, 0, 0.1)' : 'none'};
+    box-shadow: ${props => props.$isOpen ? `0 4px 12px ${colors.shadow.medium}` : 'none'};
   }
 `
 
@@ -51,12 +53,12 @@ const Logo = styled.div<{ $isCompact: boolean }>`
   display: flex;
   align-items: center;
   padding: 1.5rem;
-  border-bottom: 1px solid #E2E8F0;
+  border-bottom: 1px solid ${colors.border.light};
   margin-bottom: 1.5rem;
   justify-content: space-between;
   position: relative;
   height: 80px;
-  background: white;
+  background: ${colors.background.light};
 
   .logo-container {
     display: flex;
@@ -80,7 +82,7 @@ const Logo = styled.div<{ $isCompact: boolean }>`
 const CompactButton = styled.button<{ $isCompact: boolean }>`
   background: transparent;
   border: none;
-  color: #64748B;
+  color: ${colors.text.secondary};
   cursor: pointer;
   width: 32px;
   height: 32px;
@@ -92,8 +94,8 @@ const CompactButton = styled.button<{ $isCompact: boolean }>`
   padding: 0;
 
   &:hover {
-    background: #F1F5F9;
-    color: #1E40AF;
+    background: ${colors.background.main};
+    color: ${colors.primary};
   }
 
   svg {
@@ -203,36 +205,31 @@ const NavSection = styled.div<{ $isCompact: boolean }>`
   }
 `
 
-const NavItem = styled.a<{ active?: boolean; $isCompact: boolean }>`
+const NavItem = styled.button<{ $isCompact: boolean; $active?: boolean }>`
   display: flex;
   align-items: center;
-  gap: ${props => props.$isCompact ? '0' : '0.75rem'};
+  gap: 0.75rem;
+  width: 100%;
   padding: 0.75rem;
-  border-radius: 0.75rem;
-  color: ${props => props.active ? '#1E40AF' : '#64748B'};
-  background: ${props => props.active ? '#EFF6FF' : 'transparent'};
-  font-weight: ${props => props.active ? '600' : '500'};
-  font-size: 0.875rem;
+  border: none;
+  background: ${props => props.$active ? 'rgba(74, 107, 87, 0.08)' : 'transparent'};
+  color: ${props => props.$active ? colors.primary : colors.text.secondary};
+  border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.2s;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  justify-content: ${props => props.$isCompact ? 'center' : 'flex-start'};
-  height: 44px;
   margin-bottom: 0.25rem;
-  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
 
   &:hover {
-    background: ${props => props.active ? '#EFF6FF' : '#F8FAFC'};
-    color: #1E40AF;
+    background: rgba(74, 107, 87, 0.08);
+    color: ${colors.primary};
   }
 
   svg {
     width: 20px;
     height: 20px;
-    flex-shrink: 0;
-    stroke-width: ${props => props.active ? 2 : 1.5};
+    stroke-width: 1.5;
   }
 
   span {
@@ -243,9 +240,9 @@ const NavItem = styled.a<{ active?: boolean; $isCompact: boolean }>`
 
 const UserProfileSection = styled.div<{ $isCompact: boolean }>`
   padding: ${props => props.$isCompact ? '0.5rem' : '1rem'};
-  border-top: 1px solid #E2E8F0;
+  border-top: 1px solid ${colors.border.light};
   margin-top: auto;
-  background: #F8FAFC;
+  background: ${colors.background.light};
   
   .user-info {
     display: ${props => props.$isCompact ? 'none' : 'block'};
@@ -253,25 +250,25 @@ const UserProfileSection = styled.div<{ $isCompact: boolean }>`
     
     h4 {
       font-size: 0.875rem;
-      font-weight: 600;
-      color: #1E293B;
-      margin-bottom: 0.25rem;
+      color: ${colors.text.primary};
+      margin: 0;
     }
     
     p {
       font-size: 0.75rem;
-      color: #64748B;
+      color: ${colors.text.secondary};
+      margin: 0;
     }
   }
 `
 
 const UserButton = styled(NavItem)`
   margin-bottom: 0;
-  background: white;
-  border: 1px solid #E2E8F0;
+  background: ${colors.background.light};
+  border: 1px solid ${colors.border.light};
   
   &:hover {
-    background: #F1F5F9;
+    background: rgba(74, 107, 87, 0.08);
   }
 `
 
@@ -365,21 +362,28 @@ export default function Layout({ children }: LayoutProps) {
               <h3>General</h3>
               <NavItem 
                 $isCompact={isCompact} 
-                active={isActive('/dashboard')}
+                $active={isActive('/dashboard')}
                 onClick={() => handleNavClick('/dashboard')}
               >
                 <BarChart3 /> <span>Dashboard</span>
               </NavItem>
               <NavItem 
                 $isCompact={isCompact} 
-                active={isActive('/inventory')}
+                $active={isActive('/inventory')}
                 onClick={() => handleNavClick('/inventory')}
               >
                 <Leaf /> <span>Cultivos</span>
               </NavItem>
               <NavItem 
                 $isCompact={isCompact} 
-                active={isActive('/users')}
+                $active={isActive('/products')}
+                onClick={() => handleNavClick('/products')}
+              >
+                <Package /> <span>Productos</span>
+              </NavItem>
+              <NavItem 
+                $isCompact={isCompact} 
+                $active={isActive('/users')}
                 onClick={() => handleNavClick('/users')}
               >
                 <Users /> <span>Usuarios</span>
@@ -390,21 +394,21 @@ export default function Layout({ children }: LayoutProps) {
               <h3>Herramientas</h3>
               <NavItem 
                 $isCompact={isCompact} 
-                active={isActive('/calendar')}
+                $active={isActive('/calendar')}
                 onClick={() => handleNavClick('/calendar')}
               >
                 <Calendar /> <span>Calendario</span>
               </NavItem>
               <NavItem 
                 $isCompact={isCompact} 
-                active={isActive('/reports')}
+                $active={isActive('/reports')}
                 onClick={() => handleNavClick('/reports')}
               >
                 <BarChart3 /> <span>Reportes</span>
               </NavItem>
               <NavItem 
                 $isCompact={isCompact} 
-                active={isActive('/settings')}
+                $active={isActive('/settings')}
                 onClick={() => handleNavClick('/settings')}
               >
                 <Settings /> <span>Configuración</span>
@@ -414,7 +418,7 @@ export default function Layout({ children }: LayoutProps) {
             <UserProfileSection $isCompact={isCompact}>
               <div className="user-info">
                 <h4>{user?.name || 'Usuario'}</h4>
-                <p>{user?.role || 'Sin rol asignado'}</p>
+                <p>{user?.roleName || 'Sin rol asignado'}</p>
               </div>
               <UserButton 
                 $isCompact={isCompact} 

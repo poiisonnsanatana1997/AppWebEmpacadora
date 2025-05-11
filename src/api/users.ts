@@ -1,23 +1,77 @@
 import api from './axios';
 
 export interface User {
-  id: string;
+  id: number;
   name: string;
+  username: string;
   email: string;
-  role: 'admin' | 'manager' | 'user';
+  phoneNumber: string;
+  roleName: string;
   isActive: boolean;
-  phoneNumber?: string;
   createdAt: string;
-  updatedAt: string;
 }
 
 export interface CreateUserData {
   name: string;
+  username: string;
   email: string;
-  role: 'admin' | 'manager' | 'user';
+  roleId: number;
   password: string;
   isActive: boolean;
-  phoneNumber?: string;
+  phoneNumber: string;
+}
+
+/**
+ * Actualiza un usuario existente
+ * @param id ID del usuario a actualizar
+ * @param data Campos a actualizar (parcial)
+ * @returns Promesa con el usuario actualizado
+ */
+async function updateUser(id: number, data: Partial<User>): Promise<User> {
+  try {
+    const response = await api.put<User>(`/users/${id}`, data);
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      const status = error.response.status;
+      const data = error.response.data;
+      if (status === 400) {
+        throw {
+          message: data.message || "Datos inválidos. Por favor, verifica la información proporcionada",
+          code: "INVALID_DATA",
+          status
+        };
+      } else if (status === 404) {
+        throw {
+          message: "Usuario no encontrado",
+          code: "NOT_FOUND",
+          status
+        };
+      } else if (status >= 500) {
+        throw {
+          message: "Error en el servidor. Por favor, intenta más tarde",
+          code: "SERVER_ERROR",
+          status
+        };
+      } else {
+        throw {
+          message: data.message || "Error al actualizar el usuario",
+          code: data.code || "UNKNOWN_ERROR",
+          status
+        };
+      }
+    } else if (error.request) {
+      throw {
+        message: "No se pudo conectar con el servidor. Verifica tu conexión a internet",
+        code: "NETWORK_ERROR"
+      };
+    } else {
+      throw {
+        message: "Error al procesar la solicitud",
+        code: "REQUEST_ERROR"
+      };
+    }
+  }
 }
 
 const usersService = {
@@ -28,7 +82,7 @@ const usersService = {
    */
   createUser: async (userData: CreateUserData): Promise<User> => {
     try {
-      const response = await api.post<User>('/user', userData);
+      const response = await api.post<User>('/users', userData);
       return response.data;
     } catch (error: any) {
       if (error.response) {
@@ -118,7 +172,9 @@ const usersService = {
         };
       }
     }
-  }
+  },
+
+  updateUser,
 };
 
 export default usersService; 

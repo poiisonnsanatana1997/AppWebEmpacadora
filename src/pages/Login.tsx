@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormMessage as BaseFormMessage } from "../components/ui/form"
-import { Mail, Lock, Loader2, Eye, EyeOff, AlertCircle } from "lucide-react"
+import { Mail, Lock, Loader2, Eye, EyeOff, AlertCircle, User } from "lucide-react"
 import { AuthError } from "../api/auth"
 import { motion, AnimatePresence } from "framer-motion"
 import { useAuth } from "../contexts/AuthContext"
@@ -214,12 +214,9 @@ const ErrorMessage = styled.div`
 
 // Form schema
 const formSchema = z.object({
-  email: z.string()
+  username: z.string()
     .min(1, {
-      message: "El correo electrónico es requerido",
-    })
-    .email({
-      message: "Por favor ingresa un correo electrónico válido",
+      message: "El nombre de usuario es requerido",
     }),
   password: z.string()
     .min(1, {
@@ -248,7 +245,7 @@ export default function Login() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
+      username: "",
       password: "",
     },
   })
@@ -259,19 +256,21 @@ export default function Login() {
       setErrorMessage(null)
       form.clearErrors()
 
-      await login(data.email, data.password)
-      navigate('/dashboard')
+      const response = await login(data.username, data.password)
+      if (response && response.token) {
+        navigate('/dashboard', { replace: true })
+      }
     } catch (error: any) {
       const authError = error as AuthError
       
       if (authError.code === 'INVALID_CREDENTIALS') {
-        form.setError('email', { 
+        form.setError('username', { 
           type: 'manual', 
-          message: 'Correo o contraseña incorrectos' 
+          message: 'Usuario o contraseña incorrectos' 
         })
         form.setError('password', { 
           type: 'manual', 
-          message: 'Correo o contraseña incorrectos' 
+          message: 'Usuario o contraseña incorrectos' 
         })
       } else {
         setErrorMessage(authError.message || 'Error al iniciar sesión')
@@ -327,7 +326,7 @@ export default function Login() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.4 }}
           >
-            <Title>Iniciar sesión con correo</Title>
+            <Title>Iniciar sesión</Title>
             <Subtitle>Prueba nuestra plataforma y disfruta de los datos.</Subtitle>
           </motion.div>
 
@@ -348,11 +347,14 @@ export default function Login() {
           </AnimatePresence>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              form.handleSubmit(onSubmit)(e);
+            }} noValidate>
               <FormSection>
                 <FormField
                   control={form.control}
-                  name="email"
+                  name="username"
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
@@ -363,11 +365,11 @@ export default function Login() {
                           custom={0}
                         >
                           <InputIcon>
-                            <Mail size={16} />
+                            <User size={16} />
                           </InputIcon>
                           <StyledInput 
                             className={form.formState.errors[field.name] ? 'error' : ''}
-                            placeholder="Correo electrónico" 
+                            placeholder="Nombre de usuario" 
                             {...field} 
                           />
                         </MotionInput>
