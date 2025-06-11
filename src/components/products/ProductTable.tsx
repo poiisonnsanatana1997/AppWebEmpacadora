@@ -11,7 +11,10 @@ import {
   ColumnFiltersState,
   RowSelectionState,
   VisibilityState,
+  FilterFn,
+  ColumnResizeMode,
 } from '@tanstack/react-table';
+import { rankItem } from '@tanstack/match-sorter-utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,7 +26,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Product } from '@/types/product';
 import { ProductImage } from './ProductImage';
 import { Input } from '@/components/ui/input';
 import {
@@ -39,12 +41,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import clsx from 'clsx';
+import 'react-resizable/css/styles.css';
+import { Combobox } from '@headlessui/react';
+import { Check } from 'lucide-react';
+import { ProductoApi } from '@/types/product';
 
 interface ProductTableProps {
-  products: Product[];
-  onEdit: (product: Product) => void;
-  onDelete: (product: Product) => void;
+  products: ProductoApi[];
+  onEdit: (producto: ProductoApi) => void;
+  onDelete: (producto: ProductoApi) => void;
 }
+
+// Agregar la función de filtrado fuzzy
+const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
+  // Rankear el item
+  const itemRank = rankItem(row.getValue(columnId), value);
+
+  // Guardar el ranking para el item
+  addMeta({
+    itemRank,
+  });
+
+  // Retornar si el item debe ser incluido en los resultados
+  return itemRank.passed;
+};
 
 export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -52,18 +73,115 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [globalFilter, setGlobalFilter] = React.useState('');
+  const [columnResizeMode] = React.useState<ColumnResizeMode>('onChange');
+  const [columnSizing, setColumnSizing] = React.useState({});
 
-  const columns = React.useMemo<ColumnDef<Product, any>[]>(
+  // Función para obtener valores únicos de una columna
+  const getUniqueValues = (columnId: string) => {
+    const values = new Set<string>();
+    products.forEach((product) => {
+      const value = product[columnId as keyof ProductoApi];
+      if (value) values.add(String(value));
+    });
+    return Array.from(values).sort();
+  };
+
+  // Componente de filtro avanzado
+  const AdvancedFilter = ({ column }: { column: any }) => {
+    const [query, setQuery] = React.useState('');
+    const uniqueValues = getUniqueValues(column.id);
+    const filteredValues = query === ''
+      ? uniqueValues
+      : uniqueValues.filter((value) =>
+          value.toLowerCase().includes(query.toLowerCase())
+        );
+
+    return (
+      <Combobox
+        value={column.getFilterValue() ?? ""}
+        onChange={(value: string) => column.setFilterValue(value === "" ? undefined : value)}
+      >
+        <div className="relative">
+          <Combobox.Input
+            className="w-full h-7 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => setQuery(event.target.value)}
+            displayValue={(value: string) => value}
+            placeholder={`Filtrar ${column.id}...`}
+          />
+          <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2">
+            <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
+          </Combobox.Button>
+        </div>
+        <Combobox.Options className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+          <Combobox.Option
+            value=""
+            className={({ active }: { active: boolean }) =>
+              clsx(
+                'relative cursor-default select-none py-2 pl-10 pr-4',
+                active ? 'bg-primary text-primary-foreground' : 'text-foreground'
+              )
+            }
+          >
+            {({ selected, active }: { selected: boolean; active: boolean }) => (
+              <>
+                <span className={clsx('block truncate', selected ? 'font-medium' : 'font-normal')}>
+                  Todos
+                </span>
+                {selected && (
+                  <span className={clsx(
+                    'absolute inset-y-0 left-0 flex items-center pl-3',
+                    active ? 'text-primary-foreground' : 'text-primary'
+                  )}>
+                    <Check className="h-4 w-4" />
+                  </span>
+                )}
+              </>
+            )}
+          </Combobox.Option>
+          {filteredValues.map((value) => (
+            <Combobox.Option
+              key={value}
+              value={value}
+              className={({ active }: { active: boolean }) =>
+                clsx(
+                  'relative cursor-default select-none py-2 pl-10 pr-4',
+                  active ? 'bg-primary text-primary-foreground' : 'text-foreground'
+                )
+              }
+            >
+              {({ selected, active }: { selected: boolean; active: boolean }) => (
+                <>
+                  <span className={clsx('block truncate', selected ? 'font-medium' : 'font-normal')}>
+                    {value}
+                  </span>
+                  {selected && (
+                    <span className={clsx(
+                      'absolute inset-y-0 left-0 flex items-center pl-3',
+                      active ? 'text-primary-foreground' : 'text-primary'
+                    )}>
+                      <Check className="h-4 w-4" />
+                    </span>
+                  )}
+                </>
+              )}
+            </Combobox.Option>
+          ))}
+        </Combobox.Options>
+      </Combobox>
+    );
+  };
+
+  const columns = React.useMemo<ColumnDef<ProductoApi, any>[]>(
     () => [
       {
-        accessorKey: 'imageBase64',
+        accessorKey: 'imagen',
         header: 'Imagen',
-        cell: ({ row }) => <ProductImage imageBase64={row.original.imageBase64} />,
+        cell: ({ row }) => <ProductImage imageBase64={row.original.imagen} />,
         enableSorting: false,
         enableColumnFilter: false,
       },
       {
-        accessorKey: 'code',
+        accessorKey: 'codigo',
         header: ({ column }) => {
           const filterValue = column.getFilterValue() as string | undefined;
           const hasFilter = Boolean(filterValue);
@@ -88,7 +206,10 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className={`h-6 w-6 relative cursor-pointer ${hasFilter ? "text-blue-500" : ""}`}
+                    className={clsx(
+                      "h-6 w-6 relative cursor-pointer",
+                      hasFilter && "text-blue-500"
+                    )}
                   >
                     <Filter className="h-3 w-3" />
                     {hasFilter && (
@@ -96,21 +217,17 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-[180px]">
-                  <Input
-                    placeholder="Filtrar código..."
-                    value={filterValue ?? ""}
-                    onChange={(event) => column.setFilterValue(event.target.value)}
-                    className="h-7"
-                  />
+                <DropdownMenuContent align="start" className="w-[200px]">
+                  <AdvancedFilter column={column} />
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
           );
         },
+        filterFn: fuzzyFilter,
       },
       {
-        accessorKey: 'name',
+        accessorKey: 'nombre',
         header: ({ column }) => {
           const filterValue = column.getFilterValue() as string | undefined;
           const hasFilter = Boolean(filterValue);
@@ -135,7 +252,10 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className={`h-6 w-6 relative cursor-pointer ${hasFilter ? "text-blue-500" : ""}`}
+                    className={clsx(
+                      "h-6 w-6 relative cursor-pointer",
+                      hasFilter && "text-blue-500"
+                    )}
                   >
                     <Filter className="h-3 w-3" />
                     {hasFilter && (
@@ -143,21 +263,17 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-[180px]">
-                  <Input
-                    placeholder="Filtrar nombre..."
-                    value={filterValue ?? ""}
-                    onChange={(event) => column.setFilterValue(event.target.value)}
-                    className="h-7"
-                  />
+                <DropdownMenuContent align="start" className="w-[200px]">
+                  <AdvancedFilter column={column} />
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
           );
         },
+        filterFn: fuzzyFilter,
       },
       {
-        accessorKey: 'variety',
+        accessorKey: 'variedad',
         header: ({ column }) => {
           const filterValue = column.getFilterValue() as string | undefined;
           const hasFilter = Boolean(filterValue);
@@ -182,7 +298,10 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className={`h-6 w-6 relative cursor-pointer ${hasFilter ? "text-blue-500" : ""}`}
+                    className={clsx(
+                      "h-6 w-6 relative cursor-pointer",
+                      hasFilter && "text-blue-500"
+                    )}
                   >
                     <Filter className="h-3 w-3" />
                     {hasFilter && (
@@ -190,27 +309,23 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-[180px]">
-                  <Input
-                    placeholder="Filtrar variedad..."
-                    value={filterValue ?? ""}
-                    onChange={(event) => column.setFilterValue(event.target.value)}
-                    className="h-7"
-                  />
+                <DropdownMenuContent align="start" className="w-[200px]">
+                  <AdvancedFilter column={column} />
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
           );
         },
+        filterFn: fuzzyFilter,
       },
       {
-        accessorKey: 'isActive',
+        accessorKey: 'unidadMedida',
         header: ({ column }) => {
           const filterValue = column.getFilterValue() as string | undefined;
           const hasFilter = Boolean(filterValue);
           return (
             <div className="flex items-center gap-1">
-              <div className="font-semibold">Estado</div>
+              <div className="font-semibold">Unidad de Medida</div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button 
@@ -230,12 +345,104 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                     onValueChange={(value) => column.setFilterValue(value === "all" ? "" : value)}
                   >
                     <SelectTrigger className="h-7">
-                      <SelectValue placeholder="Filtrar estado" />
+                      <SelectValue placeholder="Filtrar unidad de medida" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="true">Activo</SelectItem>
-                      <SelectItem value="false">Inactivo</SelectItem>
+                      <SelectItem value="kilogramos">Kilogramos</SelectItem>
+                      <SelectItem value="pieza">Pieza</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          );
+        },
+        cell: ({ row }) => row.original.unidadMedida || '-',
+        filterFn: (row, _id, value) => {
+          if (!value || value === "all") return true;
+          return row.original.unidadMedida === value;
+        },
+      },
+      {
+        accessorKey: 'precio',
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() as string | undefined;
+          const hasFilter = Boolean(filterValue);
+          return (
+            <div className="flex items-center gap-1">
+              <div className="font-semibold">Precio</div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className={`h-6 w-6 relative cursor-pointer ${hasFilter ? "text-blue-500" : ""}`}
+                  >
+                    <Filter className="h-3 w-3" />
+                    {hasFilter && (
+                      <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 bg-blue-500 rounded-full" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-[180px]">
+                  <Select
+                    value={filterValue ?? "all"}
+                    onValueChange={(value) => column.setFilterValue(value === "all" ? "" : value)}
+                  >
+                    <SelectTrigger className="h-7">
+                      <SelectValue placeholder="Filtrar precio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="kilogramos">Kilogramos</SelectItem>
+                      <SelectItem value="pieza">Pieza</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          );
+        },
+        cell: ({ row }) => row.original.precio || '-',
+        filterFn: (row, _id, value) => {
+          if (!value || value === "all") return true;
+          return row.original.precio === value;
+        },
+      },
+      {
+        accessorKey: 'estatus',
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() as string | undefined;
+          const hasFilter = Boolean(filterValue);
+          return (
+            <div className="flex items-center gap-1">
+              <div className="font-semibold">Estatus</div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className={`h-6 w-6 relative cursor-pointer ${hasFilter ? "text-blue-500" : ""}`}
+                  >
+                    <Filter className="h-3 w-3" />
+                    {hasFilter && (
+                      <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 bg-blue-500 rounded-full" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-[180px]">
+                  <Select
+                    value={filterValue ?? "all"}
+                    onValueChange={(value) => column.setFilterValue(value === "all" ? "" : value)}
+                  >
+                    <SelectTrigger className="h-7">
+                      <SelectValue placeholder="Filtrar estatus" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="activo">Activo</SelectItem>
+                      <SelectItem value="inactivo">Inactivo</SelectItem>
                     </SelectContent>
                   </Select>
                 </DropdownMenuContent>
@@ -244,120 +451,15 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
           );
         },
         cell: ({ row }) => (
-          <Badge variant={row.original.isActive ? "default" : "destructive"}>
-            {row.original.isActive ? "Activo" : "Inactivo"}
+          <Badge variant={row.original.estatus === "activo" ? "default" : "destructive"}>
+            {row.original.estatus === "activo" ? "Activo" : "Inactivo"}
           </Badge>
         ),
         enableSorting: false,
         filterFn: (row, _id, value) => {
           if (!value || value === "all") return true;
-          return row.original.isActive.toString() === value;
+          return row.original.estatus === value;
         },
-      },
-      {
-        accessorKey: 'size',
-        header: ({ column }) => {
-          const filterValue = column.getFilterValue() as string | undefined;
-          const hasFilter = Boolean(filterValue);
-          return (
-            <div className="flex items-center gap-1">
-              <div className="font-semibold">Tamaño</div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className={`h-6 w-6 relative cursor-pointer ${hasFilter ? "text-blue-500" : ""}`}
-                  >
-                    <Filter className="h-3 w-3" />
-                    {hasFilter && (
-                      <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 bg-blue-500 rounded-full" />
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-[180px]">
-                  <Input
-                    placeholder="Filtrar tamaño..."
-                    value={filterValue ?? ""}
-                    onChange={(event) => column.setFilterValue(event.target.value)}
-                    className="h-7"
-                  />
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          );
-        },
-        cell: ({ row }) => row.original.size || '-',
-      },
-      {
-        accessorKey: 'packagingType',
-        header: ({ column }) => {
-          const filterValue = column.getFilterValue() as string | undefined;
-          const hasFilter = Boolean(filterValue);
-          return (
-            <div className="flex items-center gap-1">
-              <div className="font-semibold">Empaque</div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className={`h-6 w-6 relative cursor-pointer ${hasFilter ? "text-blue-500" : ""}`}
-                  >
-                    <Filter className="h-3 w-3" />
-                    {hasFilter && (
-                      <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 bg-blue-500 rounded-full" />
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-[180px]">
-                  <Input
-                    placeholder="Filtrar empaque..."
-                    value={filterValue ?? ""}
-                    onChange={(event) => column.setFilterValue(event.target.value)}
-                    className="h-7"
-                  />
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          );
-        },
-        cell: ({ row }) => row.original.packagingType || '-',
-      },
-      {
-        accessorKey: 'unit',
-        header: ({ column }) => {
-          const filterValue = column.getFilterValue() as string | undefined;
-          const hasFilter = Boolean(filterValue);
-          return (
-            <div className="flex items-center gap-1">
-              <div className="font-semibold">Unidad</div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className={`h-6 w-6 relative cursor-pointer ${hasFilter ? "text-blue-500" : ""}`}
-                  >
-                    <Filter className="h-3 w-3" />
-                    {hasFilter && (
-                      <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 bg-blue-500 rounded-full" />
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-[180px]">
-                  <Input
-                    placeholder="Filtrar unidad..."
-                    value={filterValue ?? ""}
-                    onChange={(event) => column.setFilterValue(event.target.value)}
-                    className="h-7"
-                  />
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          );
-        },
-        cell: ({ row }) => row.original.unit || '-',
       },
       {
         id: 'actions',
@@ -414,17 +516,25 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
       rowSelection,
       columnVisibility,
       globalFilter,
+      columnSizing,
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onRowSelectionChange: setRowSelection,
     onColumnVisibilityChange: setColumnVisibility,
     onGlobalFilterChange: setGlobalFilter,
+    onColumnSizingChange: setColumnSizing,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     enableRowSelection: true,
+    filterFns: {
+      fuzzy: fuzzyFilter,
+    },
+    globalFilterFn: fuzzyFilter,
+    columnResizeMode,
+    enableColumnResizing: true,
   });
 
   return (
@@ -456,7 +566,7 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                     <DropdownMenuItem
                       key={column.id}
                       className="capitalize"
-                      onSelect={(e) => {
+                      onSelect={(e: Event) => {
                         e.preventDefault();
                         column.toggleVisibility(!column.getIsVisible());
                       }}
@@ -485,13 +595,34 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
+                    <TableHead 
+                      key={header.id}
+                      style={{ 
+                        width: header.getSize(),
+                        position: 'relative',
+                      }}
+                    >
+                      {header.isPlaceholder ? null : (
+                        <div
+                          className={clsx(
+                            "relative h-full w-full",
+                            "flex items-center justify-between"
                           )}
+                        >
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                          <div
+                            onMouseDown={header.getResizeHandler()}
+                            onTouchStart={header.getResizeHandler()}
+                            className={clsx(
+                              "absolute right-0 top-0 h-full w-1",
+                              "cursor-col-resize select-none touch-none",
+                              "bg-transparent hover:bg-blue-500",
+                              "opacity-0 hover:opacity-100",
+                              "transition-opacity"
+                            )}
+                          />
+                        </div>
+                      )}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -507,10 +638,16 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.2 }}
-                      className={row.getIsSelected() ? "bg-muted/50" : ""}
+                      className={clsx(row.getIsSelected() && "bg-muted/50")}
                     >
                       {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
+                        <TableCell 
+                          key={cell.id}
+                          style={{ 
+                            width: cell.column.getSize(),
+                            position: 'relative',
+                          }}
+                        >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </TableCell>
                       ))}
@@ -558,7 +695,10 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
-              className="hidden h-8 w-8 p-0 lg:flex cursor-pointer"
+              className={clsx(
+                "h-8 w-8 p-0 cursor-pointer",
+                "hidden lg:flex"
+              )}
               onClick={() => table.setPageIndex(0)}
               disabled={!table.getCanPreviousPage()}
             >
@@ -585,7 +725,10 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
             </Button>
             <Button
               variant="outline"
-              className="hidden h-8 w-8 p-0 lg:flex cursor-pointer"
+              className={clsx(
+                "h-8 w-8 p-0 cursor-pointer",
+                "hidden lg:flex"
+              )}
               onClick={() => table.setPageIndex(table.getPageCount() - 1)}
               disabled={!table.getCanNextPage()}
             >

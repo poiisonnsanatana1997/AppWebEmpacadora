@@ -1,15 +1,90 @@
-import { Product } from '@/types/product';
-import api from './axios';
+import { ProductoApi } from '@/types/product';
+import api from '@/api/axios';
 
-const productsService = {
+/**
+ * Servicio para gestionar los productos del sistema
+ * @namespace ProductosService
+ */
+export const ProductosService = {
   /**
-   * Crea un nuevo producto
-   * @param formData FormData con los datos del producto
-   * @returns Promesa con el producto creado
+   * Obtiene todos los productos desde la API externa
+   * @returns {Promise<ProductoApi[]>} Lista de productos
    */
-  createProduct: async (formData: FormData): Promise<Product> => {
+  async obtenerProductos(): Promise<ProductoApi[]> {
     try {
-      const response = await api.post<Product>('/products', formData, {
+      const response = await api.get<ProductoApi[]>('/productos/detalle');
+      return response.data;
+    } catch (error: any) {
+      if (error.response) {
+        const status = error.response.status;
+        const data = error.response.data;
+        throw {
+          message: data.message || 'Error al obtener los productos',
+          code: data.code || 'UNKNOWN_ERROR',
+          status
+        };
+      } else if (error.request) {
+        throw {
+          message: 'No se pudo conectar con el servidor. Verifica tu conexión a internet',
+          code: 'NETWORK_ERROR'
+        };
+      } else {
+        throw {
+          message: 'Error al procesar la solicitud',
+          code: 'REQUEST_ERROR'
+        };
+      }
+    }
+  },
+
+  /**
+   * Obtiene un producto por su ID desde la API externa
+   * @param {number} id - ID del producto
+   * @returns {Promise<ProductoApi | undefined>} Producto encontrado
+   */
+  async obtenerProducto(id: number): Promise<ProductoApi | undefined> {
+    try {
+      const response = await api.get<ProductoApi>(`/productos/${id}/detalle`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response) {
+        const status = error.response.status;
+        const data = error.response.data;
+        if (status === 404) {
+          throw {
+            message: 'Producto no encontrado',
+            code: 'NOT_FOUND',
+            status
+          };
+        } else {
+          throw {
+            message: data.message || 'Error al obtener el producto',
+            code: data.code || 'UNKNOWN_ERROR',
+            status
+          };
+        }
+      } else if (error.request) {
+        throw {
+          message: 'No se pudo conectar con el servidor. Verifica tu conexión a internet',
+          code: 'NETWORK_ERROR'
+        };
+      } else {
+        throw {
+          message: 'Error al procesar la solicitud',
+          code: 'REQUEST_ERROR'
+        };
+      }
+    }
+  },
+
+  /**
+   * Crea un nuevo producto según la especificación de la API externa
+   * @param {FormData} formData - Datos del producto
+   * @returns {Promise<ProductoApi>} Producto creado
+   */
+  async crearProducto(formData: FormData): Promise<ProductoApi> {
+    try {
+      const response = await api.post<ProductoApi>('/productos', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 30000,
       });
@@ -52,86 +127,14 @@ const productsService = {
   },
 
   /**
-   * Obtiene todos los productos
-   * @returns Promesa con la lista de productos
+   * Actualiza un producto existente usando la API externa
+   * @param {number} id - ID del producto
+   * @param {FormData} formData - Datos a actualizar
+   * @returns {Promise<ProductoApi>} Producto actualizado
    */
-  getProducts: async (): Promise<Product[]> => {
+  async actualizarProducto(id: number, formData: FormData): Promise<ProductoApi> {
     try {
-      const response = await api.get<Product[]>('/products');
-      console.log(response.data);
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        const status = error.response.status;
-        const data = error.response.data;
-        throw {
-          message: data.message || 'Error al obtener los productos',
-          code: data.code || 'UNKNOWN_ERROR',
-          status
-        };
-      } else if (error.request) {
-        throw {
-          message: 'No se pudo conectar con el servidor. Verifica tu conexión a internet',
-          code: 'NETWORK_ERROR'
-        };
-      } else {
-        throw {
-          message: 'Error al procesar la solicitud',
-          code: 'REQUEST_ERROR'
-        };
-      }
-    }
-  },
-
-  /**
-   * Obtiene un producto por ID
-   * @param id ID del producto
-   * @returns Promesa con el producto
-   */
-  getProduct: async (id: number): Promise<Product> => {
-    try {
-      const response = await api.get<Product>(`/products/${id}`);
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        const status = error.response.status;
-        const data = error.response.data;
-        if (status === 404) {
-          throw {
-            message: 'Producto no encontrado',
-            code: 'NOT_FOUND',
-            status
-          };
-        } else {
-          throw {
-            message: data.message || 'Error al obtener el producto',
-            code: data.code || 'UNKNOWN_ERROR',
-            status
-          };
-        }
-      } else if (error.request) {
-        throw {
-          message: 'No se pudo conectar con el servidor. Verifica tu conexión a internet',
-          code: 'NETWORK_ERROR'
-        };
-      } else {
-        throw {
-          message: 'Error al procesar la solicitud',
-          code: 'REQUEST_ERROR'
-        };
-      }
-    }
-  },
-
-  /**
-   * Actualiza un producto existente
-   * @param id ID del producto
-   * @param formData FormData con los datos a actualizar
-   * @returns Promesa con el producto actualizado
-   */
-  updateProduct: async (id: number, formData: FormData): Promise<Product> => {
-    try {
-      const response = await api.put<Product>(`/products/${id}`, formData, {
+      const response = await api.put<ProductoApi>(`/productos/${id}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 30000,
       });
@@ -180,13 +183,13 @@ const productsService = {
   },
 
   /**
-   * Elimina un producto por ID
-   * @param id ID del producto
-   * @returns Promesa void
+   * Elimina un producto usando la API externa
+   * @param {number} id - ID del producto
+   * @returns {Promise<void>}
    */
-  deleteProduct: async (id: number): Promise<void> => {
+  async eliminarProducto(id: number): Promise<void> {
     try {
-      await api.delete(`/products/${id}`);
+      await api.delete(`/productos/${id}`);
     } catch (error: any) {
       if (error.response) {
         const status = error.response.status;
@@ -217,6 +220,41 @@ const productsService = {
       }
     }
   },
-};
 
-export default productsService; 
+  /**
+   * Importa productos desde un archivo usando la API externa
+   * @param {File} archivo - Archivo a importar (formato soportado: Excel, CSV)
+   * @returns {Promise<ProductoApi[]>} Lista de productos importados
+   */
+  async importarProductos(archivo: File): Promise<ProductoApi[]> {
+    try {
+      const formData = new FormData();
+      formData.append('archivo', archivo);
+      const response = await api.post<ProductoApi[]>('/productos/importar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 60000,
+      });
+      return response.data;
+    } catch (error: any) {
+      if (error.response) {
+        const status = error.response.status;
+        const data = error.response.data;
+        throw {
+          message: data.message || 'Error al importar los productos',
+          code: data.code || 'UNKNOWN_ERROR',
+          status
+        };
+      } else if (error.request) {
+        throw {
+          message: 'No se pudo conectar con el servidor. Verifica tu conexión a internet',
+          code: 'NETWORK_ERROR'
+        };
+      } else {
+        throw {
+          message: 'Error al procesar la solicitud',
+          code: 'REQUEST_ERROR'
+        };
+      }
+    }
+  }
+}; 

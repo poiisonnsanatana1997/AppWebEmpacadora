@@ -1,29 +1,103 @@
-"use client"
-
 import * as React from "react"
-import * as SwitchPrimitives from "@radix-ui/react-switch"
-
+import styled from "styled-components"
 import { cn } from "@/lib/utils"
 
-const Switch = React.forwardRef<
-  React.ElementRef<typeof SwitchPrimitives.Root>,
-  React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>
->(({ className, ...props }, ref) => (
-  <SwitchPrimitives.Root
-    className={cn(
-      "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input",
-      className
-    )}
-    {...props}
-    ref={ref}
-  >
-    <SwitchPrimitives.Thumb
-      className={cn(
-        "pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0"
-      )}
-    />
-  </SwitchPrimitives.Root>
-))
-Switch.displayName = SwitchPrimitives.Root.displayName
+const SwitchContainer = styled.label`
+  position: relative;
+  display: inline-flex;
+  height: 1.15rem;
+  width: 2rem;
+  flex-shrink: 0;
+  align-items: center;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-color: var(--input);
+  box-shadow: var(--shadow-xs);
+  transition: all 0.2s;
+  outline: none;
+  cursor: pointer;
 
-export { Switch } 
+  &:focus-visible {
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px var(--ring-50);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  &[data-state="checked"] {
+    background-color: var(--primary);
+  }
+
+  &[data-state="unchecked"] {
+    background-color: var(--input);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    &[data-state="unchecked"] {
+      background-color: var(--input-80);
+    }
+  }
+`
+
+const SwitchThumb = styled.span`
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 9999px;
+  background-color: var(--background);
+  pointer-events: none;
+  transition: transform 0.2s;
+  transform: translateX(0);
+
+  &[data-state="checked"] {
+    transform: translateX(calc(100% - 2px));
+  }
+
+  @media (prefers-color-scheme: dark) {
+    &[data-state="unchecked"] {
+      background-color: var(--foreground);
+    }
+    &[data-state="checked"] {
+      background-color: var(--primary-foreground);
+    }
+  }
+`
+
+function Switch({
+  className,
+  checked,
+  onChange,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement>) {
+  const [isChecked, setIsChecked] = React.useState(checked ?? false)
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsChecked(e.target.checked)
+    onChange?.(e)
+  }
+
+  return (
+    <SwitchContainer
+      data-slot="switch"
+      data-state={isChecked ? "checked" : "unchecked"}
+      className={cn(className)}
+    >
+      <input
+        type="checkbox"
+        checked={isChecked}
+        onChange={handleChange}
+        style={{ display: "none" }}
+        {...props}
+      />
+      <SwitchThumb
+        data-slot="switch-thumb"
+        data-state={isChecked ? "checked" : "unchecked"}
+      />
+    </SwitchContainer>
+  )
+}
+
+export { Switch }

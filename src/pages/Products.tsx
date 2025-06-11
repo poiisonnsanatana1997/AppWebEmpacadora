@@ -5,8 +5,8 @@ import { Package, Loader2 } from "lucide-react";
 import { Toaster } from "sonner";
 import ProductTable from "@/components/products/ProductTable";
 import ProductForm from "@/components/forms/ProductForm";
-import productsService from "@/api/products";
-import type { Product } from "@/types/product";
+import { ProductosService } from "@/services/productos.service";
+import type { ProductoApi } from "@/types/product";
 import ProductsHeader from "@/components/products/ProductsHeader";
 import {
   Dialog,
@@ -103,19 +103,19 @@ const EmptyState = styled.div`
 `;
 
 const Products: React.FC = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [selected, setSelected] = useState<Product | null>(null);
+  const [products, setProducts] = useState<ProductoApi[]>([]);
+  const [selected, setSelected] = useState<ProductoApi | null>(null);
   const [openForm, setOpenForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [productToDelete, setProductToDelete] = useState<ProductoApi | null>(null);
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await productsService.getProducts();
+      const data = await ProductosService.obtenerProductos();
       setProducts(data);
     } catch (error: any) {
       console.error('Error al obtener productos:', error);
@@ -130,21 +130,20 @@ const Products: React.FC = () => {
     fetchProducts();
   }, []);
 
-  const handleEdit = (product: Product) => {
-    setSelected(product);
+  const handleEdit = (producto: ProductoApi) => {
+    setSelected(producto);
     setOpenForm(true);
   };
 
-  const handleDelete = async (product: Product) => {
-    setProductToDelete(product);
+  const handleDelete = async (producto: ProductoApi) => {
+    setProductToDelete(producto);
     setDeleteDialogOpen(true);
   };
 
   const confirmDelete = async () => {
     if (!productToDelete) return;
-    
     try {
-      await productsService.deleteProduct(productToDelete.id);
+      await ProductosService.eliminarProducto(productToDelete.id);
       await fetchProducts();
       setDeleteDialogOpen(false);
       setProductToDelete(null);
@@ -162,7 +161,6 @@ const Products: React.FC = () => {
   return (
     <Container>
       <Toaster richColors position="top-right" />
-      
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -174,7 +172,6 @@ const Products: React.FC = () => {
           onFilter={() => console.log('Filtros')}
           onExport={() => console.log('Exportar')}
         />
-
         <ProductsTableContainer>
           <TableHeaderSection>
             <motion.div
@@ -187,7 +184,6 @@ const Products: React.FC = () => {
               </h2>
             </motion.div>
           </TableHeaderSection>
-
           <TableContentSection>
             {loading ? (
               <LoadingMessage>
@@ -211,20 +207,18 @@ const Products: React.FC = () => {
             )}
           </TableContentSection>
         </ProductsTableContainer>
-
         <ProductForm
-          product={selected}
+          producto={selected}
           open={openForm}
           onClose={() => setOpenForm(false)}
           onSuccess={fetchProducts}
         />
-
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Confirmar eliminación</DialogTitle>
               <DialogDescription>
-                ¿Estás seguro que deseas eliminar el producto "{productToDelete?.name}"? Esta acción no se puede deshacer.
+                ¿Estás seguro que deseas eliminar el producto "{productToDelete?.nombre}"? Esta acción no se puede deshacer.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>

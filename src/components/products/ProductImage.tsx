@@ -55,14 +55,16 @@ export const ProductImage: React.FC<ProductImageProps> = ({ imageBase64 }) => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <ImageContainer>
-          <img 
-            src={`data:image/jpeg;base64,${imageBase64}`} 
-            alt="Producto"
-            loading="lazy"
-          />
-        </ImageContainer>
+      <DialogTrigger>
+        <button type="button" style={{ border: 'none', background: 'none', padding: 0 }}>
+          <ImageContainer>
+            <img 
+              src={`data:image/jpeg;base64,${imageBase64}`} 
+              alt="Producto"
+              loading="lazy"
+            />
+          </ImageContainer>
+        </button>
       </DialogTrigger>
       <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 bg-transparent border-none">
         <img 

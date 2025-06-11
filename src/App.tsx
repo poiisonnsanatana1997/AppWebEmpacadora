@@ -7,6 +7,8 @@ import Settings from './pages/Settings'
 import Reports from './pages/Reports'
 import Inventory from './pages/Inventory'
 import Products from './pages/Products'
+import OrdenesEntrada from './pages/OrdenesEntrada'
+import DetalleOrdenEntrada from './pages/DetalleOrdenEntrada'
 import { useAuth } from './contexts/AuthContext'
 import Layout from './components/Layout'
 
@@ -83,6 +85,22 @@ function App() {
               element={
                 <PrivateRoute>
                   <Products />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/ordenes-entrada" 
+              element={
+                <PrivateRoute>
+                  <OrdenesEntrada />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/ordenes-entrada/:codigo" 
+              element={
+                <PrivateRoute>
+                  <DetalleOrdenEntrada />
                 </PrivateRoute>
               } 
             />

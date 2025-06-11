@@ -12,7 +12,8 @@ import {
   X,
   ChevronLeft,
   LogOut,
-  Package} from "lucide-react"
+  Package,
+  ClipboardList} from "lucide-react"
 import { useAuth } from "../contexts/AuthContext"
 import { colors } from "../styles/colors"
 
@@ -34,7 +35,7 @@ const Sidebar = styled(motion.div)<{ $isOpen: boolean; $isCompact: boolean }>`
   left: 0;
   top: 0;
   overflow-y: auto;
-  z-index: 1000;
+  z-index: 100;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px ${colors.shadow.light};
 
@@ -118,7 +119,7 @@ const Overlay = styled(motion.div)<{ $isOpen: boolean }>`
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 999;
+  z-index: 99;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
@@ -142,6 +143,7 @@ const MainContent = styled.div<{ $sidebarOpen: boolean; $isCompact: boolean }>`
   width: 100%;
   position: relative;
   z-index: 1;
+  overflow: auto;
 
   @media (max-width: 1024px) {
     margin-left: ${props => props.$sidebarOpen ? (props.$isCompact ? '80px' : '240px') : '0'};
@@ -380,6 +382,13 @@ export default function Layout({ children }: LayoutProps) {
                 onClick={() => handleNavClick('/products')}
               >
                 <Package /> <span>Productos</span>
+              </NavItem>
+              <NavItem 
+                $isCompact={isCompact} 
+                $active={isActive('/ordenes-entrada')}
+                onClick={() => handleNavClick('/ordenes-entrada')}
+              >
+                <ClipboardList /> <span>Órdenes de Entrada</span>
               </NavItem>
               <NavItem 
                 $isCompact={isCompact} 
