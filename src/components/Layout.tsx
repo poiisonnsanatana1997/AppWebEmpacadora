@@ -1,21 +1,19 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import styled from "styled-components"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import {
-  Calendar,
-  BarChart3,
   Users,
-  Settings,
-  Leaf,
   Menu,
   X,
   ChevronLeft,
   LogOut,
   Package,
-  ClipboardList} from "lucide-react"
+  ClipboardList
+} from "lucide-react"
 import { useAuth } from "../contexts/AuthContext"
 import { colors } from "../styles/colors"
+import Tooltip from "./Tooltip"
 
 const LayoutContainer = styled.div`
   display: flex;
@@ -23,9 +21,11 @@ const LayoutContainer = styled.div`
   background: ${colors.background.main};
   position: relative;
   overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
 `
 
-const Sidebar = styled(motion.div)<{ $isOpen: boolean; $isCompact: boolean }>`
+const Sidebar = styled.div<{ $isOpen: boolean; $isCompact: boolean }>`
   width: ${props => props.$isCompact ? '80px' : '280px'};
   background: ${colors.background.light};
   border-right: 1px solid ${colors.border.light};
@@ -35,9 +35,13 @@ const Sidebar = styled(motion.div)<{ $isOpen: boolean; $isCompact: boolean }>`
   left: 0;
   top: 0;
   overflow-y: auto;
-  z-index: 100;
-  transition: all 0.3s ease;
+  overflow-x: hidden;
+  z-index: 1200;
   box-shadow: 0 4px 12px ${colors.shadow.light};
+  transition: transform 0.18s cubic-bezier(0.4,0,0.2,1), opacity 0.18s cubic-bezier(0.4,0,0.2,1);
+  transform: ${props => props.$isOpen ? 'translateX(0)' : 'translateX(-100%)'};
+  opacity: ${props => props.$isOpen ? '1' : '0'};
+  pointer-events: ${props => props.$isOpen ? 'auto' : 'none'};
 
   @media (max-width: 1024px) {
     width: ${props => props.$isCompact ? '80px' : '240px'};
@@ -45,66 +49,144 @@ const Sidebar = styled(motion.div)<{ $isOpen: boolean; $isCompact: boolean }>`
 
   @media (max-width: 768px) {
     width: 280px;
-    transform: ${props => props.$isOpen ? 'translateX(0)' : 'translateX(-100%)'};
-    box-shadow: ${props => props.$isOpen ? `0 4px 12px ${colors.shadow.medium}` : 'none'};
+    height: 100vh;
+    max-height: 100vh;
+    z-index: 1200;
+    display: block;
+  }
+`
+
+const SidebarHeader = styled.div<{ $isMobile: boolean }>`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem 0.5rem 1.5rem;
+  border-bottom: 1px solid ${colors.border.light};
+  height: 65px;
+  background: ${colors.background.light};
+
+  .logo-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .close-btn {
+    display: ${props => props.$isMobile ? 'block' : 'none'};
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 1.5rem;
+    cursor: pointer;
+    margin-left: 1rem;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: background 0.2s;
+    &:hover {
+      background: #f1f5f9;
+      color: ${colors.primary};
+    }
   }
 `
 
 const Logo = styled.div<{ $isCompact: boolean }>`
   display: flex;
   align-items: center;
-  padding: 1.5rem;
+  padding: 1rem 1.5rem;
   border-bottom: 1px solid ${colors.border.light};
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   justify-content: space-between;
   position: relative;
-  height: 80px;
+  height: 60px;
   background: ${colors.background.light};
 
   .logo-container {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
+  }
+
+  .brand-name {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+  }
+
+  .brand-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 1.1rem;
+    color: #1a365d;
+    margin: 0;
+  }
+
+  .brand-subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.65rem;
+    color: #64748b;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 1px;
   }
 
   @media (max-width: 768px) {
-    padding: 1rem;
-    margin-bottom: 1rem;
-    height: 64px;
+    padding: 0.875rem 1.25rem;
+    margin-bottom: 0.875rem;
+    height: 55px;
+
+    .brand-title {
+      font-size: 1rem;
+    }
   }
 
   img {
-    height: ${props => props.$isCompact ? '24px' : '32px'};
+    max-height: 32px;
+    max-width: ${props => props.$isCompact ? '32px' : '85px'};
+    height: auto;
     width: auto;
+    object-fit: contain;
     transition: all 0.2s;
   }
 `
 
 const CompactButton = styled.button<{ $isCompact: boolean }>`
-  background: transparent;
-  border: none;
-  color: ${colors.text.secondary};
+  background: ${props => props.$isCompact ? '#f8fafc' : 'transparent'};
+  border: 1px solid ${colors.border.light};
+  color: ${props => props.$isCompact ? colors.primary : '#64748b'};
   cursor: pointer;
   width: 32px;
   height: 32px;
-  border-radius: 0.5rem;
-  transition: all 0.2s;
+  border-radius: 4px;
+  transition: all 0.18s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0;
+  position: relative;
 
   &:hover {
-    background: ${colors.background.main};
+    background: #f8fafc;
+    border-color: #cbd5e0;
     color: ${colors.primary};
   }
 
+  &:focus {
+    outline: none;
+    border-color: ${colors.primary};
+    box-shadow: 0 0 0 2px rgba(74, 107, 87, 0.1);
+  }
+
+  &:active {
+    background: #f1f5f9;
+  }
+
   svg {
-    width: 20px;
-    height: 20px;
-    transform: ${props => props.$isCompact ? 'rotate(180deg)' : 'none'};
-    transition: transform 0.3s ease;
-    stroke-width: 1.5;
+    width: 18px;
+    height: 18px;
+    transform: ${props => props.$isCompact ? 'rotate(180deg)' : 'rotate(0)'};
+    transition: transform 0.18s ease;
+    stroke-width: 2;
   }
 
   @media (max-width: 768px) {
@@ -118,8 +200,10 @@ const Overlay = styled(motion.div)<{ $isOpen: boolean }>`
   left: 0;
   right: 0;
   bottom: 0;
+  width: 100vw;
+  height: 100vh;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 99;
+  z-index: 1100;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
@@ -131,7 +215,8 @@ const Overlay = styled(motion.div)<{ $isOpen: boolean }>`
   @media (max-width: 768px) {
     opacity: ${props => props.$isOpen ? '1' : '0'};
     pointer-events: ${props => props.$isOpen ? 'auto' : 'none'};
-    top: 4rem;
+    top: 0;
+    display: ${props => props.$isOpen ? 'block' : 'none'};
   }
 `
 
@@ -140,20 +225,24 @@ const MainContent = styled.div<{ $sidebarOpen: boolean; $isCompact: boolean }>`
   padding: 2rem;
   margin-left: ${props => props.$sidebarOpen ? (props.$isCompact ? '80px' : '280px') : '0'};
   transition: margin-left 0.3s ease;
-  width: 100%;
+  width: calc(100% - ${props => props.$sidebarOpen ? (props.$isCompact ? '80px' : '280px') : '0'});
   position: relative;
   z-index: 1;
-  overflow: auto;
+  overflow-x: hidden;
+  max-width: 100vw;
 
   @media (max-width: 1024px) {
     margin-left: ${props => props.$sidebarOpen ? (props.$isCompact ? '80px' : '240px') : '0'};
+    width: calc(100% - ${props => props.$sidebarOpen ? (props.$isCompact ? '80px' : '240px') : '0'});
     padding: 1.5rem;
   }
 
   @media (max-width: 768px) {
     margin-left: 0;
+    width: 100vw;
     padding: 1rem;
     padding-top: 4.5rem;
+    max-width: 100vw;
   }
 `
 
@@ -279,31 +368,48 @@ interface LayoutProps {
 }
 
 export default function Layout({ children }: LayoutProps) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768)
-  const [isCompact, setIsCompact] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem('sidebarOpen')
+    return saved ? JSON.parse(saved) : window.innerWidth > 768
+  })
+  
+  const [isCompact, setIsCompact] = useState(() => {
+    const saved = localStorage.getItem('sidebarCompact')
+    return saved ? JSON.parse(saved) : false
+  })
+  
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuth()
 
+  // Persistir estados en localStorage
   useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth <= 768
-      setIsMobile(mobile)
-      if (!mobile && !isSidebarOpen) {
-        setIsSidebarOpen(true)
-      }
-    }
-
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
+    localStorage.setItem('sidebarOpen', JSON.stringify(isSidebarOpen))
   }, [isSidebarOpen])
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen)
-  }
+  useEffect(() => {
+    localStorage.setItem('sidebarCompact', JSON.stringify(isCompact))
+  }, [isCompact])
 
-  const handleNavClick = (path: string) => {
+  const handleResize = useCallback(() => {
+    const mobile = window.innerWidth <= 768
+    setIsMobile(mobile)
+    if (!mobile && !isSidebarOpen) {
+      setIsSidebarOpen(true)
+    }
+  }, [isSidebarOpen])
+
+  useEffect(() => {
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [handleResize])
+
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarOpen((prev: boolean) => !prev)
+  }, [])
+
+  const handleNavClick = useCallback((path: string) => {
     if (path === '/logout') {
       logout()
       navigate('/login')
@@ -314,21 +420,36 @@ export default function Layout({ children }: LayoutProps) {
       setIsSidebarOpen(false)
     }
     navigate(path)
-  }
+  }, [logout, navigate])
 
-  const handleOverlayClick = (e: React.MouseEvent) => {
+  const handleOverlayClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
     setIsSidebarOpen(false)
-  }
+  }, [])
 
-  const isActive = (path: string) => {
+  const isActive = useCallback((path: string) => {
     return location.pathname === path
-  }
+  }, [location.pathname])
+
+  // Bloquear scroll del body cuando el sidebar está abierto en móvil
+  useEffect(() => {
+    if (isMobile && isSidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobile, isSidebarOpen]);
 
   return (
     <LayoutContainer>
       {isMobile && (
-        <MenuButton onClick={toggleSidebar}>
+        <MenuButton 
+          onClick={toggleSidebar}
+          aria-label={isSidebarOpen ? "Cerrar menú" : "Abrir menú"}
+        >
           {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
         </MenuButton>
       )}
@@ -336,109 +457,99 @@ export default function Layout({ children }: LayoutProps) {
       <Overlay 
         $isOpen={isSidebarOpen}
         onClick={handleOverlayClick}
+        aria-hidden={!isSidebarOpen}
       />
 
-      <AnimatePresence>
-        {isSidebarOpen && (
-          <Sidebar
-            $isOpen={isSidebarOpen}
-            $isCompact={isCompact}
-            initial={{ x: -280 }}
-            animate={{ x: 0 }}
-            exit={{ x: -280 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Logo $isCompact={isCompact}>
-              <div className="logo-container">
-                <img src="/images/deepsoft-logo.svg" alt="AgroSmart" />
+      <Sidebar
+        $isOpen={isSidebarOpen}
+        $isCompact={isCompact}
+        role="navigation"
+        aria-label="Menú principal"
+      >
+        <SidebarHeader $isMobile={isMobile}>
+          <div className="logo-container">
+            <img src="/images/LogoEmpacadora.jpg" alt="Empacadora del Valle de San Francisco" style={{ maxHeight: 38, maxWidth: isCompact ? 38 : 95 }} />
+            {!isCompact && (
+              <div className="brand-name">
+                <h1 className="brand-title" style={{ fontSize: '1.1rem', color: '#1a365d', fontWeight: 600, margin: 0 }}>Empacadora</h1>
+                <span className="brand-subtitle" style={{ fontSize: '0.7rem', color: '#1a365d', fontWeight: 400, marginTop: 2 }}>Valle de San Francisco</span>
               </div>
-              <CompactButton 
+            )}
+          </div>
+          {isMobile && (
+            <button
+              className="close-btn"
+              aria-label="Cerrar menú"
+              onClick={toggleSidebar}
+            >
+              <X size={24} />
+            </button>
+          )}
+          {!isMobile && (
+            <Tooltip content={isCompact ? "Expandir menú" : "Compactar menú"}>
+              <CompactButton
                 $isCompact={isCompact}
                 onClick={() => setIsCompact(!isCompact)}
+                aria-label={isCompact ? "Expandir menú" : "Compactar menú"}
               >
                 <ChevronLeft />
               </CompactButton>
-            </Logo>
+            </Tooltip>
+          )}
+        </SidebarHeader>
 
-            <NavSection $isCompact={isCompact}>
-              <h3>General</h3>
-              <NavItem 
-                $isCompact={isCompact} 
-                $active={isActive('/dashboard')}
-                onClick={() => handleNavClick('/dashboard')}
-              >
-                <BarChart3 /> <span>Dashboard</span>
-              </NavItem>
-              <NavItem 
-                $isCompact={isCompact} 
-                $active={isActive('/inventory')}
-                onClick={() => handleNavClick('/inventory')}
-              >
-                <Leaf /> <span>Cultivos</span>
-              </NavItem>
-              <NavItem 
-                $isCompact={isCompact} 
-                $active={isActive('/products')}
-                onClick={() => handleNavClick('/products')}
-              >
-                <Package /> <span>Productos</span>
-              </NavItem>
-              <NavItem 
-                $isCompact={isCompact} 
-                $active={isActive('/ordenes-entrada')}
-                onClick={() => handleNavClick('/ordenes-entrada')}
-              >
-                <ClipboardList /> <span>Órdenes de Entrada</span>
-              </NavItem>
-              <NavItem 
-                $isCompact={isCompact} 
-                $active={isActive('/users')}
-                onClick={() => handleNavClick('/users')}
-              >
-                <Users /> <span>Usuarios</span>
-              </NavItem>
-            </NavSection>
+        <NavSection $isCompact={isCompact} style={{ marginTop: '1.5rem' }}>
+          <h3>Menú Principal</h3>
+          <Tooltip content="Productos" disabled={!isCompact}>
+            <NavItem
+              $isCompact={isCompact}
+              $active={isActive('/productos')}
+              onClick={() => handleNavClick('/productos')}
+              aria-current={isActive('/productos') ? 'page' : undefined}
+            >
+              <Package /> <span>Productos</span>
+            </NavItem>
+          </Tooltip>
+          <Tooltip content="Órdenes de Entrada" disabled={!isCompact}>
+            <NavItem
+              $isCompact={isCompact}
+              $active={isActive('/ordenes-entrada')}
+              onClick={() => handleNavClick('/ordenes-entrada')}
+              aria-current={isActive('/ordenes-entrada') ? 'page' : undefined}
+            >
+              <ClipboardList /> <span>Órdenes de Entrada</span>
+            </NavItem>
+          </Tooltip>
+          <Tooltip content="Usuarios" disabled={!isCompact}>
+            <NavItem
+              $isCompact={isCompact}
+              $active={isActive('/users')}
+              onClick={() => handleNavClick('/users')}
+              aria-current={isActive('/users') ? 'page' : undefined}
+            >
+              <Users /> <span>Usuarios</span>
+            </NavItem>
+          </Tooltip>
+        </NavSection>
 
-            <NavSection $isCompact={isCompact}>
-              <h3>Herramientas</h3>
-              <NavItem 
-                $isCompact={isCompact} 
-                $active={isActive('/calendar')}
-                onClick={() => handleNavClick('/calendar')}
-              >
-                <Calendar /> <span>Calendario</span>
-              </NavItem>
-              <NavItem 
-                $isCompact={isCompact} 
-                $active={isActive('/reports')}
-                onClick={() => handleNavClick('/reports')}
-              >
-                <BarChart3 /> <span>Reportes</span>
-              </NavItem>
-              <NavItem 
-                $isCompact={isCompact} 
-                $active={isActive('/settings')}
-                onClick={() => handleNavClick('/settings')}
-              >
-                <Settings /> <span>Configuración</span>
-              </NavItem>
-            </NavSection>
+        <div style={{ flex: 1 }} />
 
-            <UserProfileSection $isCompact={isCompact}>
-              <div className="user-info">
-                <h4>{user?.name || 'Usuario'}</h4>
-                <p>{user?.roleName || 'Sin rol asignado'}</p>
-              </div>
-              <UserButton 
-                $isCompact={isCompact} 
-                onClick={() => handleNavClick('/logout')}
-              >
-                <LogOut /> <span>Cerrar sesión</span>
-              </UserButton>
-            </UserProfileSection>
-          </Sidebar>
-        )}
-      </AnimatePresence>
+        <UserProfileSection $isCompact={isCompact}>
+          <div className="user-info">
+            <h4>{user?.name || 'Usuario'}</h4>
+            <p>{user?.roleName || 'Sin rol asignado'}</p>
+          </div>
+          <Tooltip content="Cerrar sesión" disabled={!isCompact}>
+            <UserButton
+              $isCompact={isCompact}
+              onClick={() => handleNavClick('/logout')}
+              aria-label="Cerrar sesión"
+            >
+              <LogOut /> <span>Cerrar sesión</span>
+            </UserButton>
+          </Tooltip>
+        </UserProfileSection>
+      </Sidebar>
 
       <MainContent $sidebarOpen={isSidebarOpen} $isCompact={isCompact}>
         {children}

@@ -312,7 +312,7 @@ export default function Login() {
         animate="visible"
         variants={logoVariants}
       >
-        <img src="/images/deepsoft-logo.svg" alt="DeepSOFT" />
+        <img src="/images/LogoEmpacadora.jpg" alt="Empacadora" />
       </MotionLogo>
       
       <motion.div

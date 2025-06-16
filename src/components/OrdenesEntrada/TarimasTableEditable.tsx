@@ -2,8 +2,8 @@ import styled from 'styled-components';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { NumericFormat } from 'react-number-format';
-import { Search, ChevronLeft, ChevronRight, Plus, Trash2, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { ESTADO_ORDEN, EstadoOrden, PesajeTarimaDto, estadoOrdenUtils } from '@/types/ordenesEntrada';
+import { Search, ChevronLeft, ChevronRight, Plus, Trash2, Loader2 } from 'lucide-react';
+import { ESTADO_ORDEN, EstadoOrden, PesajeTarimaDto, estadoOrdenUtils } from '../../types/ordenesEntrada';
 import { OrdenesEntradaService } from '@/services/ordenesEntrada.service';
 import { toast } from 'sonner';
 import React, { useCallback } from 'react';
@@ -262,7 +262,7 @@ export const TarimasTableEditable: React.FC<TarimasTableEditableProps> = ({ tari
       i === realIndex ? tarimaActualizada : t
     );
     setTarimas(nuevasTarimas);
-    debouncedHandleEdit(idx, field, value);
+    debouncedHandleEdit(tarimaActual.numero, field, value);
   };
 
   // Al inicio del componente:
@@ -273,73 +273,26 @@ export const TarimasTableEditable: React.FC<TarimasTableEditableProps> = ({ tari
 
   // Crear una versión debounceada de handleEdit
   const debouncedHandleEdit = useCallback(
-    debounce(async (idx: number, field: keyof Omit<PesajeTarimaDto, 'numero' | 'pesoNeto'>, value: number | string) => {
-      if (!canAddTarimas) return;
-      const currentTarimas = currentTarimasRef.current;
-      const tarimas = tarimasRef.current;
-      const tarimaActual = currentTarimas[idx];
-      if (!tarimaActual) return;
-      const realIndex = tarimas.findIndex(t => t.numero === tarimaActual.numero);
-      if (realIndex === -1) return;
+    debounce(async (numero: string, field: keyof Omit<PesajeTarimaDto, 'numero' | 'pesoNeto'>, value: number | string) => {
       try {
-        if (field !== 'observaciones') {
-          const error = validateNumericValue(value as number, field);
-          if (error) {
-            setValidationErrors(prev => ({ ...prev, [`${tarimaActual.numero}-${field}`]: error }));
-            setEditStatus(prev => ({ ...prev, [tarimaActual.numero]: 'error' }));
-            return;
-          }
-        }
-        const tarimaActualizada = { ...tarimas[realIndex] };
-        if (field === 'observaciones') {
-          tarimaActualizada[field] = value as string;
-        } else {
-          tarimaActualizada[field] = value as number;
-        }
-        if (field === 'cantidadCajas' || field === 'pesoPorCaja') {
-          tarimaActualizada.pesoTara = calcTara(
-            tarimaActualizada.cantidadCajas,
-            tarimaActualizada.pesoPorCaja
-          );
-        }
-        tarimaActualizada.pesoNeto = calcNeto(
-          tarimaActualizada.pesoBruto,
-          tarimaActualizada.pesoTara,
-          tarimaActualizada.pesoTarima,
-          tarimaActualizada.pesoPatin
-        );
-        await OrdenesEntradaService.actualizarPesajesTarima(
+        const updated = await OrdenesEntradaService.actualizarPesajesTarima(
           codigoOrden,
-          tarimaActualizada.numero,
-          {
-            pesoBruto: tarimaActualizada.pesoBruto,
-            pesoTara: tarimaActualizada.pesoTara,
-            pesoTarima: tarimaActualizada.pesoTarima,
-            pesoPatin: tarimaActualizada.pesoPatin,
-            cantidadCajas: tarimaActualizada.cantidadCajas,
-            pesoPorCaja: tarimaActualizada.pesoPorCaja,
-            observaciones: tarimaActualizada.observaciones,
-            pesoNeto: tarimaActualizada.pesoNeto
-          }
+          numero,
+          { [field]: value }
         );
-        // No sobrescribas el estado local con la respuesta del backend
-        setEditStatus(prev => ({ ...prev, [tarimaActual.numero]: 'success' }));
-        setValidationErrors(prev => {
-          const newErrors = { ...prev };
-          Object.keys(newErrors).forEach(k => { if (k.startsWith(`${tarimaActual.numero}-`)) delete newErrors[k]; });
-          return newErrors;
-        });
-        toast.success(`Pesaje de la tarima ${tarimaActual.numero} actualizado correctamente`);
-        setTimeout(() => {
-          setEditStatus(prev => ({ ...prev, [tarimaActual.numero]: 'idle' }));
-        }, 2000);
+
+        if (updated) {
+          setEditStatus(prev => ({ ...prev, [numero]: 'success' }));
+        } else {
+          throw new Error('No se pudo actualizar la tarima');
+        }
       } catch (error) {
-        console.error('Error al actualizar el pesaje:', error);
-        setEditStatus(prev => ({ ...prev, [tarimaActual.numero]: 'error' }));
-        toast.error('Error al actualizar el pesaje');
+        console.error('Error al actualizar tarima:', error);
+        setEditStatus(prev => ({ ...prev, [numero]: 'error' }));
+        toast.error('Error al actualizar la tarima');
       }
     }, 500),
-    [canAddTarimas, codigoOrden]
+    [codigoOrden]
   );
 
   // Validaciones

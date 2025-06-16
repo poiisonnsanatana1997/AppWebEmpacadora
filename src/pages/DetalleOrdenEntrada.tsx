@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import styled from 'styled-components';
-import { Package, Calendar, User, ClipboardList, StickyNote, Boxes, FileDown } from 'lucide-react';
+import { Package, Calendar, User, ClipboardList, StickyNote, Boxes, FileDown, Hash, FileText, Clock } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import { ESTADO_ORDEN, OrdenEntradaDto, PesajeTarimaDto } from '../types/ordenesEntrada';
 import {
@@ -22,14 +22,64 @@ import {
 
 const InfoGrid = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 0.5rem 1.5rem;
-  font-size: 0.98rem;
-  @media (max-width: 900px) {
-    grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  font-size: 0.9rem;
+  
+  @media (min-width: 640px) {
+    grid-template-columns: repeat(2, 1fr);
   }
-  @media (max-width: 600px) {
-    grid-template-columns: 1fr;
+  
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+`;
+
+const InfoItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: #ffffff;
+  border-radius: 0.375rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  
+  b {
+    color: #374151;
+    font-weight: 500;
+    min-width: 80px;
+    
+    @media (min-width: 640px) {
+      min-width: 100px;
+    }
+  }
+
+  svg {
+    color: #6B7280;
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+  }
+`;
+
+const InfoItemFull = styled(InfoItem)`
+  grid-column: 1 / -1;
+  background-color: #F9FAFB;
+`;
+
+const InfoGroup = styled.div`
+  display: contents;
+`;
+
+const InfoGroupHeader = styled(InfoItemFull)`
+  background-color: #F3F4F6;
+  font-weight: 600;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  border-left: 3px solid #3B82F6;
+  
+  svg {
+    color: #3B82F6;
   }
 `;
 
@@ -94,6 +144,7 @@ export default function DetalleOrdenEntrada() {
         proveedorId: orden.proveedor.id,
         productoId: orden.producto.id,
         fechaEstimada: orden.fechaEstimada,
+        fechaRecepcion: new Date().toISOString(),
         estado: ESTADO_ORDEN.RECIBIDA,
         observaciones: orden.observaciones
       });
@@ -141,6 +192,7 @@ export default function DetalleOrdenEntrada() {
         proveedorId: orden.proveedor.id,
         productoId: orden.producto.id,
         fechaEstimada: orden.fechaEstimada,
+        fechaRecepcion: null,
         estado: ESTADO_ORDEN.PROCESANDO,
         observaciones: orden.observaciones
       });
@@ -168,6 +220,7 @@ export default function DetalleOrdenEntrada() {
         proveedorId: orden.proveedor.id,
         productoId: orden.producto.id,
         fechaEstimada: orden.fechaEstimada,
+        fechaRecepcion: null,
         estado: ESTADO_ORDEN.PENDIENTE,
         observaciones: orden.observaciones
       });
@@ -192,32 +245,39 @@ export default function DetalleOrdenEntrada() {
       <Toaster richColors position="top-right" />
       
       {/* Encabezado compacto */}
-      <div className="flex items-center justify-between mb-2">
-        <Button onClick={() => navigate(-1)} variant="outline" size="sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
+        <Button onClick={() => navigate(-1)} variant="outline" size="sm" className="w-full sm:w-auto">
           ← Regresar
         </Button>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
           <ClipboardList className="h-6 w-6 text-primary" />
           <span className="text-lg font-bold">Orden #{orden.codigo}</span>
           <Badge className={`ml-2 text-sm px-2 py-1.5 ${
-            orden.estado === ESTADO_ORDEN.PENDIENTE ? 'bg-black text-white' :
-            orden.estado === ESTADO_ORDEN.PROCESANDO ? 'bg-blue-600 text-white' :
-            orden.estado === ESTADO_ORDEN.RECIBIDA ? 'bg-green-600 text-white' :
-            'bg-red-600 text-white'
+            orden.estado === ESTADO_ORDEN.PENDIENTE ? 'bg-yellow-200 text-yellow-800 hover:bg-yellow-300 font-semibold' :
+            orden.estado === ESTADO_ORDEN.PROCESANDO ? 'bg-blue-200 text-blue-800 hover:bg-blue-300 font-semibold' :
+            orden.estado === ESTADO_ORDEN.RECIBIDA ? 'bg-green-200 text-green-800 hover:bg-green-300 font-semibold' :
+            'bg-red-200 text-red-800 hover:bg-red-300 font-semibold'
           }`} variant="secondary">{orden.estado}</Badge>
         </div>
       </div>
 
       {/* Tarimas primero */}
       <Card className="mb-6 w-full">
-        <CardHeader>
+        <CardHeader className="p-4 sm:p-6">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <Boxes className="h-5 w-5 text-muted-foreground" /> Tarimas (Pesaje por Tarima)
+            <Boxes className="h-5 w-5 text-muted-foreground" /> 
+            <span className="text-base sm:text-lg">Tarimas (Pesaje por Tarima)</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="mb-2 text-sm text-muted-foreground">
-            Aquí puedes ver y editar el pesaje de cada tarima asociada a esta orden. Utiliza los campos para modificar los valores y el botón <span className="font-bold">➕</span> para agregar nuevas tarimas.
+        <CardContent className="p-4 sm:p-6">
+          <div className="mb-4 text-sm text-muted-foreground">
+            <p className="hidden sm:block">
+              Aquí puedes ver y editar el pesaje de cada tarima asociada a esta orden. 
+              Utiliza los campos para modificar los valores y el botón <span className="font-bold">➕</span> para agregar nuevas tarimas.
+            </p>
+            <p className="sm:hidden">
+              Edita el pesaje de cada tarima. Usa <span className="font-bold">➕</span> para agregar nuevas.
+            </p>
           </div>
           <TarimasTableEditable 
             tarimas={tarimas} 
@@ -227,12 +287,12 @@ export default function DetalleOrdenEntrada() {
             onPrimerPesaje={handlePrimerPesaje}
             onEliminarUltimoPesaje={handleEliminarUltimoPesaje}
           />
-          <div className="mt-4 flex justify-end gap-2">
-            {(orden.estado === ESTADO_ORDEN.PENDIENTE || orden.estado === ESTADO_ORDEN.PROCESANDO ) && (
+          <div className="mt-4 flex flex-col sm:flex-row justify-end gap-2">
+            {(orden.estado === ESTADO_ORDEN.PENDIENTE || orden.estado === ESTADO_ORDEN.PROCESANDO) && (
               <Button 
                 onClick={handleFinalizarPesaje} 
                 disabled={guardando}
-                className="bg-green-600 hover:bg-green-700"
+                className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
               >
                 {guardando ? 'Guardando...' : 'Finalizar Pesaje'}
               </Button>
@@ -241,7 +301,7 @@ export default function DetalleOrdenEntrada() {
               <Button 
                 onClick={handleGenerarPDF}
                 variant="outline"
-                className="flex items-center gap-2"
+                className="w-full sm:w-auto flex items-center justify-center gap-2"
               >
                 <FileDown className="h-4 w-4" />
                 Generar PDF
@@ -251,13 +311,23 @@ export default function DetalleOrdenEntrada() {
           <div className="mt-2 text-xs text-muted-foreground">
             {(orden.estado === ESTADO_ORDEN.PENDIENTE || orden.estado === ESTADO_ORDEN.PROCESANDO) ? (
               <>
-                Los cambios en las tarimas se guardan automáticamente en esta vista.<br/>
-                Una vez finalizado el pesaje, no se podrán realizar más cambios.
+                <p className="hidden sm:block">
+                  Los cambios en las tarimas se guardan automáticamente en esta vista.<br/>
+                  Una vez finalizado el pesaje, no se podrán realizar más cambios.
+                </p>
+                <p className="sm:hidden">
+                  Los cambios se guardan automáticamente. No se podrán modificar después de finalizar.
+                </p>
               </>
             ) : (
               <>
-                Esta orden ya ha sido finalizada. No se pueden realizar más cambios en el pesaje.<br/>
-                Para ver los detalles, descarga el PDF de la orden.
+                <p className="hidden sm:block">
+                  Esta orden ya ha sido finalizada. No se pueden realizar más cambios en el pesaje.<br/>
+                  Para ver los detalles, descarga el PDF de la orden.
+                </p>
+                <p className="sm:hidden">
+                  Orden finalizada. Descarga el PDF para ver los detalles.
+                </p>
               </>
             )}
           </div>
@@ -266,34 +336,114 @@ export default function DetalleOrdenEntrada() {
 
       {/* Información general compacta */}
       <Card className="mb-4 w-full">
-        <CardHeader>
+        <CardHeader className="p-4 sm:p-6">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Package className="h-5 w-5 text-muted-foreground" /> Información general
+            <Package className="h-5 w-5 text-muted-foreground" /> 
+            <span className="text-sm sm:text-base">Información general</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 sm:p-6 pt-0">
           <InfoGrid>
-            <div className="flex items-center gap-2"><Calendar className="h-4 w-4 text-muted-foreground" /><b>Fecha:</b> {formatearFecha(orden.fechaEstimada)}</div>
-            <div className="flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" /><b>Proveedor:</b> {orden.proveedor.nombre}</div>
-            <div className="flex items-center gap-2"><Package className="h-4 w-4 text-muted-foreground" /><b>Producto:</b> {orden.producto.nombre}</div>
-            <div className="flex items-center gap-2"><Calendar className="h-4 w-4 text-muted-foreground" /><b>Fecha de Registro:</b> {formatearFecha(orden.fechaRegistro) || <span className="italic text-muted-foreground">No registrada</span>}</div>
-            <div className="flex items-center gap-2"><Calendar className="h-4 w-4 text-muted-foreground" /><b>Fecha de Recepción:</b> {formatearFecha(orden.fechaRecepcion) || <span className="italic text-muted-foreground">No recibida</span>}</div>
-            <div className="flex items-center gap-2 col-span-3"><StickyNote className="h-4 w-4 text-muted-foreground" /><b>Observaciones:</b> <span className="ml-1 text-muted-foreground">{orden.observaciones || <span className="italic">Sin observaciones</span>}</span></div>
+            <InfoGroup>
+              <InfoGroupHeader>
+                <ClipboardList className="h-4 w-4" />
+                Información de la Orden
+              </InfoGroupHeader>
+              <InfoItem>
+                <Hash className="h-4 w-4" />
+                <b>Código:</b> {orden.codigo}
+              </InfoItem>
+              <InfoItem>
+                <Calendar className="h-4 w-4" />
+                <b>Fecha Est.:</b> {formatearFecha(orden.fechaEstimada)}
+              </InfoItem>
+              <InfoItem>
+                <Calendar className="h-4 w-4" />
+                <b>Fecha Reg.:</b> {formatearFecha(orden.fechaRegistro) || <span className="italic text-muted-foreground">No registrada</span>}
+              </InfoItem>
+              <InfoItem>
+                <User className="h-4 w-4" />
+                <b>Usuario:</b> {orden.usuarioRegistro || <span className="italic text-muted-foreground">No registrado</span>}
+              </InfoItem>
+            </InfoGroup>
+
+            <InfoGroup>
+              <InfoGroupHeader>
+                <Package className="h-4 w-4" />
+                Proveedor y Producto
+              </InfoGroupHeader>
+              <InfoItem>
+                <User className="h-4 w-4" />
+                <b>Proveedor:</b> {orden.proveedor.nombre}
+              </InfoItem>
+              <InfoItem>
+                <Package className="h-4 w-4" />
+                <b>Producto:</b> {orden.producto.nombre}
+              </InfoItem>
+              <InfoItem>
+                <Hash className="h-4 w-4" />
+                <b>Cod. Prod.:</b> {orden.producto.codigo}
+              </InfoItem>
+              <InfoItem>
+                <Package className="h-4 w-4" />
+                <b>Variedad:</b> {orden.producto.variedad}
+              </InfoItem>
+            </InfoGroup>
+
+            <InfoGroup>
+              <InfoGroupHeader>
+                <Boxes className="h-4 w-4" />
+                Recepción y Pesaje
+              </InfoGroupHeader>
+              <InfoItem>
+                <Calendar className="h-4 w-4" />
+                <b>Fecha Rec.:</b> {formatearFecha(orden.fechaRecepcion) || <span className="italic text-muted-foreground">No recibida</span>}
+              </InfoItem>
+              <InfoItem>
+                <User className="h-4 w-4" />
+                <b>Usuario Rec.:</b> {orden.usuarioRecepcion || <span className="italic text-muted-foreground">No recibido</span>}
+              </InfoItem>
+              <InfoItem>
+                <Boxes className="h-4 w-4" />
+                <b>Tarimas:</b> {tarimas.length}
+              </InfoItem>
+            </InfoGroup>
+
+            <InfoGroup>
+              <InfoGroupHeader>
+                <StickyNote className="h-4 w-4" />
+                Observaciones
+              </InfoGroupHeader>
+              <InfoItemFull>
+                <div className="flex items-start gap-2">
+                  <StickyNote className="h-4 w-4 mt-1" />
+                  <div>
+                    <p className="text-muted-foreground">
+                      {orden.observaciones || <span className="italic">Sin observaciones</span>}
+                    </p>
+                  </div>
+                </div>
+              </InfoItemFull>
+            </InfoGroup>
           </InfoGrid>
         </CardContent>
       </Card>
 
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[95%] sm:w-[500px] max-w-[95vw]">
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Finalizar pesaje?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-lg sm:text-xl">¿Finalizar pesaje?</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm sm:text-base">
               Esta acción cambiará el estado de la orden a "Recibida" y no se podrán realizar más cambios en el pesaje. ¿Estás seguro de continuar?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmarFinalizarPesaje} disabled={guardando}>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmarFinalizarPesaje} 
+              disabled={guardando}
+              className="w-full sm:w-auto"
+            >
               {guardando ? 'Finalizando...' : 'Sí, finalizar pesaje'}
             </AlertDialogAction>
           </AlertDialogFooter>

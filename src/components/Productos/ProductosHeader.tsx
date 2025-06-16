@@ -1,9 +1,5 @@
 import { motion } from 'framer-motion';
-import { 
-  ClipboardList, 
-  Plus, 
-  CloudUpload
-} from 'lucide-react';
+import { Package, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import styled from 'styled-components';
 
@@ -115,15 +111,11 @@ const HeaderActions = styled.div`
   }
 `;
 
-interface OrdenesEntradaHeaderProps {
-  onNewOrder: () => void;
-  onImport: () => void;
+interface ProductosHeaderProps {
+  onNewProduct: () => void;
 }
 
-export function OrdenesEntradaHeader({ 
-  onNewOrder,
-  onImport,
-}: OrdenesEntradaHeaderProps) {
+export function ProductosHeader({ onNewProduct }: ProductosHeaderProps) {
   return (
     <Header>
       <HeaderContent>
@@ -133,11 +125,11 @@ export function OrdenesEntradaHeader({
           transition={{ duration: 0.3 }}
         >
           <HeaderTitle>
-            <ClipboardList />
+            <Package />
             <div>
-              Órdenes de Entrada
+              Productos
               <HeaderSubtitle>
-                Gestiona las órdenes de entrada de productos
+                Gestiona tu catálogo de productos
               </HeaderSubtitle>
             </div>
           </HeaderTitle>
@@ -150,13 +142,9 @@ export function OrdenesEntradaHeader({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
         >
-          <Button variant="outline" onClick={onImport} className="mr-2">
-            <CloudUpload className="w-4 h-4 mr-2" />
-            Importar
-          </Button>
-          <Button onClick={onNewOrder}>
+          <Button onClick={onNewProduct}>
             <Plus className="w-4 h-4 mr-2" />
-            Nueva Orden
+            Nuevo Producto
           </Button>
         </motion.div>
       </HeaderActions>
@@ -164,4 +152,4 @@ export function OrdenesEntradaHeader({
   );
 }
 
-export default OrdenesEntradaHeader; 
+export default ProductosHeader; 

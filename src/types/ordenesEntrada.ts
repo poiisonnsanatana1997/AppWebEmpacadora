@@ -1,34 +1,80 @@
-// Dto de producto
-export interface ProductoDto {
-  id: number;
-  nombre: string;
+export enum ESTADO_ORDEN {
+  PENDIENTE = 'Pendiente',
+  PROCESANDO = 'Procesando',
+  RECIBIDA = 'Recibida',
+  CANCELADA = 'Cancelada'
 }
 
-// Dto de proveedor
-export interface ProveedorDto {
-  id: number;
-  nombre: string;
-}
+export type EstadoOrden = typeof ESTADO_ORDEN[keyof typeof ESTADO_ORDEN];
 
-// Dto de orden de entrada
-export interface OrdenEntradaDto {
-  codigo: string;
-  proveedor: ProveedorDto;
-  producto: ProductoDto;
+export interface CrearOrdenEntradaDto {
+  proveedorId: number;
+  productoId: number;
   fechaEstimada: string;
-  fechaRegistro: string | null;
+  fechaRegistro: string;
+  estado: EstadoOrden;
+  observaciones: string | null;
+}
+
+export interface ActualizarOrdenEntradaDto {
+  proveedorId: number;
+  productoId: number;
+  fechaEstimada: string;
   fechaRecepcion: string | null;
   estado: EstadoOrden;
-  observaciones: string;
+  observaciones: string | null;
 }
 
-// Dto detalle de orden de entrada
 export interface DetalleOrdenEntradaDto {
   ordenEntrada: OrdenEntradaDto;
   tarimas: PesajeTarimaDto[];
 }
 
-// Dto de pesaje de tarima
+export interface ProveedorDto {
+  id: number;
+  nombre: string;
+}
+
+export interface ProductoDto {
+  id: number;
+  nombre: string;
+  codigo: string;
+  variedad: string;
+}
+
+export interface OrdenEntradaDto {
+  codigo: string;
+  proveedor: ProveedorDto;
+  producto: ProductoDto;
+  fechaEstimada: string;
+  fechaRegistro: string;
+  fechaRecepcion: string | null;
+  estado: EstadoOrden;
+  observaciones: string;
+  usuarioRegistro: string;
+  usuarioRecepcion: string | null;
+}
+
+export interface OrdenEntradaFormData {
+  proveedor: {
+    id: number;
+    nombre: string;
+  };
+  producto: {
+    id: number;
+    nombre: string;
+    codigo: string;
+    variedad: string;
+  };
+  fechaEstimada: string;
+  estado: EstadoOrden;
+  observaciones: string;
+  fechaRegistro: string;
+  fechaRecepcion: string | null;
+  usuarioRegistro: string;
+  usuarioRecepcion: string | null;
+}
+
 export interface PesajeTarimaDto {
   numero: string;
   pesoBruto: number;
@@ -41,38 +87,35 @@ export interface PesajeTarimaDto {
   observaciones: string;
 }
 
-
-// Tipos de Orden de Entrada
-export type EstadoOrden = 'Pendiente' | 'Procesando' | 'Recibida' | 'Cancelada';
-
-// Constantes para los estados
-export const ESTADO_ORDEN = {
-  PENDIENTE: 'Pendiente',
-  PROCESANDO: 'Procesando',
-  RECIBIDA: 'Recibida',
-  CANCELADA: 'Cancelada'
-} as const;
-
-// Funciones de utilidad para validar estados
 export const estadoOrdenUtils = {
+  estaCompletada: (estado: EstadoOrden): boolean => {
+    return estado === ESTADO_ORDEN.RECIBIDA;
+  },
   puedeEditar: (estado: EstadoOrden): boolean => {
     return estado === ESTADO_ORDEN.PENDIENTE || estado === ESTADO_ORDEN.PROCESANDO;
   },
-  estaCompletada: (estado: EstadoOrden): boolean => {
-    return estado === ESTADO_ORDEN.RECIBIDA || estado === ESTADO_ORDEN.CANCELADA;
+  esCancelable: (estado: EstadoOrden): boolean => {
+    return estado === ESTADO_ORDEN.PENDIENTE || estado === ESTADO_ORDEN.PROCESANDO;
   },
-  esProcesando: (estado: EstadoOrden): boolean => {
-    return estado === ESTADO_ORDEN.PROCESANDO;
+  esReactivable: (estado: EstadoOrden): boolean => {
+    return estado === ESTADO_ORDEN.CANCELADA;
+  },
+  esValidaTransicion: (estadoActual: EstadoOrden, nuevoEstado: EstadoOrden): boolean => {
+    const transicionesPermitidas: Record<EstadoOrden, EstadoOrden[]> = {
+      [ESTADO_ORDEN.PENDIENTE]: [ESTADO_ORDEN.PROCESANDO, ESTADO_ORDEN.CANCELADA],
+      [ESTADO_ORDEN.PROCESANDO]: [ESTADO_ORDEN.RECIBIDA, ESTADO_ORDEN.CANCELADA],
+      [ESTADO_ORDEN.RECIBIDA]: [],
+      [ESTADO_ORDEN.CANCELADA]: [ESTADO_ORDEN.PENDIENTE]
+    };
+    return transicionesPermitidas[estadoActual].includes(nuevoEstado);
+  },
+  obtenerEstadosSiguientes: (estadoActual: EstadoOrden): EstadoOrden[] => {
+    const transicionesPermitidas: Record<EstadoOrden, EstadoOrden[]> = {
+      [ESTADO_ORDEN.PENDIENTE]: [ESTADO_ORDEN.PROCESANDO, ESTADO_ORDEN.CANCELADA],
+      [ESTADO_ORDEN.PROCESANDO]: [ESTADO_ORDEN.RECIBIDA, ESTADO_ORDEN.CANCELADA],
+      [ESTADO_ORDEN.RECIBIDA]: [],
+      [ESTADO_ORDEN.CANCELADA]: [ESTADO_ORDEN.PENDIENTE]
+    };
+    return transicionesPermitidas[estadoActual];
   }
-};
-
-export type OrdenEntradaFormData = Omit<OrdenEntradaDto, 'codigo'>;
-
-// DTO para crear una orden de entrada (compatible con la API)
-export interface CrearOrdenEntradaDto {
-  proveedorId: number;
-  productoId: number;
-  fechaEstimada: string;
-  estado: EstadoOrden;
-  observaciones: string;
-} 
+}; 

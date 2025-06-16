@@ -1,23 +1,32 @@
+/**
+ * Página principal de gestión de órdenes de entrada
+ * Permite crear, actualizar, eliminar y gestionar órdenes de entrada
+ */
+
+// Importaciones de React y librerías externas
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { motion } from 'framer-motion';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { OrdenEntradaModal } from '@/components/OrdenesEntrada/OrdenEntradaModal';
+import { motion } from 'motion/react';
+import { toast, Toaster } from 'sonner';
+
+// Importaciones de componentes personalizados
+import { NuevaOrdenEntradaModal } from '../components/OrdenesEntrada/NuevaOrdenEntradaModal';
+import { ActualizarOrdenEntradaModal } from '../components/OrdenesEntrada/ActualizarOrdenEntradaModal';
 import { OrdenesEntradaTable } from '@/components/OrdenesEntrada/OrdenesEntradaTable';
 import { ImportarOrdenesModal } from '@/components/OrdenesEntrada/ImportarOrdenesModal';
-import { useOrdenesEntrada } from '@/hooks/useOrdenesEntrada';
-import { ClipboardList, CloudUpload, Plus, Calendar, CheckCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { toast, Toaster } from 'sonner';
-import { ESTADO_ORDEN, OrdenEntradaDto, OrdenEntradaFormData, CrearOrdenEntradaDto } from '@/types/ordenesEntrada';
-import { OrdenesEntradaService } from '@/services/ordenesEntrada.service';
+import { TableHeader } from '@/components/OrdenesEntrada/TableHeader';
+import { Indicators } from '@/components/OrdenesEntrada/Indicators';
 
-const PageContainer = styled.div`
+// Importaciones de hooks y tipos
+import { useOrdenesEntrada } from '@/hooks/ordenesentrada/useOrdenesEntrada';
+import { ESTADO_ORDEN, OrdenEntradaDto, OrdenEntradaFormData, CrearOrdenEntradaDto, ActualizarOrdenEntradaDto } from '@/types/ordenesEntrada';
+
+// Componentes estilizados para la interfaz
+const PageContainer = styled(motion.div)`
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  align-items: center;
   background:rgba(255, 255, 255, 0);
 `;
 
@@ -29,19 +38,13 @@ const ProductsTableContainer = styled(motion.div)`
   overflow: hidden;
 `;
 
-const TableHeaderSection = styled.div`
-  padding: 1.5rem;
-  border-bottom: 1px solid #E2E8F0;
-  background: #F8FAFC;
-`;
-
-const TableContentSection = styled.div`
+const TableContentSection = styled(motion.div)`
   padding: 1.5rem;
   overflow-x: auto;
   background: #fff;
 `;
 
-const StyledTable = styled.table`
+const StyledTable = styled(motion.table)`
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
@@ -67,116 +70,107 @@ const StyledTable = styled.table`
   }
 `;
 
-const IndicatorsContainer = styled.div`
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  width: 100%;
-`;
-
-const IndicatorCard = styled.div`
-  background: white;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid #E2E8F0;
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-`;
-
-const IndicatorIcon = styled.div`
-  background: #EFF6FF;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  color: #3B82F6;
-`;
-
-const IndicatorContent = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-const IndicatorValue = styled.span`
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #1E293B;
-`;
-
-const IndicatorLabel = styled.span`
-  font-size: 0.875rem;
-  color: #64748B;
-`;
-
 export default function OrdenesEntrada() {
+  // Hook personalizado para gestionar las órdenes de entrada
   const {
     ordenes,
     error,
+    loading,
     pesoTotalRecibidoHoy,
     ordenesPendientesHoy,
     cargarOrdenes,
     crearOrden,
     actualizarOrden,
-    eliminarOrden,
     importarOrdenes,
   } = useOrdenesEntrada();
 
-  const [modalOpen, setModalOpen] = useState(false);
+  // Estados para controlar los modales
+  const [modalNuevaOrdenOpen, setModalNuevaOrdenOpen] = useState(false);
+  const [modalActualizarOpen, setModalActualizarOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
-  const [ordenSeleccionada, setOrdenSeleccionada] = useState<{ codigo?: string; data: OrdenEntradaFormData } | undefined>();
+  const [ordenSeleccionada, setOrdenSeleccionada] = useState<OrdenEntradaDto | undefined>();
 
+  // Efecto para cargar las órdenes al montar el componente
   useEffect(() => {
     cargarOrdenes();
   }, [cargarOrdenes]);
 
-  const handleOpenModal = (codigo?: string) => {
-    if (codigo) {
-      const orden = ordenes.find(o => o.codigo === codigo);
-      if (orden) {
-        if (orden.estado !== ESTADO_ORDEN.PENDIENTE) {
-          toast.error('Solo se pueden editar órdenes en estado Pendiente');
-          return;
-        }
-        setOrdenSeleccionada({
-          codigo: orden.codigo,
-          data: convertirOrdenAFormData(orden)
-        });
-      }
-    } else {
-      setOrdenSeleccionada(undefined);
-    }
-    setModalOpen(true);
+  // Efecto para recargar las órdenes cuando la ventana recupera el foco
+  useEffect(() => {
+    const handleFocus = async () => {
+      await cargarOrdenes();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [cargarOrdenes]);
+
+  // Manejadores para abrir y cerrar modales
+  const handleOpenModalNuevaOrden = () => {
+    setModalNuevaOrdenOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setModalOpen(false);
+  const handleOpenModalActualizar = (codigo: string) => {
+    const orden = ordenes.find(o => o.codigo === codigo);
+    if (orden) {
+      if (orden.estado !== ESTADO_ORDEN.PENDIENTE) {
+        toast.error('Solo se pueden editar órdenes en estado Pendiente');
+        return;
+      }
+      setOrdenSeleccionada(orden);
+      setModalActualizarOpen(true);
+    }
+  };
+
+  const handleCloseModalNuevaOrden = () => {
+    setModalNuevaOrdenOpen(false);
+  };
+
+  const handleCloseModalActualizar = () => {
+    setModalActualizarOpen(false);
     setOrdenSeleccionada(undefined);
   };
 
-  const handleSubmit = async (orden: OrdenEntradaFormData) => {
+  // Funciones para gestionar las operaciones CRUD
+  const handleSubmitNuevaOrden = async (orden: OrdenEntradaFormData) => {
     try {
-      const ordenParaAPI: CrearOrdenEntradaDto = {
+      const ordenParaCrear: CrearOrdenEntradaDto = {
         proveedorId: Number(orden.proveedor.id),
         productoId: Number(orden.producto.id),
         fechaEstimada: orden.fechaEstimada,
+        fechaRegistro: orden.fechaRegistro,
         estado: orden.estado,
         observaciones: orden.observaciones
       };
-
-      if (ordenSeleccionada?.codigo) {
-        await actualizarOrden(ordenSeleccionada.codigo, ordenParaAPI);
-        toast.success('Orden actualizada correctamente');
-      } else {
-        await crearOrden(ordenParaAPI);
-        toast.success('Orden creada correctamente');
-      }
-      handleCloseModal();
+      await crearOrden(ordenParaCrear);
+      toast.success('Orden creada correctamente');
+      handleCloseModalNuevaOrden();
     } catch (error) {
       toast.error('Error al guardar la orden');
     }
   };
 
+  const handleSubmitActualizar = async (orden: OrdenEntradaFormData) => {
+    try {
+      if (ordenSeleccionada) {
+        const ordenParaActualizar: ActualizarOrdenEntradaDto = {
+          proveedorId: Number(orden.proveedor.id),
+          productoId: Number(orden.producto.id),
+          fechaEstimada: orden.fechaEstimada,
+          fechaRecepcion: orden.fechaRecepcion,
+          estado: orden.estado,
+          observaciones: orden.observaciones
+        };
+        await actualizarOrden(ordenSeleccionada.codigo, ordenParaActualizar);
+        toast.success('Orden actualizada correctamente');
+        handleCloseModalActualizar();
+      }
+    } catch (error) {
+      toast.error('Error al guardar la orden');
+    }
+  };
+
+  // Funciones para gestionar los estados de las órdenes
   const handleEliminar = async (codigo: string) => {
     try {
       const orden = ordenes.find(o => o.codigo === codigo);
@@ -187,10 +181,11 @@ export default function OrdenesEntrada() {
         return;
       }
 
-      const ordenParaAPI: CrearOrdenEntradaDto = {
+      const ordenParaAPI: ActualizarOrdenEntradaDto = {
         proveedorId: orden.proveedor.id,
         productoId: orden.producto.id,
         fechaEstimada: orden.fechaEstimada,
+        fechaRecepcion: orden.fechaRecepcion,
         estado: ESTADO_ORDEN.CANCELADA,
         observaciones: orden.observaciones
       };
@@ -213,10 +208,11 @@ export default function OrdenesEntrada() {
         return;
       }
 
-      const ordenParaAPI: CrearOrdenEntradaDto = {
+      const ordenParaAPI: ActualizarOrdenEntradaDto = {
         proveedorId: orden.proveedor.id,
         productoId: orden.producto.id,
         fechaEstimada: orden.fechaEstimada,
+        fechaRecepcion: orden.fechaRecepcion,
         estado: ESTADO_ORDEN.PENDIENTE,
         observaciones: orden.observaciones
       };
@@ -229,6 +225,7 @@ export default function OrdenesEntrada() {
     }
   };
 
+  // Función para manejar la importación de órdenes
   const handleImportar = async (file: File) => {
     try {
       await importarOrdenes(file);
@@ -239,107 +236,61 @@ export default function OrdenesEntrada() {
     }
   };
 
-  const convertirOrdenAFormData = (orden: OrdenEntradaDto): OrdenEntradaFormData => {
-    return {
-      proveedor: orden.proveedor,
-      producto: orden.producto,
-      fechaEstimada: orden.fechaEstimada,
-      fechaRegistro: orden.fechaRegistro,
-      fechaRecepcion: orden.fechaRecepcion,
-      estado: orden.estado,
-      observaciones: orden.observaciones,
-    };
-  };
-
-  const getOrdenesRecibidasHoy = async (): Promise<string> => {
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    
-    const ordenesRecibidasHoy = ordenes.filter(orden => {
-      const fechaOrden = new Date(orden.fechaEstimada);
-      fechaOrden.setHours(0, 0, 0, 0);
-        return fechaOrden.getTime() === hoy.getTime() && orden.estado === ESTADO_ORDEN.RECIBIDA;
-    });
-
-    let pesoTotalNeto = 0;
-    
-    for (const orden of ordenesRecibidasHoy) {
-      try {
-        const detalleOrden = await OrdenesEntradaService.obtenerDetalleOrden(orden.codigo);
-        if (detalleOrden) {
-          const pesoNetoOrden = detalleOrden.tarimas.reduce((total: number, tarima: { pesoNeto: number }) => total + tarima.pesoNeto, 0);
-          pesoTotalNeto += pesoNetoOrden;
-        }
-      } catch (error) {
-        console.error(`Error al obtener detalle de orden ${orden.codigo}:`, error);
-      }
-    }
-
-    return pesoTotalNeto.toFixed(2);
-  };
-
+  // Renderizado del componente
   return (
-    <PageContainer>
+    <PageContainer
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <Toaster richColors position="top-right" />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.5 }}
       >
-        <IndicatorsContainer>
-          <IndicatorCard>
-            <IndicatorIcon>
-              <Calendar className="w-6 h-6" />
-            </IndicatorIcon>
-            <IndicatorContent>
-              <IndicatorValue>{ordenesPendientesHoy}</IndicatorValue>
-              <IndicatorLabel>Órdenes pendientes para hoy</IndicatorLabel>
-            </IndicatorContent>
-          </IndicatorCard>
+        {/* Sección de indicadores de estado */}
+        <Indicators 
+          ordenesPendientesHoy={ordenesPendientesHoy}
+          pesoTotalRecibidoHoy={pesoTotalRecibidoHoy}
+          loading={loading}
+        />
 
-          <IndicatorCard>
-            <IndicatorIcon>
-              <CheckCircle className="w-6 h-6" />
-            </IndicatorIcon>
-            <IndicatorContent>
-              <IndicatorValue>{pesoTotalRecibidoHoy} kg</IndicatorValue>
-              <IndicatorLabel>Peso total recibido hoy</IndicatorLabel>
-            </IndicatorContent>
-          </IndicatorCard>
-        </IndicatorsContainer>
+        {/* Mensaje de error si existe */}
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-red-500 mb-4"
+          >
+            Error: {error}
+          </motion.div>
+        )}
 
-        <ProductsTableContainer>
-          <TableHeaderSection>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
-              <h2 className="text-xl font-semibold text-gray-900" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <ClipboardList className="w-6 h-6 text-blue-700" />
-                Lista de Órdenes de Entrada
-              </h2>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <Button variant="outline" onClick={() => setImportModalOpen(true)}>
-                  <CloudUpload className="w-4 h-4 mr-2" />
-                  Importar
-                </Button>
-                <Button onClick={() => handleOpenModal()}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nueva Orden
-                </Button>
-              </div>
-            </div>
-            {error && (
-              <div className="mt-2">
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              </div>
-            )}
-          </TableHeaderSection>
+        {/* Contenedor principal de la tabla de órdenes */}
+        <ProductsTableContainer
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <TableHeader 
+            onImportClick={() => setImportModalOpen(true)}
+            onNewOrderClick={handleOpenModalNuevaOrden}
+          />
 
-          <TableContentSection>
-            <StyledTable>
+          <TableContentSection
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            <StyledTable
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+            >
               <OrdenesEntradaTable
                 ordenes={ordenes}
-                onEdit={handleOpenModal}
+                onEdit={handleOpenModalActualizar}
                 onDelete={handleEliminar}
                 onReactivate={handleReactivate}
               />
@@ -348,15 +299,21 @@ export default function OrdenesEntrada() {
         </ProductsTableContainer>
       </motion.div>
 
-      <OrdenEntradaModal
-        isOpen={modalOpen}
-        onClose={handleCloseModal}
-        onSave={handleSubmit}
-        orden={ordenSeleccionada ? {
-          codigo: ordenSeleccionada.codigo!,
-          ...ordenSeleccionada.data
-        } : null}
+      {/* Modales de la aplicación */}
+      <NuevaOrdenEntradaModal
+        isOpen={modalNuevaOrdenOpen}
+        onClose={handleCloseModalNuevaOrden}
+        onSave={handleSubmitNuevaOrden}
       />
+
+      {ordenSeleccionada && (
+        <ActualizarOrdenEntradaModal
+          isOpen={modalActualizarOpen}
+          onClose={handleCloseModalActualizar}
+          onSave={handleSubmitActualizar}
+          orden={ordenSeleccionada}
+        />
+      )}
 
       <ImportarOrdenesModal
         open={importModalOpen}

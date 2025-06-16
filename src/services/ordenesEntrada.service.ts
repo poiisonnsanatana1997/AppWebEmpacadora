@@ -1,4 +1,4 @@
-import { ProveedorDto, ProductoDto, OrdenEntradaDto, PesajeTarimaDto, DetalleOrdenEntradaDto, CrearOrdenEntradaDto } from '../types/ordenesEntrada';
+import { ProveedorDto, ProductoDto, OrdenEntradaDto, PesajeTarimaDto, DetalleOrdenEntradaDto, CrearOrdenEntradaDto, ActualizarOrdenEntradaDto } from '../types/ordenesEntrada';
 // @ts-ignore
 import pdfMake from "pdfmake/build/pdfmake";
 // @ts-ignore
@@ -12,85 +12,6 @@ if ((pdfFonts as any).pdfMake && (pdfFonts as any).pdfMake.vfs) {
   console.error('No se pudo asignar pdfMake.vfs correctamente. Revisa la importación de pdfFonts.');
 }
 
-// Datos de prueba
-const proveedoresPrueba: ProveedorDto[] = [
-  { id: 1, nombre: "AgroSupply S.A." },
-  { id: 2, nombre: "Fertilizantes del Norte" },
-  { id: 3, nombre: "Semillas Premium" },
-  { id: 4, nombre: "Maquinaria Agrícola XYZ" },
-  { id: 5, nombre: "Insumos Agrícolas del Sur" }
-];
-
-const productosPrueba: ProductoDto[] = [
-  { id: 1, nombre: "Fertilizante NPK 15-15-15" },
-  { id: 2, nombre: "Semillas de Maíz Híbrido" },
-  { id: 3, nombre: "Herbicida Glifosato 5L" },
-  { id: 4, nombre: "Pesticida Orgánico" },
-  { id: 5, nombre: "Abono Orgánico 20kg" }
-];
-
-const ordenesPrueba: OrdenEntradaDto[] = [
-  {
-    codigo: "OE-670824",
-    proveedor: proveedoresPrueba[0],
-    producto: productosPrueba[0],
-    fechaEstimada: "2024-03-15",
-    fechaRegistro: "2024-03-15",
-    fechaRecepcion: "2024-03-15",
-    estado: "Pendiente",
-    observaciones: "Nueva orden importada"
-  },
-  {
-    codigo: "OE-670825",
-    proveedor: proveedoresPrueba[1],
-    producto: productosPrueba[1],
-    fechaEstimada: "2024-03-16",
-    fechaRegistro: "2024-03-16",
-    fechaRecepcion: "2024-03-16",
-    estado: "Pendiente",
-    observaciones: "Nueva orden importada"
-  },
-  {
-    codigo: "OE-670826",
-    proveedor: proveedoresPrueba[2],
-    producto: productosPrueba[2],
-    fechaEstimada: "2024-03-17",
-    fechaRegistro: "2024-03-17",
-    fechaRecepcion: "2024-03-17",
-    estado: "Pendiente",
-    observaciones: "Nueva orden importada"
-  },
-  {
-    codigo: "OE-670827",
-    proveedor: proveedoresPrueba[3],
-    producto: productosPrueba[3],
-    fechaEstimada: "2024-03-18",
-    fechaRegistro: "2024-03-18",
-    fechaRecepcion: "2024-03-18",
-    estado: "Pendiente",
-    observaciones: "Nueva orden importada"
-  },
-  {
-    codigo: "OE-670828",
-    proveedor: proveedoresPrueba[4],
-    producto: productosPrueba[4],
-    fechaEstimada: "2024-03-19",
-    fechaRegistro: "2024-03-19",
-    fechaRecepcion: "2024-03-19",
-    estado: "Pendiente",
-    observaciones: "Nueva orden importada"
-  },
-  {
-    codigo: "OE-670829",
-    proveedor: proveedoresPrueba[0],
-    producto: productosPrueba[0],
-    fechaEstimada: "2024-03-20",
-    fechaRegistro: "2024-03-20",
-    fechaRecepcion: "2024-03-20",
-    estado: "Pendiente",
-    observaciones: "Nueva orden importada"
-  }
-];
 
 // Función para asegurar que todos los valores sean números válidos
 function safeNumber(val: any): number {
@@ -134,7 +55,7 @@ export const OrdenesEntradaService = {
    * Actualiza una orden de entrada existente
    * Endpoint: PUT /OrdenEntrada/{codigo}
    */
-  async actualizarOrden(codigo: string, orden: CrearOrdenEntradaDto): Promise<OrdenEntradaDto | undefined> {
+  async actualizarOrden(codigo: string, orden: ActualizarOrdenEntradaDto): Promise<OrdenEntradaDto | undefined> {
     const { data } = await api.put<OrdenEntradaDto>(`/OrdenEntrada/${codigo}`, orden);
     return data;
   },
@@ -190,35 +111,35 @@ export const OrdenesEntradaService = {
    * @returns {Promise<OrdenEntradaDto[]>} Lista de órdenes importadas
    */
   async importarOrdenes(_archivo: File): Promise<OrdenEntradaDto[]> {
-    // Simular delay de red
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Simular importación de 2 órdenes
-    const ordenesImportadas: OrdenEntradaDto[] = [
-      {
-        codigo: `OE-${Date.now().toString().slice(-6)}`,
-        proveedor: proveedoresPrueba[2],
-        fechaEstimada: new Date().toISOString().split('T')[0],
-        estado: "Pendiente",
-        observaciones: "Nueva orden importada",
-        producto: productosPrueba[2],
-        fechaRegistro: new Date().toISOString().split('T')[0],
-        fechaRecepcion: new Date().toISOString().split('T')[0],
-      },
-      {
-        codigo: `OE-${Date.now().toString().slice(-6)}`,
-        proveedor: proveedoresPrueba[3],
-        fechaEstimada: new Date().toISOString().split('T')[0],
-        estado: "Pendiente",
-        observaciones: "Nueva orden importada",
-        producto: productosPrueba[3],
-        fechaRegistro: new Date().toISOString().split('T')[0],
-        fechaRecepcion: new Date().toISOString().split('T')[0],
+    try {
+      const formData = new FormData();
+      formData.append('archivo', _archivo);
+      const { data } = await api.post<OrdenEntradaDto[]>('/OrdenEntrada/importar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 60000,
+      });
+      return data;
+    } catch (error: any) {
+      if (error.response) {
+        const status = error.response.status;
+        const data = error.response.data;
+        throw {
+          message: data.message || 'Error al importar las órdenes',
+          code: data.code || 'UNKNOWN_ERROR',
+          status
+        };
+      } else if (error.request) {
+        throw {
+          message: 'No se pudo conectar con el servidor. Verifica tu conexión a internet',
+          code: 'NETWORK_ERROR'
+        };
+      } else {
+        throw {
+          message: 'Error al procesar la solicitud',
+          code: 'REQUEST_ERROR'
+        };
       }
-    ];
-    
-    ordenesPrueba.push(...ordenesImportadas);
-    return ordenesImportadas;
+    }
   },
 
   /**
@@ -243,132 +164,300 @@ export const OrdenesEntradaService = {
     const detalleOrden = await this.obtenerDetalleOrden(codigo);
     if (!detalleOrden) throw new Error('Orden no encontrada');
 
+    // Cargar el logo como base64
+    const logoBase64 = await this.cargarLogoBase64();
+
     const orden = detalleOrden.ordenEntrada;
     const tarimas = detalleOrden.tarimas;
 
     // Calcular totales asegurando que todos los valores sean números válidos
-    const totales = tarimas.reduce((acc: { pesoBruto: number; pesoTara: number; pesoTarima: number; pesoPatin: number; pesoNeto: number }, t: PesajeTarimaDto) => ({
+    const totales = tarimas.reduce((acc: { pesoBruto: number; pesoTara: number; pesoTarima: number; pesoPatin: number; pesoNeto: number; cantidadCajas: number }, t: PesajeTarimaDto) => ({
       pesoBruto: acc.pesoBruto + safeNumber(t.pesoBruto),
       pesoTara: acc.pesoTara + safeNumber(t.pesoTara),
       pesoTarima: acc.pesoTarima + safeNumber(t.pesoTarima),
       pesoPatin: acc.pesoPatin + safeNumber(t.pesoPatin),
-      pesoNeto: acc.pesoNeto + safeNumber(t.pesoNeto)
+      pesoNeto: acc.pesoNeto + safeNumber(t.pesoNeto),
+      cantidadCajas: acc.cantidadCajas + safeNumber(t.cantidadCajas)
     }), {
       pesoBruto: 0,
       pesoTara: 0,
       pesoTarima: 0,
       pesoPatin: 0,
-      pesoNeto: 0
+      pesoNeto: 0,
+      cantidadCajas: 0
     });
 
     const docDefinition = {
-      pageSize: 'A4',
-      pageMargins: [40, 60, 40, 40],
+      pageSize: 'LETTER',
+      pageMargins: [40, 40, 40, 60],
       content: [
+        // Encabezado
         {
           columns: [
-            [
-              { text: 'EMPACADORA DEL VALLE DE SAN FRANCISCO', style: 'empresa' },
-              { text: '"Fulgencio García Téllez"', style: 'responsable' },
-              { text: 'Camino a San Francisco Núm. 101, Epazoyucan; Hidalgo. C.P. 43580', style: 'direccion' },
-              { text: 'RFC: GATF580116P8A', style: 'direccion' }
-            ],
-            [
-              { text: `Folio: ${orden.codigo}`, style: 'folio', alignment: 'right' },
-              { text: `Fecha: ${orden.fechaRecepcion}`, style: 'folio', alignment: 'right' }
-            ]
-          ]
+            {
+              image: 'logo',
+              width: 60,
+              margin: [0, 0, 10, 0],
+              alignment: 'left',
+            },
+            {
+              width: '*',
+              stack: [
+                { text: 'EMPACADORA DEL VALLE DE SAN FRANCISCO', style: 'empresa', alignment: 'center' },
+                { text: '"Fulgencio García Téllez"', style: 'responsable', alignment: 'center' },
+                { text: 'Camino a San Francisco Núm. 101, Epazoyucan; Hidalgo. C.P. 43580', style: 'direccion', alignment: 'center' },
+                { text: 'RFC: GATF580116P8A', style: 'direccion', alignment: 'center' },
+                { text: 'RECEPCIÓN DE PRODUCTO', style: 'titulo', margin: [0, 6, 0, 0], alignment: 'center' }
+              ]
+            },
+            {
+              width: 'auto',
+              table: {
+                body: [
+                  [{ text: 'FOLIO', style: 'folioLabel' }],
+                  [{ text: `No. ${orden.codigo}`, style: 'folioValue' }],
+                  [{ text: 'FECHA', style: 'folioLabel' }],
+                  [{ text: formatearFecha(orden.fechaRecepcion).split(',')[0], style: 'folioValue' }]
+                ]
+              },
+              layout: {
+                hLineWidth: function(i: number, node: any) { return 1; },
+                vLineWidth: function(i: number, node: any) { return 1; },
+                hLineColor: function(i: number, node: any) { return '#333'; },
+                vLineColor: function(i: number, node: any) { return '#333'; },
+                fillColor: function(i: number, node: any) { 
+                  return (i === 0 || i === 2) ? '#333' : null;
+                }
+              },
+              margin: [0, 0, 0, 0]
+            }
+          ],
+          columnGap: 10,
+          margin: [0, 0, 0, 10]
         },
-        { text: 'RECEPCIÓN DE PRODUCTO', style: 'titulo', margin: [0, 18, 0, 12] },
+        // Línea divisoria sutil
         {
-          style: 'datosPrincipales',
-          table: {
-            widths: [90, '*'],
-            body: [
-              [{ text: 'Productor:', bold: true }, orden.proveedor.nombre],
-              [{ text: 'Producto:', bold: true }, orden.producto.nombre],
-              [{ text: 'Observaciones:', bold: true }, orden.observaciones || 'Sin observaciones']
-            ]
-          },
-          layout: 'noBorders',
-          margin: [0, 0, 0, 18]
+          canvas: [
+            { type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#e0e0e0' }
+          ],
+          margin: [0, 0, 0, 10]
         },
+        // Datos generales con fondo y borde
         {
           table: {
-            headerRows: 1,
-            widths: [50, 65, 65, 65, 65, 75, '*'],
+            widths: ['*', '*', '*', '*'],
             body: [
               [
-                { text: 'Número', style: 'tableHeader' },
-                { text: 'Peso Bruto', style: 'tableHeader' },
-                { text: 'Peso Tara', style: 'tableHeader' },
-                { text: 'Peso Tarima', style: 'tableHeader' },
-                { text: 'Peso Patín', style: 'tableHeader' },
-                { text: 'Peso Neto', style: 'tableHeader' },
-                { text: 'Observaciones', style: 'tableHeader' }
+                { text: 'Productor:', style: 'label' }, { text: orden.proveedor.nombre, style: 'valor' },
+                { text: 'Producto:', style: 'label' }, { text: orden.producto.nombre, style: 'valor' }
               ],
-              ...tarimas.map((t: PesajeTarimaDto) => [
-                t.numero,
-                `${safeNumber(t.pesoBruto)} kg`,
-                `${safeNumber(t.pesoTara)} kg`,
-                `${safeNumber(t.pesoTarima)} kg`,
-                `${safeNumber(t.pesoPatin)} kg`,
-                `${safeNumber(t.pesoNeto)} kg`,
-                t.observaciones || ''
-              ]),
               [
-                { text: 'TOTAL', bold: true },
-                { text: `${safeNumber(totales.pesoBruto).toFixed(2)} kg`, bold: true },
-                { text: `${safeNumber(totales.pesoTara).toFixed(2)} kg`, bold: true },
-                { text: `${safeNumber(totales.pesoTarima).toFixed(2)} kg`, bold: true },
-                { text: `${safeNumber(totales.pesoPatin).toFixed(2)} kg`, bold: true },
-                { text: `${safeNumber(totales.pesoNeto).toFixed(2)} kg`, bold: true },
-                ''
+                { text: 'Código Producto:', style: 'label' }, { text: orden.producto.codigo, style: 'valor' },
+                { text: 'Variedad:', style: 'label' }, { text: orden.producto.variedad, style: 'valor' }
               ]
             ]
           },
           layout: {
-            fillColor: function (rowIndex: number, node: any, columnIndex: number) {
-              if (rowIndex === 0) return '#388E3C'; // Encabezado
-              if (rowIndex === node.table.body.length - 1) return '#e8f5e9'; // Totales
-              return null;
+            fillColor: function(rowIndex: number, node: any, columnIndex: number) {
+              return '#f7f7f7';
             },
-            hLineWidth: function () { return 0.7; },
-            vLineWidth: function () { return 0.7; },
-            hLineColor: function () { return '#c8e6c9'; },
-            vLineColor: function () { return '#c8e6c9'; },
-            paddingLeft: function() { return 6; },
-            paddingRight: function() { return 6; },
-            paddingTop: function() { return 5; },
-            paddingBottom: function() { return 5; }
-          }
+            hLineWidth: function(i: number, node: any) { return i === 0 || i === node.table.body.length ? 1 : 0; },
+            vLineWidth: function(i: number, node: any) { return i === 0 || i === node.table.widths.length ? 1 : 0; },
+            hLineColor: function() { return '#e0e0e0'; },
+            vLineColor: function() { return '#e0e0e0'; },
+            paddingLeft: function() { return 8; },
+            paddingRight: function() { return 8; },
+            paddingTop: function() { return 4; },
+            paddingBottom: function() { return 4; }
+          },
+          margin: [0, 0, 0, 18]
+        },
+        {
+          text: 'Detalle de Tarimas',
+          style: 'subtitulo',
+          margin: [0, 0, 0, 8]
+        },
+        {
+          columns: [
+            { width: '*', text: '' },
+            {
+              width: 'auto',
+              table: {
+                headerRows: 1,
+                widths: [40, 50, 50, 50, 50, 60, 50],
+                alignment: 'center',
+                body: [
+                  [
+                    { text: 'Número', style: 'tableHeaderSmall' },
+                    { text: 'Peso Bruto', style: 'tableHeaderSmall' },
+                    { text: 'Peso Tara', style: 'tableHeaderSmall' },
+                    { text: 'Peso Tarima', style: 'tableHeaderSmall' },
+                    { text: 'Peso Patín', style: 'tableHeaderSmall' },
+                    { text: 'Peso Neto', style: 'tableHeaderSmall' },
+                    { text: 'Cajas', style: 'tableHeaderSmall' }
+                  ],
+                  ...tarimas.map((t, i) => [
+                    { text: t.numero, fillColor: i % 2 === 0 ? '#fff' : '#f5f5f5', fontSize: 8, color: '#222' },
+                    { text: `${safeNumber(t.pesoBruto).toFixed(2)} kg`, fillColor: i % 2 === 0 ? '#fff' : '#f5f5f5', fontSize: 8, color: '#222' },
+                    { text: `${safeNumber(t.pesoTara).toFixed(2)} kg`, fillColor: i % 2 === 0 ? '#fff' : '#f5f5f5', fontSize: 8, color: '#222' },
+                    { text: `${safeNumber(t.pesoTarima).toFixed(2)} kg`, fillColor: i % 2 === 0 ? '#fff' : '#f5f5f5', fontSize: 8, color: '#222' },
+                    { text: `${safeNumber(t.pesoPatin).toFixed(2)} kg`, fillColor: i % 2 === 0 ? '#fff' : '#f5f5f5', fontSize: 8, color: '#222' },
+                    { text: `${safeNumber(t.pesoNeto).toFixed(2)} kg`, fillColor: i % 2 === 0 ? '#fff' : '#f5f5f5', fontSize: 8, color: '#222' },
+                    { text: t.cantidadCajas || '0', fillColor: i % 2 === 0 ? '#fff' : '#f5f5f5', fontSize: 8, color: '#222' }
+                  ]),
+                  [
+                    { text: 'TOTAL', bold: true, fillColor: '#e0e0e0', fontSize: 8, color: '#222' },
+                    { text: `${safeNumber(totales.pesoBruto).toFixed(2)} kg`, bold: true, fillColor: '#e0e0e0', fontSize: 8, color: '#222' },
+                    { text: `${safeNumber(totales.pesoTara).toFixed(2)} kg`, bold: true, fillColor: '#e0e0e0', fontSize: 8, color: '#222' },
+                    { text: `${safeNumber(totales.pesoTarima).toFixed(2)} kg`, bold: true, fillColor: '#e0e0e0', fontSize: 8, color: '#222' },
+                    { text: `${safeNumber(totales.pesoPatin).toFixed(2)} kg`, bold: true, fillColor: '#e0e0e0', fontSize: 8, color: '#222' },
+                    { text: `${safeNumber(totales.pesoNeto).toFixed(2)} kg`, bold: true, fillColor: '#e0e0e0', fontSize: 8, color: '#222' },
+                    { text: `${totales.cantidadCajas || 0}`, bold: true, fillColor: '#e0e0e0', fontSize: 8, color: '#222' }
+                  ]
+                ]
+              },
+              layout: {
+                fillColor: function (rowIndex: number, node: any, columnIndex: number) {
+                  if (rowIndex === 0) return '#333'; // Encabezado negro
+                  if (rowIndex === node.table.body.length - 1) return '#e0e0e0'; // Totales gris claro
+                  return rowIndex % 2 === 0 ? '#fff' : '#f5f5f5'; // Filas alternas
+                },
+                hLineWidth: function (i: number, node: any) { return i === 0 || i === node.table.body.length ? 1.2 : 0.5; },
+                vLineWidth: function (): number { return 0; },
+                hLineColor: function (): string { return '#333'; },
+                paddingLeft: function(): number { return 8; },
+                paddingRight: function(): number { return 8; },
+                paddingTop: function(): number { return 6; },
+                paddingBottom: function(): number { return 6; }
+              }
+            },
+            { width: '*', text: '' }
+          ],
+          columnGap: 0,
+          margin: [0, 0, 0, 12]
+        },
+        // Observaciones con borde sutil
+        {
+          text: 'Observaciones:',
+          style: 'label',
+          margin: [0, 0, 0, 2]
+        },
+        {
+          table: {
+            widths: ['*'],
+            body: [
+              [
+                { text: orden.observaciones || 'N/A', style: 'observaciones', border: [false, false, false, false] }
+              ]
+            ]
+          },
+          layout: {
+            hLineWidth: function() { return 1; },
+            vLineWidth: function() { return 0; },
+            hLineColor: function() { return '#e0e0e0'; },
+            paddingLeft: function() { return 8; },
+            paddingRight: function() { return 8; },
+            paddingTop: function() { return 4; },
+            paddingBottom: function() { return 4; }
+          },
+          margin: [0, 0, 0, 10]
+        },
+        // Sección de firmas
+        {
+          columns: [
+            {
+              width: '45%',
+              stack: [
+                { text: '________________________', alignment: 'center' },
+                { text: 'Firma del Productor', alignment: 'center', style: 'firma' },
+                { text: orden.proveedor.nombre, alignment: 'center', style: 'nombreFirma' }
+              ]
+            },
+            {
+              width: '10%',
+              text: ''
+            },
+            {
+              width: '45%',
+              stack: [
+                { text: '________________________', alignment: 'center' },
+                { text: 'Firma de Recepción', alignment: 'center', style: 'firma' },
+                { text: orden.usuarioRecepcion || 'Usuario de Recepción', alignment: 'center', style: 'nombreFirma' }
+              ]
+            }
+          ],
+          margin: [0, 20, 0, 0]
         }
       ],
+      images: {
+        logo: logoBase64
+      },
       styles: {
-        empresa: { fontSize: 16, bold: true, color: '#388E3C' },
-        responsable: { fontSize: 11, italics: true, color: '#444' },
-        direccion: { fontSize: 9, color: '#555' },
-        folio: { fontSize: 10, color: '#444', margin: [0, 2, 0, 0] },
-        titulo: { fontSize: 18, bold: true, color: '#2980b9', alignment: 'center', margin: [0, 10, 0, 10] },
-        datosPrincipales: { fontSize: 11, margin: [0, 10, 0, 10] },
-        tableHeader: { bold: true, fontSize: 10, color: 'white', fillColor: '#388E3C', alignment: 'center' },
-        footer: { fontSize: 8, color: '#636e72' }
+        empresa: { fontSize: 13, bold: true, color: '#333' },
+        responsable: { fontSize: 10, italics: true, color: '#333' },
+        direccion: { fontSize: 8, color: '#888' },
+        titulo: { fontSize: 16, bold: true, color: '#333', alignment: 'center', margin: [0, 10, 0, 10] },
+        subtitulo: { fontSize: 13, bold: true, color: '#333', alignment: 'left', margin: [0, 10, 0, 6] },
+        label: { bold: true, color: '#333', fontSize: 9 },
+        valor: { color: '#333', fontSize: 9 },
+        valorDestacado: { color: '#C62828', fontSize: 11, bold: true },
+        tableHeader: { bold: true, fontSize: 10, color: 'white', fillColor: '#333', alignment: 'center' },
+        tableHeaderSmall: { bold: true, fontSize: 8, color: 'white', fillColor: '#333', alignment: 'center' },
+        observaciones: { fontSize: 10, color: '#333', italics: true, margin: [0, 0, 0, 10] },
+        footer: { fontSize: 8, color: '#888' },
+        firma: { fontSize: 10, color: '#333', margin: [0, 5, 0, 0] },
+        nombreFirma: { fontSize: 9, color: '#888', margin: [0, 2, 0, 0] },
+        folioLabel: { fontSize: 9, bold: true, color: 'white', alignment: 'center', margin: [0, 2, 0, 2] },
+        folioValue: { fontSize: 11, bold: true, color: '#C62828', alignment: 'center', margin: [0, 2, 0, 2] }
       },
       footer: function(currentPage: number, pageCount: number) {
         return {
           columns: [
-            { text: 'Documento generado automáticamente por AgroSmart', alignment: 'center', style: 'footer' }
+            { text: `Documento generado automáticamente por EMPACADORA DEL VALLE DE SAN FRANCISCO | Página ${currentPage} de ${pageCount} | Generado: ${new Date().toLocaleString('es-MX')}` , alignment: 'center', style: 'footer' }
           ],
           margin: [0, 10, 0, 0]
         };
       }
     };
 
+    // Función auxiliar para formatear fechas
+    function formatearFecha(fecha: string | null | undefined): string {
+      if (!fecha) return 'No disponible';
+      return new Intl.DateTimeFormat('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(new Date(fecha));
+    }
+
     return new Promise<Blob>((resolve) => {
       pdfMake.createPdf(docDefinition).getBlob((blob: Blob) => {
         resolve(blob);
       });
     });
+  },
+
+  /**
+   * Carga el logo del proyecto y lo convierte a base64
+   * @returns {Promise<string>} Logo en formato base64
+   */
+  async cargarLogoBase64(): Promise<string> {
+    try {
+      const response = await fetch('/images/LogoEmpacadora.jpg');
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Error al cargar el logo:', error);
+      // Retornar un logo por defecto en caso de error
+      return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAACXBIWXMAAAsTAAALEwEAmpwYAAAF0WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNy4yLWMwMDAgNzkuMWI2NWE3OWI0LCAyMDIyLzA2LzEzLTIyOjAxOjAxICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIiB4bWxuczpzdEV2dD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlRXZlbnQjIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iIHhtbG5zOnBob3Rvc2hvcD0iaHR0cDovL25zLmFkb2JlLmNvbS9waG90b3Nob3AvMS4wLyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgMjQuMCAoTWFjaW50b3NoKSIgeG1wOkNyZWF0ZURhdGU9IjIwMjQtMDItMTNUMTU6NDc6NDctMDY6MDAiIHhtcDpNZXRhZGF0YURhdGU9IjIwMjQtMDItMTNUMTU6NDc6NDctMDY6MDAiIHhtcDpNb2RpZnlEYXRlPSIyMDI0LTAyLTEzVDE1OjQ3OjQ3LTA2OjAwIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjY5ZDM4ZjM5LTM4ZTAtNDZiZi1hMzA2LTNmZjM4ZjM5M2Y2ZiIgeG1wTU06RG9jdW1lbnRJRD0iYWRvYmU6ZG9jaWQ6cGhvdG9zaG9wOjY5ZDM4ZjM5LTM4ZTAtNDZiZi1hMzA2LTNmZjM4ZjM5M2Y2ZiIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjY5ZDM4ZjM5LTM4ZTAtNDZiZi1hMzA2LTNmZjM4ZjM5M2Y2ZiIgZGM6Zm9ybWF0PSJpbWFnZS9wbmciIHBob3Rvc2hvcDpDb2xvck1vZGU9IjMiPiA8eG1wTU06SGlzdG9yeT4gPHJkZjpTZXE+IDxyZGY6bGkgc3RFdnQ6YWN0aW9uPSJjcmVhdGVkIiBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOjY5ZDM4ZjM5LTM4ZTAtNDZiZi1hMzA2LTNmZjM4ZjM5M2Y2ZiIgc3RFdnQ6d2hlbj0iMjAyNC0wMi0xM1QxNTo0Nzo0Ny0wNjowMCIgc3RFdnQ6c29mdHdhcmVBZ2VudD0iQWRvYmUgUGhvdG9zaG9wIDI0LjAgKE1hY2ludG9zaCkiLz4gPC9yZGY6U2VxPiA8L3htcE1NOkhpc3Rvcnk+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+';
+    }
   },
 
   /**
@@ -566,8 +655,13 @@ export const OrdenesEntradaService = {
    * Endpoint: GET /OrdenEntrada/peso-total-hoy
    */
   async obtenerPesoTotalRecibidoHoy(): Promise<number> {
-    const { data } = await api.get<{ pesoTotal: number }>('/OrdenEntrada/peso-total-hoy');
-    return data.pesoTotal;
+    try {
+      const { data } = await api.get<{ pesoTotal: number }>('/OrdenEntrada/peso-total-hoy');
+      return data.pesoTotal;
+    } catch (error) {
+      console.error('Error al obtener el peso total recibido hoy:', error);
+      return 0;
+    }
   },
 
   /**
@@ -575,7 +669,12 @@ export const OrdenesEntradaService = {
    * Endpoint: GET /OrdenEntrada/estadisticas/pendientes-hoy
    */
   async obtenerOrdenesPendientesHoy(): Promise<number> {
-    const { data } = await api.get<{ cantidadPendientes: number }>('/OrdenEntrada/estadisticas/pendientes-hoy');
-    return data.cantidadPendientes;
+    try {
+      const { data } = await api.get<{ cantidadPendientes: number }>('/OrdenEntrada/estadisticas/pendientes-hoy');
+      return data.cantidadPendientes;
+    } catch (error) {
+      console.error('Error al obtener órdenes pendientes hoy:', error);
+      return 0;
+    }
   },
 }; 

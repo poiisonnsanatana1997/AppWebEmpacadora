@@ -24,15 +24,14 @@ export default function HomePage() {
           gap: '0.5rem'
         }}>
           <HomeIcon size={24} />
-          Bienvenido a AgroSmart
+          Bienvenido a Empacadora
         </h1>
         <p style={{
           color: '#7B8A99',
           fontSize: '1.125rem',
           lineHeight: '1.5'
         }}>
-          Tu plataforma integral para la gestión agrícola. Aquí podrás monitorear y gestionar
-          todos los aspectos de tu producción agrícola de manera eficiente.
+          Plataforma integral para la gestión de la empacadora. Aquí podrás monitorear y gestionar todos los aspectos de tu operación de manera eficiente.
         </p>
       </div>
 

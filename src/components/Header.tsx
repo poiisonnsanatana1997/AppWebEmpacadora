@@ -126,7 +126,7 @@ const Header = () => {
   return (
     <HeaderContainer>
       <Logo onClick={() => navigate('/home')}>
-        AgroPack
+        Empacadora
       </Logo>
       <div style={{ position: 'relative' }}>
         <UserButton onClick={() => setShowDropdown(!showDropdown)}>

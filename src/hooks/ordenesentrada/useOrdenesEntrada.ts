@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { OrdenesEntradaService } from '../services/ordenesEntrada.service';
-import { OrdenEntradaDto, CrearOrdenEntradaDto } from '../types/ordenesEntrada';
+import { OrdenesEntradaService } from '../../services/ordenesEntrada.service';
+import { OrdenEntradaDto, CrearOrdenEntradaDto, ActualizarOrdenEntradaDto } from '../../types/ordenesEntrada';
 
 export const useOrdenesEntrada = () => {
   const [ordenes, setOrdenes] = useState<OrdenEntradaDto[]>([]);
@@ -13,12 +13,15 @@ export const useOrdenesEntrada = () => {
     try {
       setLoading(true);
       setError(null);
-      const [data, pesoTotal, pendientes] = await Promise.all([
+      
+      // Cargar órdenes y estadísticas en paralelo
+      const [ordenesData, pesoTotal, pendientes] = await Promise.all([
         OrdenesEntradaService.obtenerOrdenes(),
         OrdenesEntradaService.obtenerPesoTotalRecibidoHoy(),
         OrdenesEntradaService.obtenerOrdenesPendientesHoy()
       ]);
-      setOrdenes(data);
+
+      setOrdenes(ordenesData);
       setPesoTotalRecibidoHoy(pesoTotal);
       setOrdenesPendientesHoy(pendientes);
     } catch (err) {
@@ -35,6 +38,8 @@ export const useOrdenesEntrada = () => {
       setError(null);
       const nuevaOrden = await OrdenesEntradaService.crearOrden(orden);
       setOrdenes((prev) => [...prev, nuevaOrden]);
+      // Actualizar indicadores después de crear
+      await cargarOrdenes();
       return nuevaOrden;
     } catch (err) {
       setError('Error al crear la orden');
@@ -43,9 +48,9 @@ export const useOrdenesEntrada = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [cargarOrdenes]);
 
-  const actualizarOrden = useCallback(async (codigo: string, orden: CrearOrdenEntradaDto) => {
+  const actualizarOrden = useCallback(async (codigo: string, orden: ActualizarOrdenEntradaDto) => {
     try {
       setLoading(true);
       setError(null);
@@ -54,6 +59,8 @@ export const useOrdenesEntrada = () => {
         setOrdenes((prev) =>
           prev.map((o) => (o.codigo === codigo ? ordenActualizada : o))
         );
+        // Actualizar indicadores después de actualizar
+        await cargarOrdenes();
       }
       return ordenActualizada;
     } catch (err) {
@@ -63,7 +70,7 @@ export const useOrdenesEntrada = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [cargarOrdenes]);
 
   const eliminarOrden = useCallback(async (codigo: string) => {
     try {
@@ -71,6 +78,8 @@ export const useOrdenesEntrada = () => {
       setError(null);
       await OrdenesEntradaService.eliminarOrden(codigo);
       setOrdenes((prev) => prev.filter((o) => o.codigo !== codigo));
+      // Actualizar indicadores después de eliminar
+      await cargarOrdenes();
     } catch (err) {
       setError('Error al eliminar la orden');
       console.error(err);
@@ -78,7 +87,7 @@ export const useOrdenesEntrada = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [cargarOrdenes]);
 
   const importarOrdenes = useCallback(async (archivo: File) => {
     try {
@@ -86,6 +95,8 @@ export const useOrdenesEntrada = () => {
       setError(null);
       const ordenesImportadas = await OrdenesEntradaService.importarOrdenes(archivo);
       setOrdenes((prev) => [...prev, ...ordenesImportadas]);
+      // Actualizar indicadores después de importar
+      await cargarOrdenes();
       return ordenesImportadas;
     } catch (err) {
       setError('Error al importar las órdenes');
@@ -94,7 +105,7 @@ export const useOrdenesEntrada = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [cargarOrdenes]);
 
   const imprimirOrden = useCallback(async (codigo: string) => {
     try {

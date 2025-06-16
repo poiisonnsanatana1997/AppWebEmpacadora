@@ -2,11 +2,10 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
-import Users from './pages/Users'
 import Settings from './pages/Settings'
 import Reports from './pages/Reports'
 import Inventory from './pages/Inventory'
-import Products from './pages/Products'
+import Productos from './pages/Productos'
 import OrdenesEntrada from './pages/OrdenesEntrada'
 import DetalleOrdenEntrada from './pages/DetalleOrdenEntrada'
 import { useAuth } from './contexts/AuthContext'
@@ -52,7 +51,7 @@ function App() {
               path="/users" 
               element={
                 <PrivateRoute>
-                  <Users />
+                  <Settings />
                 </PrivateRoute>
               } 
             />
@@ -81,10 +80,10 @@ function App() {
               } 
             />
             <Route 
-              path="/products" 
+              path="/productos" 
               element={
                 <PrivateRoute>
-                  <Products />
+                  <Productos />
                 </PrivateRoute>
               } 
             />

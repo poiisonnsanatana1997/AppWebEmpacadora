@@ -5,14 +5,13 @@ import { z } from 'zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { EstadoOrden, OrdenEntradaDto, ProductoDto, ProveedorDto, ESTADO_ORDEN, OrdenEntradaFormData } from '../../types/ordenesEntrada';
+import { EstadoOrden, ProductoDto, ProveedorDto, ESTADO_ORDEN, OrdenEntradaFormData } from '../../types/ordenesEntrada';
 import { OrdenesEntradaService } from '../../services/ordenesEntrada.service';
 import { ScrollArea } from '../ui/scroll-area';
-import { ClipboardList, Package, Hash } from 'lucide-react';
+import { ClipboardList } from 'lucide-react';
 import { Combobox } from '../ui/combobox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
 import { Textarea } from '../ui/textarea';
-import { Badge } from '../ui/badge';
 
 const formSchema = z.object({
   proveedor: z.object({
@@ -24,18 +23,23 @@ const formSchema = z.object({
   observaciones: z.string(),
   productos: z.object({
     id: z.string().min(1, 'Debe seleccionar un producto'),
-    nombre: z.string()
+    nombre: z.string(),
+    codigo: z.string(),
+    variedad: z.string()
   })
 });
 
-interface OrdenEntradaModalProps {
+interface NuevaOrdenEntradaModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (orden: OrdenEntradaFormData) => void;
-  orden: OrdenEntradaDto | null;
 }
 
-export function OrdenEntradaModal({ isOpen, onClose, onSave, orden }: OrdenEntradaModalProps) {
+/**
+ * Componente modal para crear una nueva orden de entrada
+ * Permite seleccionar proveedor, producto, fecha y agregar observaciones
+ */
+export function NuevaOrdenEntradaModal({ isOpen, onClose, onSave }: NuevaOrdenEntradaModalProps) {
   const [proveedores, setProveedores] = useState<ProveedorDto[]>([]);
   const [productos, setProductos] = useState<ProductoDto[]>([]);
 
@@ -46,7 +50,7 @@ export function OrdenEntradaModal({ isOpen, onClose, onSave, orden }: OrdenEntra
       fecha: new Date().toISOString().split('T')[0],
       estado: ESTADO_ORDEN.PENDIENTE,
       observaciones: '',
-      productos: { id: '', nombre: '' }
+      productos: { id: '', nombre: '', codigo: '', variedad: '' }
     },
     mode: 'onChange'
   });
@@ -54,32 +58,15 @@ export function OrdenEntradaModal({ isOpen, onClose, onSave, orden }: OrdenEntra
   useEffect(() => {
     if (isOpen) {
       cargarDatos();
-      if (orden) {
-        const fechaFormateada = new Date(orden.fechaEstimada).toISOString().split('T')[0];
-        form.reset({
-          proveedor: {
-            id: orden.proveedor.id.toString(),
-            nombre: orden.proveedor.nombre
-          },
-          fecha: fechaFormateada,
-          estado: orden.estado,
-          observaciones: orden.observaciones,
-          productos: {
-            id: orden.producto.id.toString(),
-            nombre: orden.producto.nombre
-          }
-        });
-      } else {
-        form.reset({
-          proveedor: { id: '', nombre: '' },
-          fecha: new Date().toISOString().split('T')[0],
-          estado: ESTADO_ORDEN.PENDIENTE,
-          observaciones: '',
-          productos: { id: '', nombre: '' }
-        });
-      }
+      form.reset({
+        proveedor: { id: '', nombre: '' },
+        fecha: new Date().toISOString().split('T')[0],
+        estado: ESTADO_ORDEN.PENDIENTE,
+        observaciones: '',
+        productos: { id: '', nombre: '', codigo: '', variedad: '' }
+      });
     }
-  }, [isOpen, orden, form]);
+  }, [isOpen, form]);
 
   const cargarDatos = async () => {
     try {
@@ -93,6 +80,7 @@ export function OrdenEntradaModal({ isOpen, onClose, onSave, orden }: OrdenEntra
       console.error('Error al cargar datos:', error);
     }
   };
+
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     onSave({
       proveedor: {
@@ -101,13 +89,17 @@ export function OrdenEntradaModal({ isOpen, onClose, onSave, orden }: OrdenEntra
       },
       producto: {
         id: parseInt(data.productos.id),
-        nombre: data.productos.nombre
+        nombre: data.productos.nombre,
+        codigo: data.productos.codigo,
+        variedad: data.productos.variedad
       },
       fechaEstimada: data.fecha,
       estado: data.estado as EstadoOrden,
       observaciones: data.observaciones || '',
-      fechaRegistro: null,
-      fechaRecepcion: null
+      fechaRegistro: new Date().toISOString(),
+      fechaRecepcion: null,
+      usuarioRegistro: '',
+      usuarioRecepcion: null
     });
   };
 
@@ -126,7 +118,9 @@ export function OrdenEntradaModal({ isOpen, onClose, onSave, orden }: OrdenEntra
     if (productoSeleccionado) {
       form.setValue('productos', {
         id: productoSeleccionado.id.toString(),
-        nombre: productoSeleccionado.nombre
+        nombre: productoSeleccionado.nombre,
+        codigo: productoSeleccionado.codigo,
+        variedad: productoSeleccionado.variedad
       });
     }
   };
@@ -139,24 +133,9 @@ export function OrdenEntradaModal({ isOpen, onClose, onSave, orden }: OrdenEntra
             <DialogHeader className="space-y-4">
               <div className="flex items-center justify-between pr-6">
                 <DialogTitle className="flex items-center gap-2">
-                  {orden ? (
-                    <>
-                      <Package className="h-5 w-5" />
-                      Editar Orden
-                    </>
-                  ) : (
-                    <>
-                      <ClipboardList className="h-5 w-5" />
-                      Nueva Orden
-                    </>
-                  )}
+                  <ClipboardList className="h-5 w-5" />
+                  Nueva Orden
                 </DialogTitle>
-                {orden && (
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <Hash className="h-4 w-4" />
-                    {orden.codigo}
-                  </Badge>
-                )}
               </div>
               <DialogDescription>
                 Complete el formulario con la información de la orden. Los campos marcados con * son obligatorios.
@@ -211,7 +190,7 @@ export function OrdenEntradaModal({ isOpen, onClose, onSave, orden }: OrdenEntra
                           <Combobox
                             options={productos.map(p => ({
                               value: p.id.toString(),
-                              label: p.nombre
+                              label: `${p.codigo} - ${p.nombre} - ${p.variedad}`
                             }))}
                             value={field.value}
                             onValueChange={(value) => {
@@ -227,7 +206,6 @@ export function OrdenEntradaModal({ isOpen, onClose, onSave, orden }: OrdenEntra
                       </FormItem>
                     )}
                   />
-
                 </div>
 
                 {/* Sección de Fecha */}
@@ -285,7 +263,7 @@ export function OrdenEntradaModal({ isOpen, onClose, onSave, orden }: OrdenEntra
                     Cancelar
                   </Button>
                   <Button type="submit">
-                    {orden ? 'Guardando' : 'Guardar'}
+                    Guardar
                   </Button>
                 </DialogFooter>
               </form>
