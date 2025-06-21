@@ -1,4 +1,4 @@
-import { ProductoApi } from '@/types/product';
+import type { ProductoDto, ActualizarProductoDto } from '@/types/Productos/productos.types';
 import api from '@/api/axios';
 import { AxiosError } from 'axios';
 
@@ -19,12 +19,12 @@ export class ProductoServiceError extends Error {
 export const ProductosService = {
   /**
    * Obtiene todos los productos desde la API externa
-   * @returns {Promise<ProductoApi[]>} Lista de productos
+   * @returns {Promise<ProductoDto[]>} Lista de productos
    * @throws {ProductoServiceError} Si hay un error al obtener los productos
    */
-  async obtenerProductos(): Promise<ProductoApi[]> {
+  async obtenerProductos(): Promise<ProductoDto[]> {
     try {
-      const response = await api.get<ProductoApi[]>('/productos');
+      const response = await api.get<ProductoDto[]>('/productos/detalle');
       return response.data;
     } catch (error) {
       if (error instanceof AxiosError) {
@@ -40,12 +40,12 @@ export const ProductosService = {
   /**
    * Obtiene un producto por su ID desde la API externa
    * @param {number} id - ID del producto
-   * @returns {Promise<ProductoApi>} Producto encontrado
+   * @returns {Promise<ProductoDto>} Producto encontrado
    * @throws {ProductoServiceError} Si hay un error al obtener el producto o si no se encuentra
    */
-  async obtenerProducto(id: number): Promise<ProductoApi> {
+  async obtenerProducto(id: number): Promise<ProductoDto> {
     try {
-      const response = await api.get<ProductoApi>(`/productos/${id}`);
+      const response = await api.get<ProductoDto>(`/productos/${id}`);
       return response.data;
     } catch (error) {
       if (error instanceof AxiosError) {
@@ -64,12 +64,20 @@ export const ProductosService = {
   /**
    * Crea un nuevo producto según la especificación de la API externa
    * @param {FormData} formData - Datos del producto
-   * @returns {Promise<ProductoApi>} Producto creado
+   * @returns {Promise<ActualizarProductoDto>} Producto creado
    * @throws {ProductoServiceError} Si hay un error al crear el producto
    */
-  async crearProducto(formData: FormData): Promise<ProductoApi> {
+  async crearProducto(formData: FormData): Promise<ActualizarProductoDto> {
     try {
-      const response = await api.post<ProductoApi>('/productos', formData, {
+      // Convertir la imagen base64 a blob
+      const imagenBase64 = formData.get('imagen') as string;
+      if (imagenBase64) {
+        const response = await fetch(imagenBase64);
+        const blob = await response.blob();
+        formData.set('imagen', blob, 'imagen.jpg');
+      }
+
+      const response = await api.post<ActualizarProductoDto>('/productos', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -89,13 +97,29 @@ export const ProductosService = {
   /**
    * Actualiza un producto existente usando la API externa
    * @param {number} id - ID del producto
-   * @param {FormData} formData - Datos a actualizar
-   * @returns {Promise<ProductoApi>} Producto actualizado
+   * @param {FormData} data - Datos a actualizar
+   * @returns {Promise<ActualizarProductoDto>} Producto actualizado
    * @throws {ProductoServiceError} Si hay un error al actualizar el producto
    */
-  async actualizarProducto(id: number, formData: FormData): Promise<ProductoApi> {
+  async actualizarProducto(id: number, data: FormData): Promise<ActualizarProductoDto> {
     try {
-      const response = await api.put<ProductoApi>(`/productos/${id}`, formData, {
+      // Convertir la imagen base64 a blob solo si hay una nueva imagen
+      const imagenBase64 = data.get('imagen') as string;
+      if (imagenBase64 && imagenBase64.startsWith('data:')) {
+        try {
+          const response = await fetch(imagenBase64);
+          const blob = await response.blob();
+          data.set('imagen', blob, 'imagen.jpg');
+        } catch (error) {
+          console.error('Error al convertir la imagen:', error);
+          // Si hay error al convertir, dejamos la imagen como está
+        }
+      } else if (!imagenBase64) {
+        // Si no hay imagen nueva, eliminamos el campo para mantener la existente
+        data.delete('imagen');
+      }
+
+      const response = await api.put<ActualizarProductoDto>(`/productos/${id}`, data, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -138,39 +162,14 @@ export const ProductosService = {
   },
 
   /**
-   * Importa productos desde un archivo usando la API externa
-   * @param {File} archivo - Archivo a importar (formato soportado: Excel, CSV)
-   * @throws {ProductoServiceError} Si hay un error al importar los productos
-   */
-  async importarProductos(archivo: File): Promise<void> {
-    try {
-      const formData = new FormData();
-      formData.append('archivo', archivo);
-      await api.post('/productos/importar', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-    } catch (error) {
-      if (error instanceof AxiosError) {
-        throw new ProductoServiceError(
-          `Error al importar productos: ${error.response?.data?.message || error.message}`,
-          error
-        );
-      }
-      throw new ProductoServiceError('Error desconocido al importar productos', error);
-    }
-  },
-
-  /**
    * Reactiva un producto usando la API externa
    * @param {number} id - ID del producto
-   * @returns {Promise<ProductoApi>} Producto reactivado
+   * @returns {Promise<ActualizarProductoDto>} Producto reactivado
    * @throws {ProductoServiceError} Si hay un error al reactivar el producto
    */
-  async reactivarProducto(id: number): Promise<ProductoApi> {
+  async reactivarProducto(id: number): Promise<ActualizarProductoDto> {
     try {
-      const response = await api.post<ProductoApi>(`/productos/${id}/reactivar`);
+      const response = await api.post<ActualizarProductoDto>(`/productos/${id}/reactivar`);
       return response.data;
     } catch (error) {
       if (error instanceof AxiosError) {

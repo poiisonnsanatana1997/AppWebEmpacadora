@@ -1,9 +1,10 @@
 import axios from 'axios';
+import { config } from '@/config/environment';
 
-// Crear una instancia de axios con configuración base
+// Crear una instancia de axios con configuración base usando variables de entorno
 const api = axios.create({
-  baseURL: 'http://localhost:5177/api', // URL base de la API
-  timeout: 10000, // Tiempo máximo de espera para las peticiones (10 segundos)
+  baseURL: config.api.baseUrl,
+  timeout: config.api.timeout, // Tiempo máximo de espera para las peticiones
   headers: {
     'Content-Type': 'application/json',
   },

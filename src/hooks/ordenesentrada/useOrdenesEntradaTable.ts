@@ -6,11 +6,8 @@ import {
   RowSelectionState, 
   VisibilityState 
 } from '@tanstack/react-table';
-import { OrdenEntradaDto } from '../../types/ordenesEntrada';
 
 interface UseOrdenesEntradaTableProps {
-  ordenes: OrdenEntradaDto[];
-  onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onReactivate: (id: string) => void;
 }
@@ -18,12 +15,7 @@ interface UseOrdenesEntradaTableProps {
 /**
  * Hook personalizado para manejar el estado y la lógica de la tabla de órdenes de entrada
  */
-export const useOrdenesEntradaTable = ({ 
-  ordenes, 
-  onEdit, 
-  onDelete, 
-  onReactivate 
-}: UseOrdenesEntradaTableProps) => {
+export const useOrdenesEntradaTable = ({ onDelete, onReactivate }: UseOrdenesEntradaTableProps) => {
   const navigate = useNavigate();
   
   // Estado de la tabla

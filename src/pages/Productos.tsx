@@ -1,21 +1,31 @@
-import { useState, useEffect } from 'react';
+/**
+ * Página principal de gestión de productos
+ * Permite crear, actualizar, eliminar y gestionar productos
+ */
+
+// Importaciones de React y librerías externas
+import { useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
-import { toast, Toaster } from 'sonner';
-import { ProductosService } from '@/services/productos.service';
-import { ProductoApi } from '@/types/product';
-import { ProductoFormData } from '@/components/Productos/types';
-import { ProductosTable } from '@/components/Productos/ProductosTable';
-import { TableHeader } from '@/components/Productos/TableHeader';
-import { NuevaProductoModal } from '@/components/Productos/NuevaProductoModal';
-import { ActualizarProductoModal } from '@/components/Productos/ActualizarProductoModal';
+import { Toaster } from 'sonner';
 
+// Importaciones de componentes personalizados
+import { ProductoTable } from '@/components/Productos/ProductoTable';
+import { TableHeader } from '@/components/Productos/TableHeader';
+import { ActualizarProductoModal } from '@/components/Productos/ActualizarProductoModal';
+import { CrearProductoModal } from '@/components/Productos/CrearProductoModal';
+
+// Importaciones de hooks y servicios
+import { useProductos } from '@/hooks/Productos/useProductos';
+
+// Componentes estilizados para la interfaz
 const PageContainer = styled(motion.div)`
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   background: rgba(255, 255, 255, 0);
+  width: 100%;
 `;
 
 const ProductsTableContainer = styled(motion.div)`
@@ -24,144 +34,105 @@ const ProductsTableContainer = styled(motion.div)`
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   border: 1px solid #E2E8F0;
   overflow: hidden;
-  margin: 2rem;
+  width: 100%;
+  
+  @media (max-width: 768px) {
+    border-radius: 0.75rem;
+  }
+  
+  @media (max-width: 480px) {
+    border-radius: 0.5rem;
+  }
 `;
 
 const TableContentSection = styled(motion.div)`
   padding: 1.5rem;
   overflow-x: auto;
   background: #fff;
+  width: 100%;
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.75rem;
+  }
+`;
+
+const StyledTable = styled(motion.table)`
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 1.08rem;
+  border-radius: 1rem;
+  overflow: hidden;
+
+  th, td {
+    padding: 1.1rem 1rem;
+  }
+
+  th {
+    background: #f1f5f9;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  tr:hover td {
+    background: #f8fafc;
+    transition: background 0.2s;
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 0.95rem;
+    
+    th, td {
+      padding: 0.75rem 0.5rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.875rem;
+    
+    th, td {
+      padding: 0.5rem 0.25rem;
+    }
+  }
 `;
 
 export default function Productos() {
-  // Estados
-  const [productos, setProductos] = useState<ProductoApi[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [modalNuevoProductoOpen, setModalNuevoProductoOpen] = useState(false);
-  const [modalActualizarOpen, setModalActualizarOpen] = useState(false);
-  const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoApi | null>(null);
+  // Hook personalizado para gestionar los productos
+  const {
+    productos,
+    isLoading,
+    isModalOpen,
+    selectedProducto,
+    cargarProductos,
+    handleOpenModal,
+    handleCloseModal,
+    onSubmit
+  } = useProductos();
 
-  // Cargar productos
-  const cargarProductos = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await ProductosService.obtenerProductos();
-      setProductos(data);
-    } catch (error: any) {
-      console.error('Error al cargar productos:', error);
-      setError(error.message || 'Error al cargar los productos');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Efecto para cargar productos al montar el componente
+  // Efecto para cargar los productos al montar el componente
   useEffect(() => {
     cargarProductos();
-  }, []);
+  }, []); // Solo se ejecuta al montar el componente
 
-  // Efecto para recargar productos cuando la ventana recupera el foco
-  useEffect(() => {
-    const handleFocus = async () => {
-      await cargarProductos();
-    };
+  // Manejadores para abrir y cerrar modales
+  const handleOpenModalNuevoProducto = useCallback(() => {
+    handleOpenModal();
+  }, [handleOpenModal]);
 
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, []);
-
-  // Manejadores de modales
-  const handleOpenModalNuevoProducto = () => {
-    setModalNuevoProductoOpen(true);
-  };
-
-  const handleOpenModalActualizar = (id: string) => {
-    const producto = productos.find(p => p.id.toString() === id);
+  const handleOpenModalEditar = useCallback((id: number) => {
+    const producto = productos.find((p: { id: number }) => p.id === id);
     if (producto) {
-      setProductoSeleccionado(producto);
-      setModalActualizarOpen(true);
+      handleOpenModal(producto);
     }
-  };
+  }, [productos, handleOpenModal]);
 
-  const handleCloseModalNuevoProducto = () => {
-    setModalNuevoProductoOpen(false);
-  };
-
-  const handleCloseModalActualizar = () => {
-    setModalActualizarOpen(false);
-    setProductoSeleccionado(null);
-  };
-
-  // Manejadores de operaciones CRUD
-  const handleSubmitNuevoProducto = async (formData: ProductoFormData) => {
-    try {
-      const data = new FormData();
-      data.append('codigo', formData.codigo);
-      data.append('nombre', formData.nombre);
-      if (formData.descripcion) {
-        data.append('descripcion', formData.descripcion);
-      }
-      if (formData.imagen) {
-        data.append('imagen', formData.imagen);
-      }
-
-      await ProductosService.crearProducto(data);
-      toast.success('Producto creado correctamente');
-      handleCloseModalNuevoProducto();
-      await cargarProductos();
-    } catch (error: any) {
-      toast.error(error.message || 'Error al crear el producto');
-    }
-  };
-
-  const handleSubmitActualizar = async (formData: ProductoFormData) => {
-    if (!productoSeleccionado) return;
-    try {
-      const data = new FormData();
-      data.append('codigo', formData.codigo);
-      data.append('nombre', formData.nombre);
-      if (formData.descripcion) {
-        data.append('descripcion', formData.descripcion);
-      }
-      if (formData.imagen) {
-        data.append('imagen', formData.imagen);
-      }
-
-      await ProductosService.actualizarProducto(productoSeleccionado.id, data);
-      toast.success('Producto actualizado correctamente');
-      handleCloseModalActualizar();
-      await cargarProductos();
-    } catch (error: any) {
-      toast.error(error.message || 'Error al actualizar el producto');
-    }
-  };
-
-  const handleEliminar = async (id: string) => {
-    try {
-      await ProductosService.eliminarProducto(parseInt(id));
-      toast.success('Producto eliminado correctamente');
-      await cargarProductos();
-    } catch (error: any) {
-      toast.error(error.message || 'Error al eliminar el producto');
-    }
-  };
-
-  const handleReactivate = async (id: string) => {
-    try {
-      await ProductosService.reactivarProducto(parseInt(id));
-      toast.success('Producto reactivado correctamente');
-      await cargarProductos();
-    } catch (error: any) {
-      toast.error(error.message || 'Error al reactivar el producto');
-    }
-  };
-
-  // Calcular estadísticas
-  const totalProductos = productos.length;
-  const productosActivos = productos.filter(p => p.activo).length;
-
+  // Renderizado del componente
   return (
     <PageContainer
       initial={{ opacity: 0 }}
@@ -174,18 +145,7 @@ export default function Productos() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        {/* Mensaje de error */}
-        {error && (
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-red-500 mb-4 mx-8"
-          >
-            Error: {error}
-          </motion.div>
-        )}
-
-        {/* Contenedor principal */}
+        {/* Contenedor principal de la tabla de productos */}
         <ProductsTableContainer
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -200,31 +160,37 @@ export default function Productos() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, delay: 0.1 }}
           >
-            <ProductosTable
-              productos={productos}
-              onEdit={handleOpenModalActualizar}
-              onDelete={handleEliminar}
-              onReactivate={handleReactivate}
-            />
+            <StyledTable
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+            >
+              <ProductoTable
+                productos={productos}
+                loading={isLoading}
+                error={null}
+                onEdit={handleOpenModalEditar}
+              />
+            </StyledTable>
           </TableContentSection>
         </ProductsTableContainer>
       </motion.div>
 
-      {/* Modales */}
-      <NuevaProductoModal
-        isOpen={modalNuevoProductoOpen}
-        onClose={handleCloseModalNuevoProducto}
-        onSave={handleSubmitNuevoProducto}
-      />
-
-      {productoSeleccionado && (
+      {/* Modales de producto */}
+      {selectedProducto ? (
         <ActualizarProductoModal
-          isOpen={modalActualizarOpen}
-          onClose={handleCloseModalActualizar}
-          onSave={handleSubmitActualizar}
-          producto={productoSeleccionado}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onSubmit={onSubmit}
+          producto={selectedProducto}
+        />
+      ) : (
+        <CrearProductoModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onSubmit={onSubmit}
         />
       )}
     </PageContainer>
   );
-} 
+}

@@ -6,9 +6,9 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import styled from 'styled-components';
-import { Package, Calendar, User, ClipboardList, StickyNote, Boxes, FileDown, Hash, FileText, Clock } from 'lucide-react';
+import { Package, Calendar, User, ClipboardList, StickyNote, Boxes, FileDown, Hash } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
-import { ESTADO_ORDEN, OrdenEntradaDto, PesajeTarimaDto } from '../types/ordenesEntrada';
+import { ESTADO_ORDEN, OrdenEntradaDto, PesajeTarimaDto } from '../types/OrdenesEntrada/ordenesEntrada.types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,11 +20,56 @@ import {
   AlertDialogTitle,
 } from "../components/ui/alert-dialog";
 
+const PageContainer = styled.div`
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  min-height: 100vh;
+`;
+
+const HeaderContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  gap: 0.5rem;
+  width: 100%;
+  
+  @media (min-width: 640px) {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+`;
+
+const BackButton = styled(Button)`
+  width: 100%;
+  
+  @media (min-width: 640px) {
+    width: auto;
+  }
+`;
+
+const TitleContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  justify-content: center;
+  
+  @media (min-width: 640px) {
+    width: auto;
+    justify-content: flex-end;
+  }
+`;
+
 const InfoGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
   font-size: 0.9rem;
+  width: 100%;
   
   @media (min-width: 640px) {
     grid-template-columns: repeat(2, 1fr);
@@ -43,6 +88,7 @@ const InfoItem = styled.div`
   background-color: #ffffff;
   border-radius: 0.375rem;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  width: 100%;
   
   b {
     color: #374151;
@@ -80,6 +126,33 @@ const InfoGroupHeader = styled(InfoItemFull)`
   
   svg {
     color: #3B82F6;
+  }
+`;
+
+const CardContainer = styled(Card)`
+  margin-bottom: 1rem;
+  width: 100%;
+  
+  @media (min-width: 640px) {
+    margin-bottom: 1.5rem;
+  }
+`;
+
+const CardHeaderStyled = styled(CardHeader)`
+  padding: 1rem;
+  
+  @media (min-width: 640px) {
+    padding: 1.5rem;
+  }
+`;
+
+const CardContentStyled = styled(CardContent)`
+  padding: 1rem;
+  padding-top: 0;
+  
+  @media (min-width: 640px) {
+    padding: 1.5rem;
+    padding-top: 0;
   }
 `;
 
@@ -209,47 +282,19 @@ export default function DetalleOrdenEntrada() {
     }
   };
 
-  const handleEliminarUltimoPesaje = async () => {
-    if (!codigo || !orden) return;
-    
-    try {
-      setGuardando(true);
-      
-      // Actualizar la orden con el estado Pendiente
-      const ordenActualizada = await OrdenesEntradaService.actualizarOrden(codigo, {
-        proveedorId: orden.proveedor.id,
-        productoId: orden.producto.id,
-        fechaEstimada: orden.fechaEstimada,
-        fechaRecepcion: null,
-        estado: ESTADO_ORDEN.PENDIENTE,
-        observaciones: orden.observaciones
-      });
-
-      if (ordenActualizada) {
-        setOrden(ordenActualizada);
-        toast.success('Estado actualizado a Pendiente');
-      }
-    } catch (error) {
-      toast.error('Error al actualizar el estado');
-      console.error(error);
-    } finally {
-      setGuardando(false);
-    }
-  };
-
   if (loading) return <div className="text-center py-10">Cargando...</div>;
   if (!orden) return <div className="text-center py-10 text-red-500">No se encontró la orden.</div>;
 
   return (
-    <div className="w-full p-0 m-0">
+    <PageContainer>
       <Toaster richColors position="top-right" />
       
       {/* Encabezado compacto */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
-        <Button onClick={() => navigate(-1)} variant="outline" size="sm" className="w-full sm:w-auto">
+      <HeaderContainer>
+        <BackButton onClick={() => navigate(-1)} variant="outline" size="sm">
           ← Regresar
-        </Button>
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
+        </BackButton>
+        <TitleContainer>
           <ClipboardList className="h-6 w-6 text-primary" />
           <span className="text-lg font-bold">Orden #{orden.codigo}</span>
           <Badge className={`ml-2 text-sm px-2 py-1.5 ${
@@ -258,18 +303,18 @@ export default function DetalleOrdenEntrada() {
             orden.estado === ESTADO_ORDEN.RECIBIDA ? 'bg-green-200 text-green-800 hover:bg-green-300 font-semibold' :
             'bg-red-200 text-red-800 hover:bg-red-300 font-semibold'
           }`} variant="secondary">{orden.estado}</Badge>
-        </div>
-      </div>
+        </TitleContainer>
+      </HeaderContainer>
 
       {/* Tarimas primero */}
-      <Card className="mb-6 w-full">
-        <CardHeader className="p-4 sm:p-6">
+      <CardContainer>
+        <CardHeaderStyled>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Boxes className="h-5 w-5 text-muted-foreground" /> 
             <span className="text-base sm:text-lg">Tarimas (Pesaje por Tarima)</span>
           </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 sm:p-6">
+        </CardHeaderStyled>
+        <CardContentStyled>
           <div className="mb-4 text-sm text-muted-foreground">
             <p className="hidden sm:block">
               Aquí puedes ver y editar el pesaje de cada tarima asociada a esta orden. 
@@ -285,7 +330,6 @@ export default function DetalleOrdenEntrada() {
             estado={orden.estado}
             codigoOrden={orden.codigo}
             onPrimerPesaje={handlePrimerPesaje}
-            onEliminarUltimoPesaje={handleEliminarUltimoPesaje}
           />
           <div className="mt-4 flex flex-col sm:flex-row justify-end gap-2">
             {(orden.estado === ESTADO_ORDEN.PENDIENTE || orden.estado === ESTADO_ORDEN.PROCESANDO) && (
@@ -331,18 +375,18 @@ export default function DetalleOrdenEntrada() {
               </>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </CardContentStyled>
+      </CardContainer>
 
       {/* Información general compacta */}
-      <Card className="mb-4 w-full">
-        <CardHeader className="p-4 sm:p-6">
+      <CardContainer>
+        <CardHeaderStyled>
           <CardTitle className="flex items-center gap-2 text-base">
             <Package className="h-5 w-5 text-muted-foreground" /> 
             <span className="text-sm sm:text-base">Información general</span>
           </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 sm:p-6 pt-0">
+        </CardHeaderStyled>
+        <CardContentStyled>
           <InfoGrid>
             <InfoGroup>
               <InfoGroupHeader>
@@ -426,8 +470,8 @@ export default function DetalleOrdenEntrada() {
               </InfoItemFull>
             </InfoGroup>
           </InfoGrid>
-        </CardContent>
-      </Card>
+        </CardContentStyled>
+      </CardContainer>
 
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <AlertDialogContent className="w-[95%] sm:w-[500px] max-w-[95vw]">
@@ -449,6 +493,6 @@ export default function DetalleOrdenEntrada() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </PageContainer>
   );
 } 

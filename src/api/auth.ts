@@ -1,4 +1,5 @@
 import api from './axios';
+import { config } from '@/config/environment';
 
 export interface LoginCredentials {
   username: string;
@@ -40,10 +41,24 @@ const authService = {
    */
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
     try {
+      // Log de configuración en desarrollo
+      if (config.logging.enabled && config.app.environment === 'development') {
+        console.log(`Intentando login en: ${config.api.baseUrl}/auth/login`);
+      }
+      
       const response = await api.post<LoginResponse>('/auth/login', credentials);
-      console.log('Respuesta del servidor:', response.data);
+      
+      if (config.logging.enabled) {
+        console.log('Login exitoso:', response.data);
+      }
+      
       return response.data;
     } catch (error: any) {
+      // Log de errores si está habilitado
+      if (config.logging.enabled) {
+        console.error('Error en login:', error);
+      }
+      
       // Manejar diferentes tipos de errores
       if (error.response) {
         // El servidor respondió con un código de estado fuera del rango 2xx

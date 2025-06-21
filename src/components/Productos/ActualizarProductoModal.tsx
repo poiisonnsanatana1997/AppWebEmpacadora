@@ -1,115 +1,101 @@
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useDropzone } from 'react-dropzone';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Edit3 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Package, Image as ImageIcon, X, Loader2 } from 'lucide-react';
-import { ProductoApi } from '@/types/product';
-import { ProductoFormData } from './types';
-
-const formSchema = z.object({
-  codigo: z.string().min(1, 'El código es requerido'),
-  nombre: z.string().min(1, 'El nombre es requerido'),
-  variedad: z.string().min(1, 'La variedad es requerida'),
-  unidadMedida: z.string().min(1, 'La unidad de medida es requerida'),
-  precio: z.number().min(0, 'El precio debe ser mayor o igual a 0'),
-  estatus: z.string().min(1, 'El estatus es requerido'),
-  activo: z.boolean()
-});
+import { useProductoModal } from '@/hooks/Productos/useProductoModal';
+import { ProductoDto, BaseProductoDto } from '@/types/Productos/productos.types';
+import { ImageUploader } from './ImageUploader';
+import { useEffect } from 'react';
+import { NumericFormat } from 'react-number-format';
+import { toast } from 'sonner';
 
 interface ActualizarProductoModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (producto: ProductoFormData) => void;
-  producto: ProductoApi;
+  onSubmit: (data: BaseProductoDto) => Promise<void>;
+  producto: ProductoDto;
 }
 
-export function ActualizarProductoModal({ isOpen, onClose, onSave, producto }: ActualizarProductoModalProps) {
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export function ActualizarProductoModal({
+  isOpen,
+  onClose,
+  onSubmit,
+  producto
+}: ActualizarProductoModalProps) {
+  const { form, previewImage, setPreviewImage } = useProductoModal();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      codigo: producto.codigo,
-      nombre: producto.nombre,
-      variedad: producto.variedad,
-      unidadMedida: producto.unidadMedida,
-      precio: producto.precio,
-      estatus: producto.estatus,
-      activo: producto.activo
-    }
-  });
-
+  // Efecto para inicializar el formulario cuando se abre el modal
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && producto) {
       form.reset({
         codigo: producto.codigo,
         nombre: producto.nombre,
         variedad: producto.variedad,
         unidadMedida: producto.unidadMedida,
         precio: producto.precio,
-        estatus: producto.estatus,
-        activo: producto.activo
+        fecha: producto.fechaRegistro.split('T')[0],
+        activo: producto.activo,
+        imagen: producto.imagen
       });
+      setPreviewImage(producto.imagen);
     }
-  }, [isOpen, producto, form]);
+  }, [isOpen, producto, form, setPreviewImage]);
 
-  const { getRootProps, getInputProps } = useDropzone({
-    accept: {
-      'image/*': ['.jpeg', '.jpg', '.png']
-    },
-    maxSize: 5242880, // 5MB
-    onDrop: (acceptedFiles) => {
-      setSelectedImage(acceptedFiles[0]);
-    }
-  });
-
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+  const handleSubmit = async (data: BaseProductoDto) => {
     try {
-      setIsSubmitting(true);
-      const formData = new FormData();
-      formData.append('codigo', data.codigo);
-      formData.append('nombre', data.nombre);
-      formData.append('variedad', data.variedad);
-      formData.append('unidadMedida', data.unidadMedida);
-      formData.append('precio', data.precio.toString());
-      formData.append('estatus', data.estatus);
-      formData.append('activo', data.activo.toString());
-      
-      if (selectedImage) {
-        formData.append('imagen', selectedImage);
-      }
-
-      onSave(formData as unknown as ProductoFormData);
-      onClose();
+      await onSubmit(data);
+      toast.success('Producto actualizado correctamente');
+      await onClose();
     } catch (error) {
       console.error('Error al actualizar el producto:', error);
-    } finally {
-      setIsSubmitting(false);
+      toast.error('Error al actualizar el producto');
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] p-0">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] p-0">
         <ScrollArea className="max-h-[90vh]">
-          <div className="p-6">
-            <DialogHeader>
+          <div className="p-4">
+            <DialogHeader className="mb-4">
               <DialogTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Editar Producto
+                <Edit3 className="h-5 w-5 text-blue-600" />
+                Actualizar Producto
               </DialogTitle>
+              <DialogDescription>
+                Modifica los datos del producto seleccionado. Los cambios se aplicarán inmediatamente. Los campos marcados con * son obligatorios.
+              </DialogDescription>
             </DialogHeader>
-
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <form onSubmit={form.handleSubmit(handleSubmit)}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                  {/* Columna Izquierda: Imagen */}
+                  <div className="flex flex-col items-center gap-4">
+                    <FormField
+                      control={form.control}
+                      name="imagen"
+                      render={({ field }) => (
+                        <FormItem className="w-full">
+                          <FormLabel>Imagen del Producto *</FormLabel>
+                          <FormControl>
+                            <ImageUploader
+                              onImageSelect={(image) => {
+                                field.onChange(image);
+                                setPreviewImage(image);
+                              }}
+                              previewImage={previewImage}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  {/* Columna Derecha: Campos */}
                   <div className="space-y-4">
                     <FormField
                       control={form.control}
@@ -118,13 +104,12 @@ export function ActualizarProductoModal({ isOpen, onClose, onSave, producto }: A
                         <FormItem>
                           <FormLabel>Código *</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="Código del producto" />
+                            <Input type="text" placeholder="Código del producto" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
                       name="nombre"
@@ -132,13 +117,12 @@ export function ActualizarProductoModal({ isOpen, onClose, onSave, producto }: A
                         <FormItem>
                           <FormLabel>Nombre *</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="Nombre del producto" />
+                            <Input type="text" placeholder="Nombre del producto" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
                       name="variedad"
@@ -146,29 +130,34 @@ export function ActualizarProductoModal({ isOpen, onClose, onSave, producto }: A
                         <FormItem>
                           <FormLabel>Variedad *</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="Variedad del producto" />
+                            <Input type="text" placeholder="Variedad del producto" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                  </div>
-
-                  <div className="space-y-4">
                     <FormField
                       control={form.control}
                       name="unidadMedida"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Unidad de Medida *</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Unidad de medida" />
-                          </FormControl>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccione una unidad de medida" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="kilogramos">Kilogramos</SelectItem>
+                              <SelectItem value="caja">Caja</SelectItem>
+                              <SelectItem value="individual">Individual</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
                       name="precio"
@@ -176,89 +165,47 @@ export function ActualizarProductoModal({ isOpen, onClose, onSave, producto }: A
                         <FormItem>
                           <FormLabel>Precio *</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="number" 
-                              {...field} 
-                              onChange={e => field.onChange(parseFloat(e.target.value))}
-                              placeholder="Precio del producto" 
+                            <NumericFormat
+                              customInput={Input}
+                              thousandSeparator=","
+                              decimalSeparator="."
+                              prefix="$"
+                              decimalScale={2}
+                              fixedDecimalScale
+                              value={field.value || ''}
+                              onValueChange={(values) => {
+                                field.onChange(values.floatValue || 0);
+                              }}
+                              placeholder="0.00"
                             />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-
-                    <div className="space-y-2">
-                      <FormLabel>Imagen del Producto</FormLabel>
-                      <div
-                        {...getRootProps()}
-                        className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-gray-400 transition-colors"
-                      >
-                        <input {...getInputProps()} />
-                        {selectedImage ? (
-                          <div className="flex items-center justify-center gap-2">
-                            <img
-                              src={URL.createObjectURL(selectedImage)}
-                              alt="Preview"
-                              className="h-20 w-20 object-cover rounded"
+                    <FormField
+                      control={form.control}
+                      name="activo"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center gap-2">
+                          <FormLabel>Activo</FormLabel>
+                          <FormControl>
+                            <Switch 
+                              checked={field.value} 
+                              onChange={field.onChange}
                             />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedImage(null);
-                              }}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ) : producto.imagen ? (
-                          <div className="flex items-center justify-center gap-2">
-                            <img
-                              src={producto.imagen}
-                              alt="Preview"
-                              className="h-20 w-20 object-cover rounded"
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedImage(null);
-                              }}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center gap-2">
-                            <ImageIcon className="h-8 w-8 text-gray-400" />
-                            <p className="text-sm text-gray-500">
-                              Arrastra una imagen o haz clic para seleccionar
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 </div>
-
-                <DialogFooter>
+                <DialogFooter className="mt-6">
                   <Button type="button" variant="outline" onClick={onClose}>
                     Cancelar
                   </Button>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Guardando...
-                      </>
-                    ) : (
-                      'Guardar'
-                    )}
+                  <Button type="submit">
+                    Guardar Cambios
                   </Button>
                 </DialogFooter>
               </form>

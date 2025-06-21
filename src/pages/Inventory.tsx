@@ -4,11 +4,20 @@ import { List as ListIcon, Plus, Search, Filter, MoreVertical } from 'lucide-rea
 
 const InventoryContainer = styled.div`
   padding: 2rem;
-  max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
   background: #F4F6F8;
+  
+  @media (max-width: 1024px) {
+    padding: 1.5rem;
+  }
+  
   @media (max-width: 768px) {
     padding: 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.75rem;
   }
 `;
 
@@ -17,6 +26,18 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  width: 100%;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: 1rem;
+  }
 `;
 
 const Title = styled.h1`
@@ -25,11 +46,25 @@ const Title = styled.h1`
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.25rem;
+  }
 `;
 
 const Actions = styled.div`
   display: flex;
   gap: 1rem;
+  flex-wrap: wrap;
+  
+  @media (max-width: 768px) {
+    gap: 0.5rem;
+    width: 100%;
+  }
 `;
 
 const Button = styled.button`
@@ -59,6 +94,16 @@ const Button = styled.button`
       background: #F4F6F8;
     }
   }
+  
+  @media (max-width: 768px) {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
 `;
 
 const SearchBar = styled.div`
@@ -69,6 +114,10 @@ const SearchBar = styled.div`
   border-radius: 0.5rem;
   padding: 0.5rem 1rem;
   width: 300px;
+  
+  @media (max-width: 768px) {
+    width: 100%;
+  }
 `;
 
 const SearchInput = styled.input`
@@ -88,9 +137,16 @@ const Grid = styled.div`
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
   margin-top: 2rem;
+  width: 100%;
+  
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
     gap: 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 0.75rem;
+    margin-top: 1rem;
   }
 `;
 

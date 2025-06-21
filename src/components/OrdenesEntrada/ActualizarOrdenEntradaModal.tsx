@@ -17,10 +17,10 @@ import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
 
 // Iconos
-import { Package, Hash } from 'lucide-react';
+import { Edit3 } from 'lucide-react';
 
 // Tipos y Servicios
-import { EstadoOrden, OrdenEntradaDto, ProductoDto, ProveedorDto, ESTADO_ORDEN, OrdenEntradaFormData } from '../../types/ordenesEntrada';
+import { EstadoOrden, OrdenEntradaDto, ProductoDto, ProveedorDto, ESTADO_ORDEN, OrdenEntradaFormData } from '../../types/OrdenesEntrada/ordenesEntrada.types';
 import { OrdenesEntradaService } from '../../services/ordenesEntrada.service';
 
 // Esquema de validación del formulario
@@ -164,16 +164,16 @@ export function ActualizarOrdenEntradaModal({ isOpen, onClose, onSave, orden }: 
             <DialogHeader className="space-y-4">
               <div className="flex items-center justify-between pr-6">
                 <DialogTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5" />
+                  <Edit3 className="h-5 w-5 text-blue-600" />
                   Editar Orden
                 </DialogTitle>
                 <Badge variant="outline" className="flex items-center gap-1">
-                  <Hash className="h-4 w-4" />
+                  <Edit3 className="h-4 w-4" />
                   {orden.codigo}
                 </Badge>
               </div>
               <DialogDescription>
-                Complete el formulario con la información de la orden. Los campos marcados con * son obligatorios.
+                Modifica la información de la orden seleccionada. Los cambios se aplicarán inmediatamente. Los campos marcados con * son obligatorios.
               </DialogDescription>
             </DialogHeader>
 

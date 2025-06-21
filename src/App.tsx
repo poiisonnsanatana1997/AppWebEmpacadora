@@ -8,6 +8,7 @@ import Inventory from './pages/Inventory'
 import Productos from './pages/Productos'
 import OrdenesEntrada from './pages/OrdenesEntrada'
 import DetalleOrdenEntrada from './pages/DetalleOrdenEntrada'
+import Usuarios from './pages/Usuarios'
 import { useAuth } from './contexts/AuthContext'
 import Layout from './components/Layout'
 
@@ -33,10 +34,13 @@ function App() {
       padding: 0,
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif',
       backgroundColor: '#F5F5F5',
-      color: '#212121'
+      color: '#212121',
+      width: '100%',
+      minHeight: '100vh',
+      overflowX: 'hidden'
     }}>
       <AuthProvider>
-        <BrowserRouter>
+        <BrowserRouter basename="/empacadora">
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route 
@@ -100,6 +104,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <DetalleOrdenEntrada />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/usuarios" 
+              element={
+                <PrivateRoute>
+                  <Usuarios />
                 </PrivateRoute>
               } 
             />

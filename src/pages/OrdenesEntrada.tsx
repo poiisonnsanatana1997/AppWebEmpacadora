@@ -18,8 +18,8 @@ import { TableHeader } from '@/components/OrdenesEntrada/TableHeader';
 import { Indicators } from '@/components/OrdenesEntrada/Indicators';
 
 // Importaciones de hooks y tipos
-import { useOrdenesEntrada } from '@/hooks/ordenesentrada/useOrdenesEntrada';
-import { ESTADO_ORDEN, OrdenEntradaDto, OrdenEntradaFormData, CrearOrdenEntradaDto, ActualizarOrdenEntradaDto } from '@/types/ordenesEntrada';
+import { useOrdenesEntrada } from '@/hooks/OrdenesEntrada/useOrdenesEntrada';
+import { ESTADO_ORDEN, OrdenEntradaDto, OrdenEntradaFormData, CrearOrdenEntradaDto, ActualizarOrdenEntradaDto } from '@/types/OrdenesEntrada/ordenesEntrada.types';
 
 // Componentes estilizados para la interfaz
 const PageContainer = styled(motion.div)`
@@ -27,7 +27,8 @@ const PageContainer = styled(motion.div)`
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  background:rgba(255, 255, 255, 0);
+  background: rgba(255, 255, 255, 0);
+  width: 100%;
 `;
 
 const ProductsTableContainer = styled(motion.div)`
@@ -36,12 +37,30 @@ const ProductsTableContainer = styled(motion.div)`
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   border: 1px solid #E2E8F0;
   overflow: hidden;
+  width: 100%;
+  
+  @media (max-width: 768px) {
+    border-radius: 0.75rem;
+  }
+  
+  @media (max-width: 480px) {
+    border-radius: 0.5rem;
+  }
 `;
 
 const TableContentSection = styled(motion.div)`
   padding: 1.5rem;
   overflow-x: auto;
   background: #fff;
+  width: 100%;
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.75rem;
+  }
 `;
 
 const StyledTable = styled(motion.table)`
@@ -67,6 +86,22 @@ const StyledTable = styled(motion.table)`
   tr:hover td {
     background: #f8fafc;
     transition: background 0.2s;
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 0.95rem;
+    
+    th, td {
+      padding: 0.75rem 0.5rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.875rem;
+    
+    th, td {
+      padding: 0.5rem 0.25rem;
+    }
   }
 `;
 

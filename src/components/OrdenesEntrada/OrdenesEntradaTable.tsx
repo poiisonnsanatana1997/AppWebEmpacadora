@@ -15,7 +15,6 @@ import {
 } from '@tanstack/react-table';
 
 // Componentes de UI
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -36,18 +35,18 @@ import {
 } from "@/components/ui/alert-dialog";
 
 // Iconos
-import { Edit2, ChevronDown, ChevronUp, ChevronsUpDown, X, RefreshCw, Clock } from 'lucide-react';
+import { Edit2, ChevronDown, ChevronUp, ChevronsUpDown, X, RefreshCw, Clock, ClipboardX } from 'lucide-react';
 
 // Utilidades y tipos
 import clsx from 'clsx';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ESTADO_ORDEN, OrdenEntradaDto } from '../../types/ordenesEntrada';
-import { OrdenesEntradaTableProps } from './types/ordenesEntradaTable.types';
-import { useOrdenesEntradaTable } from './hooks/useOrdenesEntradaTable';
-import { FilterInput } from './components/FilterInput';
-import { FilterSelect } from './components/FilterSelect';
-import { fuzzyFilter } from './utils/tableUtils';
+import { ESTADO_ORDEN, OrdenEntradaDto } from '@/types/OrdenesEntrada/ordenesEntrada.types';
+import { OrdenesEntradaTableProps } from '@/types/OrdenesEntrada/ordenesEntradaTable.types';
+import { useOrdenesEntradaTable } from '@/hooks/OrdenesEntrada/useOrdenesEntradaTable';
+import { FilterInput } from './FilterInput';
+import { FilterSelect } from './FilterSelect';
+import { fuzzyFilter } from '@/utils/tableUtils';
 
 // Componentes Estilizados
 // ============================================
@@ -93,7 +92,10 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onReactivate }:
     handleConfirmarCancelacion,
     handleConfirmarReactivacion,
     navigate
-  } = useOrdenesEntradaTable({ ordenes, onEdit, onDelete, onReactivate });
+  } = useOrdenesEntradaTable({ onDelete, onReactivate });
+
+  // Estado local para controlar el valor del select de fecha
+  const [fechaFilterValue, setFechaFilterValue] = React.useState("all");
 
   // Definición de columnas con ordenamiento, filtrado y renderizado personalizado
   const columns = React.useMemo<ColumnDef<OrdenEntradaDto>[]>(() => [
@@ -191,9 +193,8 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onReactivate }:
       filterFn: fuzzyFilter,
     },
     {
-      accessorKey: 'fecha',
+      accessorKey: 'fechaEstimada',
       header: ({ column }) => {
-        const filterValue = column.getFilterValue() as string | undefined;
         return (
           <div className="flex flex-col">
             <Button
@@ -212,15 +213,27 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onReactivate }:
             </Button>
             <div className="mt-2">
               <FilterSelect
-                value={filterValue ?? "all"}
+                value={fechaFilterValue}
                 onChange={(value) => {
+                  setFechaFilterValue(value);
+                  
                   if (value === "all") {
                     column.setFilterValue("");
-                  } else if (value === "asc" || value === "desc") {
+                    // Limpiar ordenamiento
+                    setSorting([]);
+                  } else if (value === "asc") {
                     column.setFilterValue("");
-                    column.toggleSorting(value === "desc");
+                    // Ordenar ascendente (más antiguas primero)
+                    setSorting([{ id: 'fechaEstimada', desc: false }]);
+                  } else if (value === "desc") {
+                    column.setFilterValue("");
+                    // Ordenar descendente (más recientes primero)
+                    setSorting([{ id: 'fechaEstimada', desc: true }]);
                   } else {
+                    // Para filtros de fecha (hoy, próximos)
                     column.setFilterValue(value);
+                    // Limpiar ordenamiento
+                    setSorting([]);
                   }
                 }}
                 options={[
@@ -244,7 +257,7 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onReactivate }:
           day: 'numeric'
         });
       },
-      filterFn: (row, id, value) => {
+      filterFn: (row, _id, value) => {
         if (!value || value === "all") return true;
         
         const fecha = new Date(row.original.fechaEstimada);
@@ -324,6 +337,7 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onReactivate }:
                 options={[
                   { value: "all", label: "Todos los estados" },
                   { value: "Pendiente", label: "Pendiente" },
+                  { value: "Procesando", label: "Procesando" },
                   { value: "Recibida", label: "Recibida" },
                   { value: "Cancelada", label: "Cancelada" },
                 ]}
@@ -431,7 +445,7 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onReactivate }:
         );
       },
     },
-  ], [navigate, onEdit]);
+  ], [navigate, onEdit, fechaFilterValue, setSorting]);
 
   // Instancia de tabla con todas las características habilitadas
   const table = useReactTable({
@@ -457,62 +471,69 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onReactivate }:
   return (
     <div className="space-y-4">
       {/* Tabla con encabezado y cuerpo */}
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id} className="p-2">
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            <AnimatePresence mode="wait">
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <motion.tr
-                    key={row.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.2 }}
-                    data-state={row.getIsSelected() && "selected"}
-                    className="border-b border-gray-200 last:border-b-0"
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="p-2">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
-                  </motion.tr>
-                ))
-              ) : (
+      <table className="w-full">
+        <thead className="bg-[#f1f5f9]">
+          {table.getHeaderGroups().map((headerGroup) => (
+            <tr key={headerGroup.id} className="hover:bg-gray-100">
+              {headerGroup.headers.map((header) => (
+                <th key={header.id} className="p-2 font-semibold text-gray-700 border-b border-[#e2e8f0]">
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                </th>
+              ))}
+            </tr>
+          ))}
+        </thead>
+        <tbody>
+          <AnimatePresence mode="wait">
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
                 <motion.tr
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
+                  key={row.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.2 }}
+                  data-state={row.getIsSelected() && "selected"}
+                  className="border-b border-gray-200 last:border-b-0"
                 >
-                  <TableCell colSpan={columns.length} className="h-24 text-center">
-                    No hay resultados.
-                  </TableCell>
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="p-2">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
                 </motion.tr>
-              )}
-            </AnimatePresence>
-          </TableBody>
-        </Table>
-      </div>
+              ))
+            ) : (
+              <motion.tr
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <td colSpan={columns.length} className="h-48 text-center">
+                  <div className="flex flex-col items-center justify-center space-y-4 py-8">
+                    <div className="bg-gray-50 rounded-full p-4">
+                      <ClipboardX className="h-12 w-12 text-gray-400" />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-semibold text-gray-700">No se encontraron órdenes</h3>
+                      <p className="text-sm text-gray-500 max-w-md">
+                        No hay órdenes que coincidan con los criterios de búsqueda actuales.
+                        Intenta ajustar los filtros o crear una nueva orden.
+                      </p>
+                    </div>
+                  </div>
+                </td>
+              </motion.tr>
+            )}
+          </AnimatePresence>
+        </tbody>
+      </table>
 
       {/* Controles de paginación y conteo de filas */}
       <div className="flex items-center justify-between px-2">

@@ -5,10 +5,10 @@ import { z } from 'zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { EstadoOrden, ProductoDto, ProveedorDto, ESTADO_ORDEN, OrdenEntradaFormData } from '../../types/ordenesEntrada';
+import { EstadoOrden, ProductoDto, ProveedorDto, ESTADO_ORDEN, OrdenEntradaFormData } from '../../types/OrdenesEntrada/ordenesEntrada.types';
 import { OrdenesEntradaService } from '../../services/ordenesEntrada.service';
 import { ScrollArea } from '../ui/scroll-area';
-import { ClipboardList } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Combobox } from '../ui/combobox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
 import { Textarea } from '../ui/textarea';
@@ -133,12 +133,12 @@ export function NuevaOrdenEntradaModal({ isOpen, onClose, onSave }: NuevaOrdenEn
             <DialogHeader className="space-y-4">
               <div className="flex items-center justify-between pr-6">
                 <DialogTitle className="flex items-center gap-2">
-                  <ClipboardList className="h-5 w-5" />
+                  <Plus className="h-5 w-5 text-green-600" />
                   Nueva Orden
                 </DialogTitle>
               </div>
               <DialogDescription>
-                Complete el formulario con la información de la orden. Los campos marcados con * son obligatorios.
+                Completa la información para crear una nueva orden de entrada en el sistema. Todos los campos marcados con * son obligatorios.
               </DialogDescription>
             </DialogHeader>
 

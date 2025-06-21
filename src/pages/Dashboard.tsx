@@ -1,5 +1,6 @@
 import styled from "styled-components"
 import { motion } from "framer-motion"
+import { useAuth } from "../contexts/AuthContext"
 import {
   Droplets,
   Thermometer,
@@ -16,8 +17,57 @@ const DashboardContainer = styled.div`
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  width: 100%;
   background: #F8FAFC;
   position: relative;
+`
+
+const WelcomeBanner = styled(motion.div)`
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+`
+
+const WelcomeTitle = styled.h1`
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.25rem;
+  }
+`
+
+const WelcomeText = styled.p`
+  font-size: 1.1rem;
+  opacity: 0.9;
+  line-height: 1.6;
+  
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.9rem;
+  }
 `
 
 const Header = styled.header`
@@ -31,10 +81,17 @@ const Header = styled.header`
   border-radius: 1rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #E2E8F0;
+  width: 100%;
 
   @media (max-width: 768px) {
     margin-bottom: 1.5rem;
     padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.75rem;
+    margin-bottom: 1rem;
   }
 `
 
@@ -46,6 +103,10 @@ const HeaderActions = styled.div`
 
   @media (max-width: 768px) {
     gap: 0.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 0.25rem;
   }
 `
 
@@ -82,6 +143,16 @@ const IconButton = styled.button`
       height: 18px;
     }
   }
+  
+  @media (max-width: 480px) {
+    width: 32px;
+    height: 32px;
+    
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
 `
 
 const StatsGrid = styled.div`
@@ -89,6 +160,19 @@ const StatsGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
+  width: 100%;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
 `
 
 const StatCard = styled(motion.div)`
@@ -98,6 +182,7 @@ const StatCard = styled(motion.div)`
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #E2E8F0;
   transition: all 0.2s;
+  width: 100%;
 
   &:hover {
     transform: translateY(-2px);
@@ -127,6 +212,14 @@ const StatCard = styled(motion.div)`
     color: #1E293B;
     line-height: 1.2;
     margin-bottom: 0.25rem;
+    
+    @media (max-width: 768px) {
+      font-size: 1.75rem;
+    }
+    
+    @media (max-width: 480px) {
+      font-size: 1.5rem;
+    }
   }
 
   .change {
@@ -157,12 +250,28 @@ const ChartSection = styled.div`
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   margin-bottom: 2rem;
   border: 1px solid #E2E8F0;
+  width: 100%;
 
   h2 {
     font-size: 1.125rem;
     font-weight: 600;
     color: #1E293B;
     margin-bottom: 1.5rem;
+    
+    @media (max-width: 768px) {
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.75rem;
+    margin-bottom: 1rem;
   }
 `
 
@@ -175,8 +284,23 @@ const TableSection = styled(ChartSection)`
 `
 
 export default function Dashboard() {
+  const { user } = useAuth()
+
   return (
     <DashboardContainer>
+      <WelcomeBanner
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <WelcomeTitle>
+          ¡Bienvenido, {user?.name || 'Usuario'}!
+        </WelcomeTitle>
+        <WelcomeText>
+          Tu sistema está listo para ayudarte a gestionar y optimizar tus operaciones de empaque de manera eficiente.
+        </WelcomeText>
+      </WelcomeBanner>
+
       <Header>
         <HeaderActions>
           <IconButton>

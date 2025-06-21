@@ -1,0 +1,31 @@
+import { OrdenEntradaDto } from './ordenesEntrada.types';
+
+export interface OrdenesEntradaTableProps {
+  ordenes: OrdenEntradaDto[];
+  onEdit: (codigo: string) => void;
+  onDelete: (codigo: string) => void;
+  onReactivate: (codigo: string) => void;
+}
+
+export interface FilterOption {
+  value: string;
+  label: string;
+}
+
+export interface FilterOptions {
+  estado: string;
+  proveedor: string;
+  producto: string;
+  fechaInicio: string;
+  fechaFin: string;
+}
+
+export interface TableState {
+  sorting: { id: string; desc: boolean }[];
+  columnFilters: any[];
+  rowSelection: Record<string, boolean>;
+  columnVisibility: Record<string, boolean>;
+  ordenACancelar: string | null;
+  ordenAReactivar: string | null;
+  filters: FilterOptions;
+} 

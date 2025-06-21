@@ -1,559 +1,635 @@
-import { useState, useEffect, useCallback } from "react"
-import { useNavigate, useLocation } from "react-router-dom"
-import styled from "styled-components"
-import { motion } from "framer-motion"
-import {
-  Users,
-  Menu,
-  X,
-  ChevronLeft,
-  LogOut,
-  Package,
-  ClipboardList
-} from "lucide-react"
-import { useAuth } from "../contexts/AuthContext"
-import { colors } from "../styles/colors"
-import Tooltip from "./Tooltip"
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import styled from "styled-components";
+import { motion, AnimatePresence } from "framer-motion";
+import { Users, Menu, X, ChevronLeft, LogOut, Package, ClipboardList } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "../contexts/AuthContext";
+import logo from '/images/LogoEmpacadora.jpg';
+
+const SIDEBAR_WIDTH = 280;
+const SIDEBAR_COMPACT = 80;
+const MOBILE_BREAKPOINT = 768;
+const TABLET_BREAKPOINT = 1024;
 
 const LayoutContainer = styled.div`
   display: flex;
   min-height: 100vh;
-  background: ${colors.background.main};
-  position: relative;
-  overflow-x: hidden;
   width: 100%;
-  max-width: 100vw;
-`
-
-const Sidebar = styled.div<{ $isOpen: boolean; $isCompact: boolean }>`
-  width: ${props => props.$isCompact ? '80px' : '280px'};
-  background: ${colors.background.light};
-  border-right: 1px solid ${colors.border.light};
-  padding: 0;
-  height: 100vh;
-  position: fixed;
-  left: 0;
-  top: 0;
-  overflow-y: auto;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  position: relative;
   overflow-x: hidden;
-  z-index: 1200;
-  box-shadow: 0 4px 12px ${colors.shadow.light};
-  transition: transform 0.18s cubic-bezier(0.4,0,0.2,1), opacity 0.18s cubic-bezier(0.4,0,0.2,1);
-  transform: ${props => props.$isOpen ? 'translateX(0)' : 'translateX(-100%)'};
-  opacity: ${props => props.$isOpen ? '1' : '0'};
-  pointer-events: ${props => props.$isOpen ? 'auto' : 'none'};
-
-  @media (max-width: 1024px) {
-    width: ${props => props.$isCompact ? '80px' : '240px'};
-  }
-
-  @media (max-width: 768px) {
-    width: 280px;
-    height: 100vh;
-    max-height: 100vh;
-    z-index: 1200;
-    display: block;
-  }
-`
-
-const SidebarHeader = styled.div<{ $isMobile: boolean }>`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.5rem 0.5rem 1.5rem;
-  border-bottom: 1px solid ${colors.border.light};
-  height: 65px;
-  background: ${colors.background.light};
-
-  .logo-container {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .close-btn {
-    display: ${props => props.$isMobile ? 'block' : 'none'};
-    background: transparent;
-    border: none;
-    color: #64748b;
-    font-size: 1.5rem;
-    cursor: pointer;
-    margin-left: 1rem;
-    padding: 0.25rem;
-    border-radius: 4px;
-    transition: background 0.2s;
-    &:hover {
-      background: #f1f5f9;
-      color: ${colors.primary};
-    }
-  }
-`
-
-const Logo = styled.div<{ $isCompact: boolean }>`
-  display: flex;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid ${colors.border.light};
-  margin-bottom: 1rem;
-  justify-content: space-between;
-  position: relative;
-  height: 60px;
-  background: ${colors.background.light};
-
-  .logo-container {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .brand-name {
-    display: flex;
-    flex-direction: column;
-    line-height: 1.2;
-  }
-
-  .brand-title {
-    font-family: 'Inter', sans-serif;
-    font-weight: 500;
-    font-size: 1.1rem;
-    color: #1a365d;
-    margin: 0;
-  }
-
-  .brand-subtitle {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.65rem;
-    color: #64748b;
-    font-weight: 400;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-top: 1px;
-  }
-
-  @media (max-width: 768px) {
-    padding: 0.875rem 1.25rem;
-    margin-bottom: 0.875rem;
-    height: 55px;
-
-    .brand-title {
-      font-size: 1rem;
-    }
-  }
-
-  img {
-    max-height: 32px;
-    max-width: ${props => props.$isCompact ? '32px' : '85px'};
-    height: auto;
-    width: auto;
-    object-fit: contain;
-    transition: all 0.2s;
-  }
-`
-
-const CompactButton = styled.button<{ $isCompact: boolean }>`
-  background: ${props => props.$isCompact ? '#f8fafc' : 'transparent'};
-  border: 1px solid ${colors.border.light};
-  color: ${props => props.$isCompact ? colors.primary : '#64748b'};
-  cursor: pointer;
-  width: 32px;
-  height: 32px;
-  border-radius: 4px;
-  transition: all 0.18s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  position: relative;
-
-  &:hover {
-    background: #f8fafc;
-    border-color: #cbd5e0;
-    color: ${colors.primary};
-  }
-
-  &:focus {
-    outline: none;
-    border-color: ${colors.primary};
-    box-shadow: 0 0 0 2px rgba(74, 107, 87, 0.1);
-  }
-
-  &:active {
-    background: #f1f5f9;
-  }
-
-  svg {
-    width: 18px;
-    height: 18px;
-    transform: ${props => props.$isCompact ? 'rotate(180deg)' : 'rotate(0)'};
-    transition: transform 0.18s ease;
-    stroke-width: 2;
-  }
-
-  @media (max-width: 768px) {
-    display: none;
-  }
-`
-
-const Overlay = styled(motion.div)<{ $isOpen: boolean }>`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 1100;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-
-  @media (min-width: 769px) {
-    display: none;
-  }
-
-  @media (max-width: 768px) {
-    opacity: ${props => props.$isOpen ? '1' : '0'};
-    pointer-events: ${props => props.$isOpen ? 'auto' : 'none'};
-    top: 0;
-    display: ${props => props.$isOpen ? 'block' : 'none'};
-  }
-`
-
-const MainContent = styled.div<{ $sidebarOpen: boolean; $isCompact: boolean }>`
-  flex: 1;
-  padding: 2rem;
-  margin-left: ${props => props.$sidebarOpen ? (props.$isCompact ? '80px' : '280px') : '0'};
-  transition: margin-left 0.3s ease;
-  width: calc(100% - ${props => props.$sidebarOpen ? (props.$isCompact ? '80px' : '280px') : '0'});
-  position: relative;
-  z-index: 1;
-  overflow-x: hidden;
-  max-width: 100vw;
-
-  @media (max-width: 1024px) {
-    margin-left: ${props => props.$sidebarOpen ? (props.$isCompact ? '80px' : '240px') : '0'};
-    width: calc(100% - ${props => props.$sidebarOpen ? (props.$isCompact ? '80px' : '240px') : '0'});
-    padding: 1.5rem;
-  }
-
-  @media (max-width: 768px) {
-    margin-left: 0;
-    width: 100vw;
-    padding: 1rem;
-    padding-top: 4.5rem;
-    max-width: 100vw;
-  }
-`
-
-const MenuButton = styled.button`
-  display: none;
-  width: 40px;
-  height: 40px;
-  color: #64748B;
-  cursor: pointer;
-  background: transparent;
-  border: none;
-  z-index: 1003;
-  position: fixed;
-  top: 0.75rem;
-  left: 0.75rem;
-  border-radius: 0.5rem;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
   
-  @media (max-width: 768px) {
-    display: flex;
+  &::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
   }
+`;
 
-  &:hover {
-    color: #1E40AF;
-    background: #F1F5F9;
+const Sidebar = styled(motion.aside)<{ $compact: boolean; $isMobile: boolean }>`
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: ${({ $compact, $isMobile }) => 
+    $isMobile ? SIDEBAR_WIDTH : ($compact ? SIDEBAR_COMPACT : SIDEBAR_WIDTH)
+  }px;
+  background: ${({ $isMobile }) => 
+    $isMobile 
+      ? "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)" 
+      : "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)"
+  };
+  border-right: 1px solid rgba(226, 232, 240, 0.8);
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  box-shadow: ${({ $isMobile }) => 
+    $isMobile 
+      ? "0 4px 20px rgba(0, 0, 0, 0.15)" 
+      : "0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8)"
+  };
+  
+  /* Optimizaciones para móvil */
+  ${({ $isMobile }) => $isMobile && `
+    will-change: transform;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  `}
+  
+  /* Remover transiciones CSS para evitar conflictos con Framer Motion */
+  ${({ $isMobile }) => !$isMobile && `
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+  `}
+  
+  @media (max-width: ${MOBILE_BREAKPOINT}px) {
+    width: 100%;
+    max-width: ${SIDEBAR_WIDTH}px;
+    position: fixed;
+    z-index: 1300;
+    /* Remover backdrop-filter en móvil para mejor rendimiento */
+    backdrop-filter: none;
   }
+`;
 
-  svg {
-    width: 24px;
-    height: 24px;
-    stroke-width: 1.5;
+const Overlay = styled(motion.div)`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1100;
+  @media (min-width: ${MOBILE_BREAKPOINT + 1}px) {
+    display: none;
   }
-`
+`;
 
-const NavSection = styled.div<{ $isCompact: boolean }>`
-  margin-bottom: 2rem;
-  padding: ${props => props.$isCompact ? '0 0.5rem' : '0 1rem'};
-
-  h3 {
-    color: #94A3B8;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    margin-bottom: 1rem;
-    text-align: ${props => props.$isCompact ? 'center' : 'left'};
-    display: ${props => props.$isCompact ? 'none' : 'block'};
-    letter-spacing: 0.05em;
-    padding: 0 0.75rem;
+const Main = styled.main<{ $sidebar: boolean; $compact: boolean }>`
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  margin-left: ${({ $sidebar, $compact }) =>
+    $sidebar ? ($compact ? SIDEBAR_COMPACT : SIDEBAR_WIDTH) : 0}px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 2rem 1.5rem 1rem 1.5rem;
+  position: relative;
+  
+  @media (max-width: ${TABLET_BREAKPOINT}px) {
+    padding: 1.5rem 1rem 1rem 1rem;
   }
-`
+  
+  @media (max-width: ${MOBILE_BREAKPOINT}px) {
+    margin-left: 0;
+    padding-top: 5rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    width: 100%;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 1rem 0.75rem 0.75rem 0.75rem;
+    padding-top: 4.5rem;
+  }
+`;
 
-const NavItem = styled.button<{ $isCompact: boolean; $active?: boolean }>`
+const SidebarHeader = styled.div<{ $compact: boolean; $isMobile: boolean }>`
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  padding: 0.75rem;
-  border: none;
-  background: ${props => props.$active ? 'rgba(74, 107, 87, 0.08)' : 'transparent'};
-  color: ${props => props.$active ? colors.primary : colors.text.secondary};
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-bottom: 0.25rem;
-  font-size: 0.875rem;
-  font-weight: 500;
+  justify-content: space-between;
+  padding: ${({ $compact, $isMobile }) => 
+    $isMobile ? "1.25rem 1rem" : ($compact ? "1.25rem 0.75rem" : "1.5rem 1.5rem")
+  };
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  min-height: 72px;
+  background: ${({ $isMobile }) => 
+    $isMobile 
+      ? "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)" 
+      : "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%)"
+  };
+  position: relative;
+  
+  /* Solo aplicar backdrop-filter en desktop */
+  ${({ $isMobile }) => !$isMobile && `
+    backdrop-filter: blur(10px);
+  `}
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(226, 232, 240, 0.8) 50%, transparent 100%);
+  }
+`;
 
+const LogoBox = styled.div<{ $compact: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: ${({ $compact }) => ($compact ? "0.75rem" : "1.25rem")};
+  
+  img {
+    height: 42px;
+    width: auto;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    max-width: ${({ $compact }) => ($compact ? "42px" : "90px")};
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+const Brand = styled.div`
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  
+  .brand-title {
+    font-weight: 700;
+    font-size: 1.2rem;
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.025em;
+  }
+  
+  .brand-subtitle {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.75px;
+    margin-top: 2px;
+  }
+`;
+
+const CompactBtn = styled(Button)<{ $compact: boolean }>`
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 8px;
+  background: ${({ $compact }) => 
+    $compact 
+      ? "linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)" 
+      : "linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.8) 100%)"
+  };
+  color: ${({ $compact }) => ($compact ? "#1e293b" : "#64748b")};
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  margin-left: 0.75rem;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  
   &:hover {
-    background: rgba(74, 107, 87, 0.08);
-    color: ${colors.primary};
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    color: #1e293b;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
-
+  
   svg {
-    width: 20px;
-    height: 20px;
-    stroke-width: 1.5;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: ${({ $compact }) => ($compact ? "rotate(180deg)" : "none")};
   }
-
-  span {
-    display: ${props => props.$isCompact ? 'none' : 'inline'};
-    line-height: 20px;
+  
+  @media (max-width: ${MOBILE_BREAKPOINT}px) {
+    display: none;
   }
-`
+`;
 
-const UserProfileSection = styled.div<{ $isCompact: boolean }>`
-  padding: ${props => props.$isCompact ? '0.5rem' : '1rem'};
-  border-top: 1px solid ${colors.border.light};
-  margin-top: auto;
-  background: ${colors.background.light};
+const MenuList = styled.ul<{ $compact: boolean }>`
+  list-style: none;
+  padding: 1.75rem 0.75rem 0 0.75rem;
+  margin: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`;
+
+const MenuItem = styled.li<{ $active: boolean; $compact: boolean; $isMobile: boolean }>`
+  button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: ${({ $compact, $isMobile }) => ($compact && !$isMobile ? "0" : "0.875rem")};
+    justify-content: ${({ $compact, $isMobile }) => ($compact && !$isMobile ? "center" : "flex-start")};
+    padding: ${({ $compact, $isMobile }) => 
+      $isMobile ? "0.875rem 1rem" : ($compact ? "0.875rem 0.5rem" : "0.875rem 1rem")
+    };
+    background: ${({ $active, $isMobile }) => 
+      $active 
+        ? "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)" 
+        : $isMobile 
+          ? "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)" 
+          : "linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(248, 250, 252, 0.6) 100%)"
+    };
+    color: ${({ $active }) => ($active ? "#1e40af" : "#475569")};
+    border: 1px solid ${({ $active }) => 
+      $active ? "rgba(59, 130, 246, 0.2)" : "rgba(226, 232, 240, 0.6)"
+    };
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    position: relative;
+    overflow: hidden;
+    
+    /* Solo aplicar backdrop-filter en desktop */
+    ${({ $isMobile }) => !$isMobile && `
+      backdrop-filter: blur(10px);
+    `}
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      transition: left 0.5s;
+    }
+    
+    &:hover {
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      color: #1e40af;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.3);
+      
+      &::before {
+        left: 100%;
+      }
+    }
+    
+    &:active {
+      transform: translateY(0);
+    }
+    
+    span {
+      display: ${({ $compact, $isMobile }) => ($compact && !$isMobile ? "none" : "inline")};
+      transition: opacity 0.2s;
+      font-weight: 600;
+    }
+    
+    svg {
+      transition: all 0.2s;
+      ${({ $active }) => $active && `
+        transform: scale(1.1);
+        filter: drop-shadow(0 2px 4px rgba(59, 130, 246, 0.3));
+      `}
+    }
+  }
+`;
+
+const UserSection = styled.div<{ $compact: boolean; $isMobile: boolean }>`
+  border-top: 1px solid rgba(226, 232, 240, 0.8);
+  padding: ${({ $compact, $isMobile }) => 
+    $isMobile ? "1rem 1rem" : ($compact ? "0.75rem 0.5rem" : "1.25rem 1rem")
+  };
+  background: ${({ $isMobile }) => 
+    $isMobile 
+      ? "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)" 
+      : "linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.8) 100%)"
+  };
+  position: relative;
+  
+  /* Solo aplicar backdrop-filter en desktop */
+  ${({ $isMobile }) => !$isMobile && `
+    backdrop-filter: blur(10px);
+  `}
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(226, 232, 240, 0.8) 50%, transparent 100%);
+  }
   
   .user-info {
-    display: ${props => props.$isCompact ? 'none' : 'block'};
-    margin-bottom: 0.5rem;
+    display: ${({ $compact, $isMobile }) => ($compact && !$isMobile ? "none" : "block")};
+    margin-bottom: 0.75rem;
     
     h4 {
-      font-size: 0.875rem;
-      color: ${colors.text.primary};
+      font-size: 1rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
       margin: 0;
+      letter-spacing: -0.025em;
     }
     
     p {
-      font-size: 0.75rem;
-      color: ${colors.text.secondary};
+      font-size: 0.85rem;
+      color: #64748b;
       margin: 0;
+      font-weight: 500;
+      margin-top: 2px;
     }
   }
-`
+`;
 
-const UserButton = styled(NavItem)`
-  margin-bottom: 0;
-  background: ${colors.background.light};
-  border: 1px solid ${colors.border.light};
+const MobileMenuBtn = styled(Button)`
+  display: none;
+  position: fixed;
+  top: 1.25rem;
+  left: 1.25rem;
+  z-index: 1400;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   
   &:hover {
-    background: rgba(74, 107, 87, 0.08);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
   }
-`
-
-interface LayoutProps {
-  children: React.ReactNode;
-}
-
-export default function Layout({ children }: LayoutProps) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
-    const saved = localStorage.getItem('sidebarOpen')
-    return saved ? JSON.parse(saved) : window.innerWidth > 768
-  })
   
-  const [isCompact, setIsCompact] = useState(() => {
-    const saved = localStorage.getItem('sidebarCompact')
-    return saved ? JSON.parse(saved) : false
-  })
+  @media (max-width: ${MOBILE_BREAKPOINT}px) {
+    display: flex;
+  }
+`;
+
+const LogoutButton = styled(Button)`
+  width: 100%;
+  justify-content: flex-start;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.8) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #dc2626;
+  font-weight: 600;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-top: 0.5rem;
   
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
-  const navigate = useNavigate()
-  const location = useLocation()
-  const { user, logout } = useAuth()
+  &:hover {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    color: #b91c1c;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+  
+  svg {
+    transition: transform 0.2s;
+  }
+  
+  &:hover svg {
+    transform: translateX(-2px);
+  }
+`;
 
-  // Persistir estados en localStorage
+const navItems = [
+  { label: "Productos", icon: <Package />, path: "/productos" },
+  { label: "Órdenes de Entrada", icon: <ClipboardList />, path: "/ordenes-entrada" },
+  { label: "Usuarios", icon: <Users className="h-5 w-5" />, path: "/usuarios" },
+];
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isCompact, setIsCompact] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= MOBILE_BREAKPOINT);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, logout } = useAuth();
+
+  // Responsividad
   useEffect(() => {
-    localStorage.setItem('sidebarOpen', JSON.stringify(isSidebarOpen))
-  }, [isSidebarOpen])
-
-  useEffect(() => {
-    localStorage.setItem('sidebarCompact', JSON.stringify(isCompact))
-  }, [isCompact])
-
-  const handleResize = useCallback(() => {
-    const mobile = window.innerWidth <= 768
-    setIsMobile(mobile)
-    if (!mobile && !isSidebarOpen) {
-      setIsSidebarOpen(true)
-    }
-  }, [isSidebarOpen])
-
-  useEffect(() => {
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [handleResize])
-
-  const toggleSidebar = useCallback(() => {
-    setIsSidebarOpen((prev: boolean) => !prev)
-  }, [])
-
-  const handleNavClick = useCallback((path: string) => {
-    if (path === '/logout') {
-      logout()
-      navigate('/login')
-      return
-    }
-
-    if (window.innerWidth <= 768) {
-      setIsSidebarOpen(false)
-    }
-    navigate(path)
-  }, [logout, navigate])
-
-  const handleOverlayClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation()
-    setIsSidebarOpen(false)
-  }, [])
-
-  const isActive = useCallback((path: string) => {
-    return location.pathname === path
-  }, [location.pathname])
-
-  // Bloquear scroll del body cuando el sidebar está abierto en móvil
-  useEffect(() => {
-    if (isMobile && isSidebarOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
+    const handleResize = () => {
+      const mobile = window.innerWidth <= MOBILE_BREAKPOINT;
+      setIsMobile(mobile);
+      if (mobile) setIsSidebarOpen(false);
+      else setIsSidebarOpen(true);
     };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Bloquear scroll en móvil cuando sidebar abierto
+  useEffect(() => {
+    if (isMobile && isSidebarOpen) document.body.style.overflow = "hidden";
+    else document.body.style.overflow = "";
+    return () => { document.body.style.overflow = ""; };
   }, [isMobile, isSidebarOpen]);
+
+  // Navegación
+  const handleNav = useCallback((path: string) => {
+    if (isMobile) setIsSidebarOpen(false);
+    navigate(path);
+  }, [isMobile, navigate]);
+
+  // Logout
+  const handleLogout = useCallback(() => {
+    logout();
+    navigate("/login");
+  }, [logout, navigate]);
+
+  // Animaciones sidebar optimizadas para móvil
+  const sidebarVariants = {
+    open: { 
+      x: 0, 
+      opacity: 1, 
+      transition: { 
+        type: "tween", 
+        duration: isMobile ? 0.2 : 0.3,
+        ease: "easeOut"
+      } 
+    },
+    closed: { 
+      x: "-100%", 
+      opacity: 0, 
+      transition: { 
+        type: "tween", 
+        duration: isMobile ? 0.15 : 0.3,
+        ease: "easeIn"
+      } 
+    },
+  };
+
+  // Overlay optimizado para móvil
+  const overlayVariants = {
+    open: { 
+      opacity: 1,
+      transition: { duration: 0.2, ease: "easeOut" }
+    },
+    closed: { 
+      opacity: 0,
+      transition: { duration: 0.15, ease: "easeIn" }
+    },
+  };
 
   return (
     <LayoutContainer>
-      {isMobile && (
-        <MenuButton 
-          onClick={toggleSidebar}
-          aria-label={isSidebarOpen ? "Cerrar menú" : "Abrir menú"}
-        >
-          {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
-        </MenuButton>
-      )}
-
-      <Overlay 
-        $isOpen={isSidebarOpen}
-        onClick={handleOverlayClick}
-        aria-hidden={!isSidebarOpen}
-      />
-
-      <Sidebar
-        $isOpen={isSidebarOpen}
-        $isCompact={isCompact}
-        role="navigation"
-        aria-label="Menú principal"
+      {/* Botón menú móvil */}
+      <MobileMenuBtn
+        variant="outline"
+        size="icon"
+        aria-label="Abrir menú"
+        onClick={() => setIsSidebarOpen(true)}
+        style={{ display: isMobile && !isSidebarOpen ? "flex" : "none" }}
       >
-        <SidebarHeader $isMobile={isMobile}>
-          <div className="logo-container">
-            <img src="/images/LogoEmpacadora.jpg" alt="Empacadora del Valle de San Francisco" style={{ maxHeight: 38, maxWidth: isCompact ? 38 : 95 }} />
-            {!isCompact && (
-              <div className="brand-name">
-                <h1 className="brand-title" style={{ fontSize: '1.1rem', color: '#1a365d', fontWeight: 600, margin: 0 }}>Empacadora</h1>
-                <span className="brand-subtitle" style={{ fontSize: '0.7rem', color: '#1a365d', fontWeight: 400, marginTop: 2 }}>Valle de San Francisco</span>
+        <Menu size={24} />
+      </MobileMenuBtn>
+
+      {/* Overlay móvil */}
+      <AnimatePresence>
+        {isMobile && isSidebarOpen && (
+          <Overlay
+            variants={overlayVariants}
+            initial="closed"
+            animate="open"
+            exit="closed"
+            onClick={() => setIsSidebarOpen(false)}
+            aria-label="Cerrar menú"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Sidebar */}
+      <AnimatePresence>
+        {(isSidebarOpen || !isMobile) && (
+          <Sidebar
+            $compact={isCompact && !isMobile}
+            $isMobile={isMobile}
+            variants={sidebarVariants}
+            initial={isMobile ? "closed" : false}
+            animate={isSidebarOpen ? "open" : "closed"}
+            exit="closed"
+            role="navigation"
+            aria-label="Menú principal"
+            tabIndex={0}
+            onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
+              if (e.key === "Escape" && isMobile) setIsSidebarOpen(false);
+            }}
+          >
+            <SidebarHeader $compact={isCompact && !isMobile} $isMobile={isMobile}>
+              <LogoBox $compact={isCompact && !isMobile}>
+                <img src={logo} alt="Empacadora del Valle de San Francisco" />
+                {!(isCompact && !isMobile) && (
+                  <Brand>
+                    <span className="brand-title">Empacadora</span>
+                    <span className="brand-subtitle">Valle de San Francisco</span>
+                  </Brand>
+                )}
+              </LogoBox>
+              {isMobile ? (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  aria-label="Cerrar menú" 
+                  onClick={() => setIsSidebarOpen(false)}
+                  style={{
+                    background: "linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.8) 100%)",
+                    border: "1px solid rgba(226, 232, 240, 0.8)",
+                    borderRadius: "8px",
+                    backdropFilter: "blur(10px)"
+                  }}
+                >
+                  <X size={24} />
+                </Button>
+              ) : (
+                <CompactBtn
+                  $compact={isCompact}
+                  variant="outline"
+                  size="icon"
+                  aria-label={isCompact ? "Expandir menú" : "Compactar menú"}
+                  onClick={() => setIsCompact(c => !c)}
+                >
+                  <ChevronLeft size={20} />
+                </CompactBtn>
+              )}
+            </SidebarHeader>
+
+            <MenuList $compact={isCompact && !isMobile}>
+              {navItems.map(item => (
+                <MenuItem
+                  key={item.path}
+                  $active={location.pathname === item.path}
+                  $compact={isCompact && !isMobile}
+                  $isMobile={isMobile}
+                >
+                  <button
+                    aria-label={item.label}
+                    tabIndex={0}
+                    onClick={() => handleNav(item.path)}
+                    aria-current={location.pathname === item.path ? "page" : undefined}
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </button>
+                </MenuItem>
+              ))}
+            </MenuList>
+
+            <UserSection $compact={isCompact && !isMobile} $isMobile={isMobile}>
+              <div className="user-info">
+                <h4>{user?.name || "Usuario"}</h4>
+                <p>{user?.roleName || "Sin rol asignado"}</p>
               </div>
-            )}
-          </div>
-          {isMobile && (
-            <button
-              className="close-btn"
-              aria-label="Cerrar menú"
-              onClick={toggleSidebar}
-            >
-              <X size={24} />
-            </button>
-          )}
-          {!isMobile && (
-            <Tooltip content={isCompact ? "Expandir menú" : "Compactar menú"}>
-              <CompactButton
-                $isCompact={isCompact}
-                onClick={() => setIsCompact(!isCompact)}
-                aria-label={isCompact ? "Expandir menú" : "Compactar menú"}
+              <LogoutButton
+                variant="outline"
+                size="sm"
+                aria-label="Cerrar sesión"
+                onClick={handleLogout}
+                style={{ 
+                  justifyContent: isCompact && !isMobile ? "center" : "flex-start",
+                  marginTop: 4,
+                  background: isMobile 
+                    ? "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)" 
+                    : "linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.8) 100%)",
+                  backdropFilter: isMobile ? "none" : "blur(10px)"
+                }}
               >
-                <ChevronLeft />
-              </CompactButton>
-            </Tooltip>
-          )}
-        </SidebarHeader>
+                <LogOut size={18} style={{ marginRight: isCompact && !isMobile ? 0 : 8 }} />
+                {!(isCompact && !isMobile) && <span>Cerrar sesión</span>}
+              </LogoutButton>
+            </UserSection>
+          </Sidebar>
+        )}
+      </AnimatePresence>
 
-        <NavSection $isCompact={isCompact} style={{ marginTop: '1.5rem' }}>
-          <h3>Menú Principal</h3>
-          <Tooltip content="Productos" disabled={!isCompact}>
-            <NavItem
-              $isCompact={isCompact}
-              $active={isActive('/productos')}
-              onClick={() => handleNavClick('/productos')}
-              aria-current={isActive('/productos') ? 'page' : undefined}
-            >
-              <Package /> <span>Productos</span>
-            </NavItem>
-          </Tooltip>
-          <Tooltip content="Órdenes de Entrada" disabled={!isCompact}>
-            <NavItem
-              $isCompact={isCompact}
-              $active={isActive('/ordenes-entrada')}
-              onClick={() => handleNavClick('/ordenes-entrada')}
-              aria-current={isActive('/ordenes-entrada') ? 'page' : undefined}
-            >
-              <ClipboardList /> <span>Órdenes de Entrada</span>
-            </NavItem>
-          </Tooltip>
-          <Tooltip content="Usuarios" disabled={!isCompact}>
-            <NavItem
-              $isCompact={isCompact}
-              $active={isActive('/users')}
-              onClick={() => handleNavClick('/users')}
-              aria-current={isActive('/users') ? 'page' : undefined}
-            >
-              <Users /> <span>Usuarios</span>
-            </NavItem>
-          </Tooltip>
-        </NavSection>
-
-        <div style={{ flex: 1 }} />
-
-        <UserProfileSection $isCompact={isCompact}>
-          <div className="user-info">
-            <h4>{user?.name || 'Usuario'}</h4>
-            <p>{user?.roleName || 'Sin rol asignado'}</p>
-          </div>
-          <Tooltip content="Cerrar sesión" disabled={!isCompact}>
-            <UserButton
-              $isCompact={isCompact}
-              onClick={() => handleNavClick('/logout')}
-              aria-label="Cerrar sesión"
-            >
-              <LogOut /> <span>Cerrar sesión</span>
-            </UserButton>
-          </Tooltip>
-        </UserProfileSection>
-      </Sidebar>
-
-      <MainContent $sidebarOpen={isSidebarOpen} $isCompact={isCompact}>
+      {/* Contenido principal */}
+      <Main $sidebar={isSidebarOpen && !isMobile} $compact={isCompact && !isMobile}>
         {children}
-      </MainContent>
+      </Main>
     </LayoutContainer>
-  )
+  );
 } 

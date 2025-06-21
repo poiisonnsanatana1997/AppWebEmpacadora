@@ -2,8 +2,8 @@ import styled from 'styled-components';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { NumericFormat } from 'react-number-format';
-import { Search, ChevronLeft, ChevronRight, Plus, Trash2, Loader2 } from 'lucide-react';
-import { ESTADO_ORDEN, EstadoOrden, PesajeTarimaDto, estadoOrdenUtils } from '../../types/ordenesEntrada';
+import { Search, ChevronLeft, ChevronRight, Plus, Trash2, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { ESTADO_ORDEN, EstadoOrden, PesajeTarimaDto, estadoOrdenUtils } from '../../types/OrdenesEntrada/ordenesEntrada.types';
 import { OrdenesEntradaService } from '@/services/ordenesEntrada.service';
 import { toast } from 'sonner';
 import React, { useCallback } from 'react';
@@ -154,16 +154,19 @@ interface TarimasTableEditableProps {
   estado: EstadoOrden;
   codigoOrden: string;
   onPrimerPesaje?: () => void;
-  onEliminarUltimoPesaje?: () => void;
 }
 
 // Calcular el peso neto
-const calcNeto = (bruto: number, tara: number, tarima: number, patin: number) => {
-  return Math.max(0, bruto - tara - tarima - patin);
+const calcNeto = (bruto: number | null | undefined, tara: number | null | undefined, tarima: number | null | undefined, patin: number | null | undefined) => {
+  const pesoBruto = bruto || 0;
+  const pesoTara = tara || 0;
+  const pesoTarima = tarima || 0;
+  const pesoPatin = patin || 0;
+  return Math.max(0, pesoBruto - pesoTara - pesoTarima - pesoPatin);
 };
 
 
-export const TarimasTableEditable: React.FC<TarimasTableEditableProps> = ({ tarimas, setTarimas, estado, codigoOrden, onPrimerPesaje, onEliminarUltimoPesaje }) => {
+export const TarimasTableEditable: React.FC<TarimasTableEditableProps> = ({ tarimas, setTarimas, estado, codigoOrden, onPrimerPesaje }) => {
   const [newTarima, setNewTarima] = React.useState<Omit<PesajeTarimaDto, 'numero' | 'pesoNeto'>>({
     pesoBruto: 0,
     pesoTara: 0,
@@ -174,12 +177,10 @@ export const TarimasTableEditable: React.FC<TarimasTableEditableProps> = ({ tari
     observaciones: '',
   });
   const [errors, setErrors] = React.useState<Record<string, string>>({});
-  const [editingValues, setEditingValues] = React.useState<Record<string, string>>({});
   const [currentPage, setCurrentPage] = React.useState(1);
   const [searchTerm, setSearchTerm] = React.useState('');
   const itemsPerPage = 10;
   const [editStatus, setEditStatus] = React.useState<Record<string, 'saving' | 'success' | 'error' | 'idle'>>({});
-  const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
 
   const isDisabled = estadoOrdenUtils.estaCompletada(estado);
   const canAddTarimas = estadoOrdenUtils.puedeEditar(estado);
@@ -200,36 +201,16 @@ export const TarimasTableEditable: React.FC<TarimasTableEditableProps> = ({ tari
   const currentTarimas = filteredTarimas.slice(startIndex, endIndex);
 
   // Formatear número a dos decimales
-  const formatNumber = (value: number): string => {
-    return value.toFixed(2);
+  const formatNumber = (value: number | null | undefined): string => {
+    const numero = value || 0;
+    return numero.toFixed(2);
   };
 
-  // Validar número decimal
-  const validateDecimal = (value: string): string => {
-    // Permitir solo números y un punto decimal
-    return value;
-  };
-
-  // Convertir a número para cálculos
-  const toNumber = (value: string): number => {
-    if (value === '') return 0;
-    const num = parseFloat(value);
-    return isNaN(num) ? 0 : num;
-  };
-
-  // Calcular la tara basada en cantidad de cajas y peso por caja
-  const calcTara = (cantidadCajas: number, pesoPorCaja: number) => {
-    return cantidadCajas * pesoPorCaja;
-  };
-
-  // Validar valor numérico
-  const validateNumericValue = (value: number, field: string): string | null => {
-    if (isNaN(value)) return 'Valor inválido';
-    if (value < 0) return 'No puede ser negativo';
-    if (field === 'pesoBruto' && value === 0) return 'El peso bruto debe ser mayor a 0';
-    if (field === 'cantidadCajas' && value === 0) return 'La cantidad debe ser mayor a 0';
-    if (field === 'pesoPorCaja' && value === 0) return 'El peso por caja debe ser mayor a 0';
-    return null;
+  // Calcular tara automáticamente
+  const calcTara = (cantidadCajas: number | null | undefined, pesoPorCaja: number | null | undefined) => {
+    const cajas = cantidadCajas || 0;
+    const pesoCaja = pesoPorCaja || 0;
+    return cajas * pesoCaja;
   };
 
   // Función para manejar cambios inmediatos en el estado local
@@ -275,21 +256,68 @@ export const TarimasTableEditable: React.FC<TarimasTableEditableProps> = ({ tari
   const debouncedHandleEdit = useCallback(
     debounce(async (numero: string, field: keyof Omit<PesajeTarimaDto, 'numero' | 'pesoNeto'>, value: number | string) => {
       try {
+        // Obtener la tarima actualizada del estado local
+        const tarimaActualizada = tarimasRef.current.find(t => t.numero === numero);
+        if (!tarimaActualizada) {
+          throw new Error('Tarima no encontrada');
+        }
+
+        // Crear el payload completo con todos los datos de la tarima
+        const payload: Omit<PesajeTarimaDto, 'numero'> = {
+          pesoBruto: tarimaActualizada.pesoBruto || 0,
+          pesoTara: tarimaActualizada.pesoTara || 0,
+          pesoTarima: tarimaActualizada.pesoTarima || 0,
+          pesoPatin: tarimaActualizada.pesoPatin || 0,
+          cantidadCajas: tarimaActualizada.cantidadCajas || 0,
+          pesoPorCaja: tarimaActualizada.pesoPorCaja || 0,
+          observaciones: tarimaActualizada.observaciones || '',
+          pesoNeto: tarimaActualizada.pesoNeto || 0
+        };
+
         const updated = await OrdenesEntradaService.actualizarPesajesTarima(
           codigoOrden,
           numero,
-          { [field]: value }
+          payload
         );
 
+        // Si no hay error, la operación fue exitosa (updated puede ser undefined o el objeto actualizado)
+        setEditStatus(prev => ({ ...prev, [numero]: 'success' }));
+        
+        // Mostrar mensaje de éxito
+        toast.success(`Tarima ${numero} actualizada correctamente`);
+        
+        // Si el servidor devolvió datos actualizados, usarlos para actualizar el estado local
         if (updated) {
-          setEditStatus(prev => ({ ...prev, [numero]: 'success' }));
-        } else {
-          throw new Error('No se pudo actualizar la tarima');
+          const realIndex = tarimasRef.current.findIndex(t => t.numero === numero);
+          if (realIndex !== -1) {
+            const nuevasTarimas = [...tarimasRef.current];
+            nuevasTarimas[realIndex] = { ...tarimaActualizada, ...updated };
+            setTarimas(nuevasTarimas);
+          }
         }
-      } catch (error) {
+        
+        // Limpiar el estado de éxito después de 3 segundos
+        setTimeout(() => {
+          setEditStatus(prev => ({ ...prev, [numero]: 'idle' }));
+        }, 3000);
+      } catch (error: any) {
         console.error('Error al actualizar tarima:', error);
         setEditStatus(prev => ({ ...prev, [numero]: 'error' }));
-        toast.error('Error al actualizar la tarima');
+        
+        // Mostrar mensaje de error más específico
+        const errorMessage = error?.message || 'Error al actualizar la tarima';
+        toast.error(errorMessage);
+        
+        // Revertir el cambio local si hay error
+        const tarimaOriginal = tarimasRef.current.find(t => t.numero === numero);
+        if (tarimaOriginal) {
+          const realIndex = tarimasRef.current.findIndex(t => t.numero === numero);
+          if (realIndex !== -1) {
+            const nuevasTarimas = [...tarimasRef.current];
+            nuevasTarimas[realIndex] = tarimaOriginal;
+            setTarimas(nuevasTarimas);
+          }
+        }
       }
     }, 500),
     [codigoOrden]
@@ -345,8 +373,8 @@ export const TarimasTableEditable: React.FC<TarimasTableEditableProps> = ({ tari
         if (estado === ESTADO_ORDEN.PENDIENTE && tarimaAgregada.pesoBruto > 0) {
           onPrimerPesaje?.();
         }
-      }else{
-        toast.error('Error al agregar la tarima');
+      } else {
+        throw new Error('No se pudo agregar la tarima');
       }
 
       setNewTarima({ 
@@ -363,9 +391,20 @@ export const TarimasTableEditable: React.FC<TarimasTableEditableProps> = ({ tari
         const { temp, ...rest } = prev;
         return rest;
       });
-    } catch (error) {
+    } catch (error: any) {
       setEditStatus(prev => ({ ...prev, temp: 'error' }));
-      toast.error('Error al agregar la tarima');
+      
+      // Mostrar mensaje de error más específico
+      const errorMessage = error?.message || 'Error al agregar la tarima';
+      toast.error(errorMessage);
+      
+      // Limpiar el estado de error después de un tiempo
+      setTimeout(() => {
+        setEditStatus(prev => {
+          const { temp, ...rest } = prev;
+          return rest;
+        });
+      }, 3000);
     }
   };
 
@@ -374,6 +413,10 @@ export const TarimasTableEditable: React.FC<TarimasTableEditableProps> = ({ tari
     if (!canAddTarimas) return;
     const tarimaActual = currentTarimas[idx];
     if (!tarimaActual) return;
+    
+    // Guardar una copia de la tarima para poder revertir si hay error
+    const tarimaOriginal = { ...tarimaActual };
+    
     setEditStatus(prev => ({ ...prev, [tarimaActual.numero]: 'saving' }));
     try {
       await OrdenesEntradaService.eliminarPesajeTarima(codigoOrden, tarimaActual.numero);
@@ -383,21 +426,29 @@ export const TarimasTableEditable: React.FC<TarimasTableEditableProps> = ({ tari
       setTimeout(() => {
         setEditStatus(prev => ({ ...prev, [tarimaActual.numero]: 'idle' }));
       }, 2000);
-    } catch (error) {
+    } catch (error: any) {
       setEditStatus(prev => ({ ...prev, [tarimaActual.numero]: 'error' }));
-      toast.error(`Error al eliminar la tarima ${tarimaActual.numero}`);
+      
+      // Mostrar mensaje de error más específico
+      const errorMessage = error?.message || `Error al eliminar la tarima ${tarimaActual.numero}`;
+      toast.error(errorMessage);
+      
+      // Limpiar el estado de error después de un tiempo
+      setTimeout(() => {
+        setEditStatus(prev => ({ ...prev, [tarimaActual.numero]: 'idle' }));
+      }, 3000);
     }
   };
 
   // Suma total de pesos netos
   const totales = tarimas.reduce((acc, t) => ({
-    pesoBruto: acc.pesoBruto + t.pesoBruto,
-    pesoTara: acc.pesoTara + t.pesoTara,
-    pesoTarima: acc.pesoTarima + t.pesoTarima,
-    pesoPatin: acc.pesoPatin + t.pesoPatin,
-    pesoNeto: acc.pesoNeto + t.pesoNeto,
-    cantidadCajas: acc.cantidadCajas + t.cantidadCajas,
-    pesoPorCaja: acc.pesoPorCaja + t.pesoPorCaja
+    pesoBruto: acc.pesoBruto + (t.pesoBruto || 0),
+    pesoTara: acc.pesoTara + (t.pesoTara || 0),
+    pesoTarima: acc.pesoTarima + (t.pesoTarima || 0),
+    pesoPatin: acc.pesoPatin + (t.pesoPatin || 0),
+    pesoNeto: acc.pesoNeto + (t.pesoNeto || 0),
+    cantidadCajas: acc.cantidadCajas + (t.cantidadCajas || 0),
+    pesoPorCaja: acc.pesoPorCaja + (t.pesoPorCaja || 0)
   }), {
     pesoBruto: 0,
     pesoTara: 0,
@@ -515,15 +566,27 @@ export const TarimasTableEditable: React.FC<TarimasTableEditableProps> = ({ tari
             {canAddTarimas && (
               <tr>
                 <Td $isAction>
-                  <ActionButton
-                    type="button"
-                    className="add"
-                    size="sm"
-                    onClick={handleAdd}
-                    title="Agregar tarima"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </ActionButton>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <ActionButton
+                      type="button"
+                      className="add"
+                      size="sm"
+                      onClick={handleAdd}
+                      title="Agregar tarima"
+                      disabled={editStatus.temp === 'saving'}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </ActionButton>
+                    {editStatus.temp === 'saving' && (
+                      <Loader2 className="h-4 w-4 animate-spin text-blue-500" style={{ marginLeft: '0.5rem' }} />
+                    )}
+                    {editStatus.temp === 'success' && (
+                      <CheckCircle className="h-4 w-4 text-green-500" style={{ marginLeft: '0.5rem' }} />
+                    )}
+                    {editStatus.temp === 'error' && (
+                      <XCircle className="h-4 w-4 text-red-500" style={{ marginLeft: '0.5rem' }} />
+                    )}
+                  </div>
                 </Td>
                 <Td>{nextNumero}</Td>
                 <Td>
@@ -580,7 +643,7 @@ export const TarimasTableEditable: React.FC<TarimasTableEditableProps> = ({ tari
                 <Td>
                   <Input
                     type="text"
-                    value={formatNumber(calcTara(newTarima.cantidadCajas, newTarima.pesoPorCaja))}
+                    value={formatNumber(calcTara(newTarima.cantidadCajas || 0, newTarima.pesoPorCaja || 0))}
                     readOnly
                     className="w-full bg-gray-100"
                   />
@@ -621,10 +684,10 @@ export const TarimasTableEditable: React.FC<TarimasTableEditableProps> = ({ tari
                   <Input
                     type="text"
                     value={formatNumber(calcNeto(
-                      newTarima.pesoBruto,
-                      calcTara(newTarima.cantidadCajas, newTarima.pesoPorCaja),
-                      newTarima.pesoTarima,
-                      newTarima.pesoPatin
+                      newTarima.pesoBruto || 0,
+                      calcTara(newTarima.cantidadCajas || 0, newTarima.pesoPorCaja || 0),
+                      newTarima.pesoTarima || 0,
+                      newTarima.pesoPatin || 0
                     ))}
                     readOnly
                     className="w-full bg-gray-100"
@@ -634,7 +697,7 @@ export const TarimasTableEditable: React.FC<TarimasTableEditableProps> = ({ tari
                   <InputWrapper>
                     <Input
                       type="text"
-                      value={newTarima.observaciones}
+                      value={newTarima.observaciones || ''}
                       onChange={e => setNewTarima({ ...newTarima, observaciones: e.target.value })}
                       className="w-full"
                     />
@@ -644,7 +707,9 @@ export const TarimasTableEditable: React.FC<TarimasTableEditableProps> = ({ tari
             )}
 
             {/* Filas de tarimas existentes */}
-            {currentTarimas.map((tarima, idx) => (
+            {currentTarimas
+              .filter(tarima => tarima && tarima.numero)
+              .map((tarima, idx) => (
               <tr key={tarima.numero}>
                 <Td $even={idx % 2 === 0} $isAction>
                   <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -659,7 +724,13 @@ export const TarimasTableEditable: React.FC<TarimasTableEditableProps> = ({ tari
                       <Trash2 className="h-4 w-4" />
                     </ActionButton>
                     {editStatus[tarima.numero] === 'saving' && (
-                      <Loader2 className="h-4 w-4 animate-spin" style={{ marginLeft: '1rem' }} />
+                      <Loader2 className="h-4 w-4 animate-spin text-blue-500" style={{ marginLeft: '0.5rem' }} />
+                    )}
+                    {editStatus[tarima.numero] === 'success' && (
+                      <CheckCircle className="h-4 w-4 text-green-500" style={{ marginLeft: '0.5rem' }} />
+                    )}
+                    {editStatus[tarima.numero] === 'error' && (
+                      <XCircle className="h-4 w-4 text-red-500" style={{ marginLeft: '0.5rem' }} />
                     )}
                   </div>
                 </Td>
@@ -667,58 +738,46 @@ export const TarimasTableEditable: React.FC<TarimasTableEditableProps> = ({ tari
                 <Td $even={idx % 2 === 0}>
                   <InputWrapper>
                     <NumericFormat
-                      value={tarima.cantidadCajas}
+                      value={tarima.cantidadCajas || 0}
                       onValueChange={(values) => handleLocalChange(idx, 'cantidadCajas', values.floatValue || 0)}
                       decimalScale={0}
                       allowNegative={false}
                       customInput={Input}
                       disabled={isDisabled}
                       placeholder="0"
-                      className={validationErrors[`${tarima.numero}-cantidadCajas`] ? 'border-red-500' : ''}
                     />
-                    <ValidationMessage>
-                      {validationErrors[`${tarima.numero}-cantidadCajas`]}
-                    </ValidationMessage>
                   </InputWrapper>
                 </Td>
                 <Td $even={idx % 2 === 0}>
                   <InputWrapper>
                     <NumericFormat
-                      value={tarima.pesoPorCaja}
+                      value={tarima.pesoPorCaja || 0}
                       onValueChange={(values) => handleLocalChange(idx, 'pesoPorCaja', values.floatValue || 0)}
                       decimalScale={2}
                       allowNegative={false}
                       customInput={Input}
                       disabled={isDisabled}
                       placeholder="0.00"
-                      className={validationErrors[`${tarima.numero}-pesoPorCaja`] ? 'border-red-500' : ''}
                     />
-                    <ValidationMessage>
-                      {validationErrors[`${tarima.numero}-pesoPorCaja`]}
-                    </ValidationMessage>
                   </InputWrapper>
                 </Td>
                 <Td $even={idx % 2 === 0}>
                   <InputWrapper>
                     <NumericFormat
-                      value={tarima.pesoBruto}
+                      value={tarima.pesoBruto || 0}
                       onValueChange={(values) => handleLocalChange(idx, 'pesoBruto', values.floatValue || 0)}
                       decimalScale={2}
                       allowNegative={false}
                       customInput={Input}
                       disabled={isDisabled}
                       placeholder="0.00"
-                      className={validationErrors[`${tarima.numero}-pesoBruto`] ? 'border-red-500' : ''}
                     />
-                    <ValidationMessage>
-                      {validationErrors[`${tarima.numero}-pesoBruto`]}
-                    </ValidationMessage>
                   </InputWrapper>
                 </Td>
                 <Td $even={idx % 2 === 0}>
                   <Input
                     type="text"
-                    value={formatNumber(tarima.pesoTara)}
+                    value={formatNumber(tarima.pesoTara || 0)}
                     readOnly
                     className="w-full bg-gray-100"
                   />
@@ -726,41 +785,33 @@ export const TarimasTableEditable: React.FC<TarimasTableEditableProps> = ({ tari
                 <Td $even={idx % 2 === 0}>
                   <InputWrapper>
                     <NumericFormat
-                      value={tarima.pesoTarima}
+                      value={tarima.pesoTarima || 0}
                       onValueChange={(values) => handleLocalChange(idx, 'pesoTarima', values.floatValue || 0)}
                       decimalScale={2}
                       allowNegative={false}
                       customInput={Input}
                       disabled={isDisabled}
                       placeholder="0.00"
-                      className={validationErrors[`${tarima.numero}-pesoTarima`] ? 'border-red-500' : ''}
                     />
-                    <ValidationMessage>
-                      {validationErrors[`${tarima.numero}-pesoTarima`]}
-                    </ValidationMessage>
                   </InputWrapper>
                 </Td>
                 <Td $even={idx % 2 === 0}>
                   <InputWrapper>
                     <NumericFormat
-                      value={tarima.pesoPatin}
+                      value={tarima.pesoPatin || 0}
                       onValueChange={(values) => handleLocalChange(idx, 'pesoPatin', values.floatValue || 0)}
                       decimalScale={2}
                       allowNegative={false}
                       customInput={Input}
                       disabled={isDisabled}
                       placeholder="0.00"
-                      className={validationErrors[`${tarima.numero}-pesoPatin`] ? 'border-red-500' : ''}
                     />
-                    <ValidationMessage>
-                      {validationErrors[`${tarima.numero}-pesoPatin`]}
-                    </ValidationMessage>
                   </InputWrapper>
                 </Td>
                 <Td $even={idx % 2 === 0}>
                   <Input
                     type="text"
-                    value={formatNumber(tarima.pesoNeto)}
+                    value={formatNumber(tarima.pesoNeto || 0)}
                     readOnly
                     className="w-full bg-gray-100"
                   />
@@ -769,7 +820,7 @@ export const TarimasTableEditable: React.FC<TarimasTableEditableProps> = ({ tari
                   <InputWrapper>
                     <Input
                       type="text"
-                      value={tarima.observaciones}
+                      value={tarima.observaciones || ''}
                       onChange={e => handleLocalChange(idx, 'observaciones', e.target.value)}
                       className="w-full"
                     />

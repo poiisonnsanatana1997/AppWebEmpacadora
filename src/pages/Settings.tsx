@@ -4,11 +4,20 @@ import { Settings as SettingsIcon, Save, Bell, Lock, Globe } from 'lucide-react'
 
 const SettingsContainer = styled.div`
   padding: 2rem;
-  max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
   background: #F4F6F8;
+  
+  @media (max-width: 1024px) {
+    padding: 1.5rem;
+  }
+  
   @media (max-width: 768px) {
     padding: 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.75rem;
   }
 `;
 
@@ -17,6 +26,18 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  width: 100%;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: 1rem;
+  }
 `;
 
 const Title = styled.h1`
@@ -25,6 +46,14 @@ const Title = styled.h1`
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.25rem;
+  }
 `;
 
 const Button = styled.button`
@@ -43,15 +72,31 @@ const Button = styled.button`
   &:hover {
     background: #388E3C;
   }
+  
+  @media (max-width: 768px) {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
 `;
 
 const SettingsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
+  width: 100%;
+  
   @media (max-width: 900px) {
     grid-template-columns: 1fr;
     gap: 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 0.75rem;
   }
 `;
 
@@ -60,6 +105,15 @@ const SettingsCard = styled.div`
   border-radius: 0.75rem;
   padding: 1.5rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.75rem;
+  }
 `;
 
 const CardHeader = styled.div`
@@ -67,6 +121,10 @@ const CardHeader = styled.div`
   align-items: center;
   gap: 1rem;
   margin-bottom: 1.5rem;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 1rem;
+  }
 `;
 
 const CardIcon = styled.div`
@@ -78,12 +136,30 @@ const CardIcon = styled.div`
   align-items: center;
   justify-content: center;
   color: #4CAF50;
+  
+  @media (max-width: 768px) {
+    width: 36px;
+    height: 36px;
+  }
+  
+  @media (max-width: 480px) {
+    width: 32px;
+    height: 32px;
+  }
 `;
 
 const CardTitle = styled.h3`
   font-size: 1.125rem;
   color: #4CAF50;
   margin: 0;
+  
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.9rem;
+  }
 `;
 
 const SettingItem = styled.div`
@@ -95,6 +171,14 @@ const SettingItem = styled.div`
 
   &:last-child {
     border-bottom: none;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.75rem 0;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.5rem 0;
   }
 `;
 

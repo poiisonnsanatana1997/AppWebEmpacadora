@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { OrdenesEntradaService } from '../../services/ordenesEntrada.service';
-import { OrdenEntradaDto, CrearOrdenEntradaDto, ActualizarOrdenEntradaDto } from '../../types/ordenesEntrada';
+import { OrdenEntradaDto, CrearOrdenEntradaDto, ActualizarOrdenEntradaDto } from '../../types/OrdenesEntrada/ordenesEntrada.types';
 
 export const useOrdenesEntrada = () => {
   const [ordenes, setOrdenes] = useState<OrdenEntradaDto[]>([]);

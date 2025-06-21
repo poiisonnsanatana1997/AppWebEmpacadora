@@ -9,8 +9,9 @@ import { Input } from "../components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormMessage as BaseFormMessage } from "../components/ui/form"
 import { Lock, Loader2, Eye, EyeOff, AlertCircle, User } from "lucide-react"
 import { AuthError } from "../api/auth"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, easeOut } from "framer-motion"
 import { useAuth } from "../contexts/AuthContext"
+import logo from '/images/LogoEmpacadora.jpg'
 
 // Page container
 const LoginContainer = styled.div`
@@ -86,6 +87,40 @@ const InputIcon = styled.div`
   svg {
     width: clamp(14px, 4vw, 16px);
     height: clamp(14px, 4vw, 16px);
+  }
+`
+
+const PasswordToggleButton = styled.button`
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  cursor: pointer;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: #2563eb;
+    background-color: rgba(37, 99, 235, 0.1);
+  }
+
+  &:active {
+    background-color: rgba(37, 99, 235, 0.2);
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
   }
 `
 
@@ -256,11 +291,16 @@ export default function Login() {
       setErrorMessage(null)
       form.clearErrors()
 
+      console.log('Iniciando login...')
       const response = await login(data.username, data.password)
+      console.log('Login exitoso:', response)
+      
       if (response && response.token) {
+        console.log('Token recibido, redirigiendo a welcome...')
         navigate('/dashboard', { replace: true })
       }
     } catch (error: any) {
+      console.error('Error en login:', error)
       const authError = error as AuthError
       
       if (authError.code === 'INVALID_CREDENTIALS') {
@@ -288,7 +328,7 @@ export default function Login() {
       transition: {
         delay: i * 0.15,
         duration: 0.5,
-        ease: "easeOut"
+        ease: easeOut
       }
     })
   }
@@ -300,7 +340,7 @@ export default function Login() {
       y: 0,
       transition: {
         duration: 0.6,
-        ease: "easeOut"
+        ease: easeOut
       }
     }
   }
@@ -312,7 +352,7 @@ export default function Login() {
         animate="visible"
         variants={logoVariants}
       >
-        <img src="/images/LogoEmpacadora.jpg" alt="Empacadora" />
+        <img src={logo} alt="Empacadora" />
       </MotionLogo>
       
       <motion.div
@@ -327,7 +367,7 @@ export default function Login() {
             transition={{ delay: 0.2, duration: 0.4 }}
           >
             <Title>Iniciar sesión</Title>
-            <Subtitle>Prueba nuestra plataforma y disfruta de los datos.</Subtitle>
+            <Subtitle>Sistema integral de control y gestión de empaque.</Subtitle>
           </motion.div>
 
           <AnimatePresence>
@@ -402,26 +442,13 @@ export default function Login() {
                             className={form.formState.errors[field.name] ? 'error' : ''}
                             {...field} 
                           />
-                          <motion.button
+                          <PasswordToggleButton
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.95 }}
-                            style={{
-                              position: 'absolute',
-                              right: '1rem',
-                              top: '50%',
-                              transform: 'translateY(-50%)',
-                              background: 'none',
-                              border: 'none',
-                              padding: '0.25rem',
-                              cursor: 'pointer',
-                              color: '#666'
-                            }}
                             aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                           >
                             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                          </motion.button>
+                          </PasswordToggleButton>
                         </MotionInput>
                       </FormControl>
                       <StyledFormMessage>{form.formState.errors[field.name]?.message}</StyledFormMessage>

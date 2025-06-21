@@ -1,9 +1,11 @@
-import { ProveedorDto, ProductoDto, OrdenEntradaDto, PesajeTarimaDto, DetalleOrdenEntradaDto, CrearOrdenEntradaDto, ActualizarOrdenEntradaDto } from '../types/ordenesEntrada';
+import { ProveedorDto, ProductoDto, OrdenEntradaDto, PesajeTarimaDto, DetalleOrdenEntradaDto, CrearOrdenEntradaDto, ActualizarOrdenEntradaDto } from '../types/OrdenesEntrada/ordenesEntrada.types';
 // @ts-ignore
 import pdfMake from "pdfmake/build/pdfmake";
 // @ts-ignore
 import * as pdfFonts from "pdfmake/build/vfs_fonts";
 import api from '../api/axios';
+import { imageToBase64 } from '@/utils/imageToBase64';
+import logo from '/images/LogoEmpacadora.jpg';
 if ((pdfFonts as any).pdfMake && (pdfFonts as any).pdfMake.vfs) {
   pdfMake.vfs = (pdfFonts as any).pdfMake.vfs;
 } else if ((pdfFonts as any).default && (pdfFonts as any).default.pdfMake && (pdfFonts as any).default.pdfMake.vfs) {
@@ -164,8 +166,8 @@ export const OrdenesEntradaService = {
     const detalleOrden = await this.obtenerDetalleOrden(codigo);
     if (!detalleOrden) throw new Error('Orden no encontrada');
 
-    // Cargar el logo como base64
-    const logoBase64 = await this.cargarLogoBase64();
+    // Convertir la imagen del logo a Base64
+    const logoBase64 = await imageToBase64(logo);
 
     const orden = detalleOrden.ordenEntrada;
     const tarimas = detalleOrden.tarimas;
@@ -195,7 +197,7 @@ export const OrdenesEntradaService = {
         {
           columns: [
             {
-              image: 'logo',
+              image: logoBase64,
               width: 60,
               margin: [0, 0, 10, 0],
               alignment: 'left',
@@ -221,12 +223,12 @@ export const OrdenesEntradaService = {
                 ]
               },
               layout: {
-                hLineWidth: function(i: number, node: any) { return 1; },
-                vLineWidth: function(i: number, node: any) { return 1; },
-                hLineColor: function(i: number, node: any) { return '#333'; },
-                vLineColor: function(i: number, node: any) { return '#333'; },
-                fillColor: function(i: number, node: any) { 
-                  return (i === 0 || i === 2) ? '#333' : null;
+                hLineWidth: function() { return 1; },
+                vLineWidth: function() { return 1; },
+                hLineColor: function() { return '#333'; },
+                vLineColor: function() { return '#333'; },
+                fillColor: function() { 
+                  return null;
                 }
               },
               margin: [0, 0, 0, 0]
@@ -258,13 +260,13 @@ export const OrdenesEntradaService = {
             ]
           },
           layout: {
-            fillColor: function(rowIndex: number, node: any, columnIndex: number) {
+            fillColor: function() {
               return '#f7f7f7';
             },
             hLineWidth: function(i: number, node: any) { return i === 0 || i === node.table.body.length ? 1 : 0; },
             vLineWidth: function(i: number, node: any) { return i === 0 || i === node.table.widths.length ? 1 : 0; },
-            hLineColor: function() { return '#e0e0e0'; },
-            vLineColor: function() { return '#e0e0e0'; },
+            hLineColor: function() { return '#333'; },
+            vLineColor: function() { return '#333'; },
             paddingLeft: function() { return 8; },
             paddingRight: function() { return 8; },
             paddingTop: function() { return 4; },
@@ -317,14 +319,12 @@ export const OrdenesEntradaService = {
                 ]
               },
               layout: {
-                fillColor: function (rowIndex: number, node: any, columnIndex: number) {
-                  if (rowIndex === 0) return '#333'; // Encabezado negro
-                  if (rowIndex === node.table.body.length - 1) return '#e0e0e0'; // Totales gris claro
-                  return rowIndex % 2 === 0 ? '#fff' : '#f5f5f5'; // Filas alternas
+                fillColor: function() {
+                  return null;
                 },
                 hLineWidth: function (i: number, node: any) { return i === 0 || i === node.table.body.length ? 1.2 : 0.5; },
                 vLineWidth: function (): number { return 0; },
-                hLineColor: function (): string { return '#333'; },
+                hLineColor: function() { return '#333'; },
                 paddingLeft: function(): number { return 8; },
                 paddingRight: function(): number { return 8; },
                 paddingTop: function(): number { return 6; },

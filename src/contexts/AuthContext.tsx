@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null;
   login: (username: string, password: string) => Promise<LoginResponse>;
   logout: () => void;
+  checkTokenExpiration: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,26 +17,67 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
 
+  const checkTokenExpiration = () => {
+    const token = localStorage.getItem('token');
+    const expiration = localStorage.getItem('tokenExpiration');
+    
+    if (!token || !expiration) {
+      return false;
+    }
+
+    const expirationTime = new Date(expiration).getTime();
+    const currentTime = new Date().getTime();
+    
+    if (currentTime >= expirationTime) {
+      logout();
+      return false;
+    }
+    
+    return true;
+  };
+
   useEffect(() => {
     // Verificar si hay un token al cargar la aplicación
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
+    const expiration = localStorage.getItem('tokenExpiration');
     
-    if (token && userData) {
-      const parsedUser = JSON.parse(userData);
-      console.log('Usuario cargado del localStorage:', parsedUser);
-      setIsAuthenticated(true);
-      setUser(parsedUser);
+    if (token && userData && expiration) {
+      const expirationTime = new Date(expiration).getTime();
+      const currentTime = new Date().getTime();
+      
+      if (currentTime < expirationTime) {
+        const parsedUser = JSON.parse(userData);
+        setIsAuthenticated(true);
+        setUser(parsedUser);
+      } else {
+        // Token expirado, limpiar datos
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('tokenExpiration');
+      }
     }
     setLoading(false);
   }, []);
 
+  // Verificar expiración del token cada minuto
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isAuthenticated && !checkTokenExpiration()) {
+        // Si el token expiró, redirigir al login
+        window.location.href = '/login';
+      }
+    }, 60000); // 60000 ms = 1 minuto
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
+
   const login = async (username: string, password: string): Promise<LoginResponse> => {
     try {
       const response = await authService.login({ username, password });
-      console.log('Respuesta del login:', response);
       localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
+      localStorage.setItem('tokenExpiration', response.expiration);
       setIsAuthenticated(true);
       setUser(response.user);
       return response;
@@ -46,12 +88,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = () => {
     authService.logout();
+    localStorage.removeItem('tokenExpiration');
     setIsAuthenticated(false);
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, loading, user, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, loading, user, login, logout, checkTokenExpiration }}>
       {children}
     </AuthContext.Provider>
   );
