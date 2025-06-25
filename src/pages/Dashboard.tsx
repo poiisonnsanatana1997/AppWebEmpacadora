@@ -12,6 +12,7 @@ import {
   HelpCircle,
   ChevronDown
 } from "lucide-react"
+import { redirectToLogin } from '../lib/utils'
 
 const DashboardContainer = styled.div`
   display: flex;
@@ -284,7 +285,16 @@ const TableSection = styled(ChartSection)`
 `
 
 export default function Dashboard() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
+
+  const handleTestExpiration = () => {
+    console.log('Probando redirección por expiración...')
+    // Simular expiración limpiando el token
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    localStorage.removeItem('tokenExpiration')
+    redirectToLogin(true)
+  }
 
   return (
     <DashboardContainer>
@@ -382,6 +392,20 @@ export default function Dashboard() {
         </h2>
         {/* Aquí iría la tabla de alertas */}
       </TableSection>
+
+      {/* Botón de prueba para expiración */}
+      <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <h3 className="text-sm font-medium text-yellow-800 mb-2">Prueba de Expiración</h3>
+        <p className="text-sm text-yellow-700 mb-3">
+          Usa este botón para probar la redirección por expiración de sesión
+        </p>
+        <button
+          onClick={handleTestExpiration}
+          className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors"
+        >
+          Probar Expiración de Sesión
+        </button>
+      </div>
     </DashboardContainer>
   )
 } 

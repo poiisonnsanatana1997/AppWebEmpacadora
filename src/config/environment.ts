@@ -12,6 +12,7 @@ interface EnvironmentConfig {
     name: string;
     version: string;
     environment: string;
+    basename: string;
   };
   auth: {
     timeout: number;
@@ -49,6 +50,7 @@ const developmentConfig: EnvironmentConfig = {
     name: getEnvVar('VITE_APP_NAME', 'AppWebEmpacadora (Dev)'),
     version: getEnvVar('VITE_APP_VERSION', '1.0.0'),
     environment: 'development',
+    basename: getEnvVar('VITE_APP_BASENAME', '/empacadora'),
   },
   auth: {
     timeout: parseInt(getEnvVar('VITE_AUTH_TIMEOUT', '3600000')),
@@ -71,6 +73,7 @@ const productionConfig: EnvironmentConfig = {
     name: getEnvVar('VITE_APP_NAME', 'AppWebEmpacadora'),
     version: getEnvVar('VITE_APP_VERSION', '1.0.0'),
     environment: 'production',
+    basename: getEnvVar('VITE_APP_BASENAME', '/empacadora'),
   },
   auth: {
     timeout: parseInt(getEnvVar('VITE_AUTH_TIMEOUT', '3600000')),
@@ -93,6 +96,7 @@ const stagingConfig: EnvironmentConfig = {
     name: getEnvVar('VITE_APP_NAME', 'AppWebEmpacadora (Staging)'),
     version: getEnvVar('VITE_APP_VERSION', '1.0.0'),
     environment: 'staging',
+    basename: getEnvVar('VITE_APP_BASENAME', '/empacadora'),
   },
   auth: {
     timeout: parseInt(getEnvVar('VITE_AUTH_TIMEOUT', '3600000')),

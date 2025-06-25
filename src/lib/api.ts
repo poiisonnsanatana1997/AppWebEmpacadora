@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { config } from '@/config/environment';
+import { redirectToLogin } from './utils';
 
 // Crear una instancia de axios con la configuración base usando variables de entorno
 export const api = axios.create({
@@ -26,7 +27,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Redirigir al login si el token expiró
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      redirectToLogin(true);
     }
     return Promise.reject(error);
   }

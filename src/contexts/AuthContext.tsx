@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import authService, { User, LoginResponse } from '../api/auth';
+import { redirectToLogin } from '../lib/utils';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -22,13 +23,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const expiration = localStorage.getItem('tokenExpiration');
     
     if (!token || !expiration) {
+      console.log('Token o expiración no encontrados');
       return false;
     }
 
     const expirationTime = new Date(expiration).getTime();
     const currentTime = new Date().getTime();
     
+    console.log('Verificando expiración del token:', {
+      currentTime: new Date(currentTime).toISOString(),
+      expirationTime: new Date(expirationTime).toISOString(),
+      isExpired: currentTime >= expirationTime
+    });
+    
     if (currentTime >= expirationTime) {
+      console.log('Token expirado, ejecutando logout');
       logout();
       return false;
     }
@@ -46,16 +55,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const expirationTime = new Date(expiration).getTime();
       const currentTime = new Date().getTime();
       
+      console.log('Verificando token al cargar:', {
+        hasToken: !!token,
+        hasUser: !!userData,
+        hasExpiration: !!expiration,
+        currentTime: new Date(currentTime).toISOString(),
+        expirationTime: new Date(expirationTime).toISOString(),
+        isExpired: currentTime >= expirationTime
+      });
+      
       if (currentTime < expirationTime) {
         const parsedUser = JSON.parse(userData);
         setIsAuthenticated(true);
         setUser(parsedUser);
       } else {
-        // Token expirado, limpiar datos
+        // Token expirado, limpiar datos y redirigir
+        console.log('Token expirado al cargar, redirigiendo al login');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('tokenExpiration');
+        redirectToLogin(true);
       }
+    } else {
+      console.log('No se encontraron datos de sesión al cargar');
     }
     setLoading(false);
   }, []);
@@ -65,7 +87,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const interval = setInterval(() => {
       if (isAuthenticated && !checkTokenExpiration()) {
         // Si el token expiró, redirigir al login
-        window.location.href = '/login';
+        console.log('Redirigiendo al login por expiración de sesión');
+        redirectToLogin(true);
       }
     }, 60000); // 60000 ms = 1 minuto
 
