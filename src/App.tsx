@@ -11,6 +11,7 @@ import DetalleOrdenEntrada from './pages/DetalleOrdenEntrada'
 import Usuarios from './pages/Usuarios'
 import { useAuth } from './contexts/AuthContext'
 import Layout from './components/Layout'
+import Proveedores from './pages/Proveedores'
 
 // Componente para proteger rutas
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
@@ -112,6 +113,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <Usuarios />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/proveedores" 
+              element={
+                <PrivateRoute>
+                  <Proveedores />
                 </PrivateRoute>
               } 
             />

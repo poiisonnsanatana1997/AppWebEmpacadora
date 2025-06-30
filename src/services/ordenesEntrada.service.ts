@@ -198,9 +198,9 @@ export const OrdenesEntradaService = {
           columns: [
             {
               image: logoBase64,
-              width: 60,
-              margin: [0, 0, 10, 0],
+              width: 70,
               alignment: 'left',
+              margin: [0, 0, 10, 0]
             },
             {
               width: '*',
@@ -209,27 +209,28 @@ export const OrdenesEntradaService = {
                 { text: '"Fulgencio García Téllez"', style: 'responsable', alignment: 'center' },
                 { text: 'Camino a San Francisco Núm. 101, Epazoyucan; Hidalgo. C.P. 43580', style: 'direccion', alignment: 'center' },
                 { text: 'RFC: GATF580116P8A', style: 'direccion', alignment: 'center' },
-                { text: 'RECEPCIÓN DE PRODUCTO', style: 'titulo', margin: [0, 6, 0, 0], alignment: 'center' }
+                { text: 'RECEPCIÓN DE PRODUCTO', style: 'tituloRecepcion', alignment: 'center', margin: [0, 8, 0, 0] }
               ]
             },
             {
               width: 'auto',
               table: {
                 body: [
-                  [{ text: 'FOLIO', style: 'folioLabel' }],
-                  [{ text: `No. ${orden.codigo}`, style: 'folioValue' }],
-                  [{ text: 'FECHA', style: 'folioLabel' }],
-                  [{ text: formatearFecha(orden.fechaRecepcion).split(',')[0], style: 'folioValue' }]
+                  [
+                    { text: `No. ${orden.codigo}`, style: 'folioBox' }
+                  ],
+                  [
+                    { text: formatearFecha(orden.fechaRecepcion).split(',')[0], style: 'fechaBox' }
+                  ]
                 ]
               },
               layout: {
-                hLineWidth: function() { return 1; },
-                vLineWidth: function() { return 1; },
-                hLineColor: function() { return '#333'; },
-                vLineColor: function() { return '#333'; },
-                fillColor: function() { 
-                  return null;
-                }
+                hLineWidth: () => 0,
+                vLineWidth: () => 0,
+                paddingLeft: () => 8,
+                paddingRight: () => 8,
+                paddingTop: () => 4,
+                paddingBottom: () => 4
               },
               margin: [0, 0, 0, 0]
             }
@@ -240,7 +241,7 @@ export const OrdenesEntradaService = {
         // Línea divisoria sutil
         {
           canvas: [
-            { type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#e0e0e0' }
+            { type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#FBBF9D' }
           ],
           margin: [0, 0, 0, 10]
         },
@@ -283,52 +284,54 @@ export const OrdenesEntradaService = {
           columns: [
             { width: '*', text: '' },
             {
-              width: 'auto',
+              width: '100%',
               table: {
                 headerRows: 1,
-                widths: [40, 50, 50, 50, 50, 60, 50],
-                alignment: 'center',
+                widths: ['*', '*', '*', '*', '*', '*', '*'],
                 body: [
                   [
-                    { text: 'Número', style: 'tableHeaderSmall' },
-                    { text: 'Peso Bruto', style: 'tableHeaderSmall' },
-                    { text: 'Peso Tara', style: 'tableHeaderSmall' },
-                    { text: 'Peso Tarima', style: 'tableHeaderSmall' },
-                    { text: 'Peso Patín', style: 'tableHeaderSmall' },
-                    { text: 'Peso Neto', style: 'tableHeaderSmall' },
-                    { text: 'Cajas', style: 'tableHeaderSmall' }
+                    { text: 'Número Tarima', style: 'tableHeaderTarima' },
+                    { text: 'Peso Bruto', style: 'tableHeaderTarima' },
+                    { text: 'Peso Tara', style: 'tableHeaderTarima' },
+                    { text: 'Peso Tarima', style: 'tableHeaderTarima' },
+                    { text: 'Peso Patín', style: 'tableHeaderTarima' },
+                    { text: 'Peso Neto', style: 'tableHeaderTarima' },
+                    { text: 'Cajas Tara', style: 'tableHeaderTarima' }
                   ],
                   ...tarimas.map((t, i) => [
-                    { text: t.numero, fillColor: i % 2 === 0 ? '#fff' : '#f5f5f5', fontSize: 8, color: '#222' },
-                    { text: `${safeNumber(t.pesoBruto).toFixed(2)} kg`, fillColor: i % 2 === 0 ? '#fff' : '#f5f5f5', fontSize: 8, color: '#222' },
-                    { text: `${safeNumber(t.pesoTara).toFixed(2)} kg`, fillColor: i % 2 === 0 ? '#fff' : '#f5f5f5', fontSize: 8, color: '#222' },
-                    { text: `${safeNumber(t.pesoTarima).toFixed(2)} kg`, fillColor: i % 2 === 0 ? '#fff' : '#f5f5f5', fontSize: 8, color: '#222' },
-                    { text: `${safeNumber(t.pesoPatin).toFixed(2)} kg`, fillColor: i % 2 === 0 ? '#fff' : '#f5f5f5', fontSize: 8, color: '#222' },
-                    { text: `${safeNumber(t.pesoNeto).toFixed(2)} kg`, fillColor: i % 2 === 0 ? '#fff' : '#f5f5f5', fontSize: 8, color: '#222' },
-                    { text: t.cantidadCajas || '0', fillColor: i % 2 === 0 ? '#fff' : '#f5f5f5', fontSize: 8, color: '#222' }
+                    { text: t.numero, fontSize: 9, color: '#222', alignment: 'center', margin: [0, 0, 0, 0] },
+                    { text: `${safeNumber(t.pesoBruto).toFixed(2)} kg`, fontSize: 9, color: '#222', alignment: 'right' },
+                    { text: `${safeNumber(t.pesoTara).toFixed(2)} kg`, fontSize: 9, color: '#222', alignment: 'right' },
+                    { text: `${safeNumber(t.pesoTarima).toFixed(2)} kg`, fontSize: 9, color: '#222', alignment: 'right' },
+                    { text: `${safeNumber(t.pesoPatin).toFixed(2)} kg`, fontSize: 9, color: '#222', alignment: 'right' },
+                    { text: `${safeNumber(t.pesoNeto).toFixed(2)} kg`, fontSize: 9, color: '#222', alignment: 'right' },
+                    { text: t.cantidadCajas || '0', fontSize: 9, color: '#222', alignment: 'right' }
                   ]),
                   [
-                    { text: 'TOTAL', bold: true, fillColor: '#e0e0e0', fontSize: 8, color: '#222' },
-                    { text: `${safeNumber(totales.pesoBruto).toFixed(2)} kg`, bold: true, fillColor: '#e0e0e0', fontSize: 8, color: '#222' },
-                    { text: `${safeNumber(totales.pesoTara).toFixed(2)} kg`, bold: true, fillColor: '#e0e0e0', fontSize: 8, color: '#222' },
-                    { text: `${safeNumber(totales.pesoTarima).toFixed(2)} kg`, bold: true, fillColor: '#e0e0e0', fontSize: 8, color: '#222' },
-                    { text: `${safeNumber(totales.pesoPatin).toFixed(2)} kg`, bold: true, fillColor: '#e0e0e0', fontSize: 8, color: '#222' },
-                    { text: `${safeNumber(totales.pesoNeto).toFixed(2)} kg`, bold: true, fillColor: '#e0e0e0', fontSize: 8, color: '#222' },
-                    { text: `${totales.cantidadCajas || 0}`, bold: true, fillColor: '#e0e0e0', fontSize: 8, color: '#222' }
+                    { text: 'TOTAL', style: 'totalRowTarima', alignment: 'center', margin: [0, 0, 0, 0] },
+                    { text: `${safeNumber(totales.pesoBruto).toFixed(2)} kg`, style: 'totalRowTarima', alignment: 'right' },
+                    { text: `${safeNumber(totales.pesoTara).toFixed(2)} kg`, style: 'totalRowTarima', alignment: 'right' },
+                    { text: `${safeNumber(totales.pesoTarima).toFixed(2)} kg`, style: 'totalRowTarima', alignment: 'right' },
+                    { text: `${safeNumber(totales.pesoPatin).toFixed(2)} kg`, style: 'totalRowTarima', alignment: 'right' },
+                    { text: `${safeNumber(totales.pesoNeto).toFixed(2)} kg`, style: 'totalRowTarima', alignment: 'right' },
+                    { text: `${totales.cantidadCajas || 0}`, style: 'totalRowTarima', alignment: 'right' }
                   ]
                 ]
               },
               layout: {
-                fillColor: function() {
-                  return null;
+                fillColor: function (rowIndex, node, columnIndex) {
+                  if (rowIndex === 0) return null; // encabezado ya tiene color
+                  if (rowIndex === node.table.body.length - 1) return '#E6F4EA'; // total
+                  return rowIndex % 2 === 0 ? '#FFFFFF' : '#FDE6DC'; // alternancia
                 },
-                hLineWidth: function (i: number, node: any) { return i === 0 || i === node.table.body.length ? 1.2 : 0.5; },
-                vLineWidth: function (): number { return 0; },
-                hLineColor: function() { return '#333'; },
-                paddingLeft: function(): number { return 8; },
-                paddingRight: function(): number { return 8; },
-                paddingTop: function(): number { return 6; },
-                paddingBottom: function(): number { return 6; }
+                hLineWidth: function (i, node) { return i === 0 || i === node.table.body.length ? 1.2 : 0.5; },
+                vLineWidth: function () { return 0.5; },
+                hLineColor: function () { return '#FBBF9D'; },
+                vLineColor: function () { return '#E0E0E0'; },
+                paddingLeft: function () { return 8; },
+                paddingRight: function () { return 8; },
+                paddingTop: function () { return 6; },
+                paddingBottom: function () { return 6; }
               }
             },
             { width: '*', text: '' }
@@ -393,11 +396,12 @@ export const OrdenesEntradaService = {
         logo: logoBase64
       },
       styles: {
-        empresa: { fontSize: 13, bold: true, color: '#333' },
-        responsable: { fontSize: 10, italics: true, color: '#333' },
-        direccion: { fontSize: 8, color: '#888' },
-        titulo: { fontSize: 16, bold: true, color: '#333', alignment: 'center', margin: [0, 10, 0, 10] },
-        subtitulo: { fontSize: 13, bold: true, color: '#333', alignment: 'left', margin: [0, 10, 0, 6] },
+        empresa: { fontSize: 16, bold: true, color: '#333333' },
+        responsable: { fontSize: 11, italics: true, color: '#C97B63' },
+        direccion: { fontSize: 9, color: '#888888' },
+        tituloRecepcion: { fontSize: 16, bold: true, color: '#F15A24', alignment: 'center', margin: [0, 10, 0, 10] },
+        folioBox: { fontSize: 11, bold: true, color: '#F15A24', fillColor: '#FDE6DC', alignment: 'center', margin: [0, 2, 0, 2] },
+        fechaBox: { fontSize: 11, bold: true, color: '#F15A24', fillColor: '#FDE6DC', alignment: 'center', margin: [0, 2, 0, 2] },
         label: { bold: true, color: '#333', fontSize: 9 },
         valor: { color: '#333', fontSize: 9 },
         valorDestacado: { color: '#C62828', fontSize: 11, bold: true },
@@ -408,7 +412,9 @@ export const OrdenesEntradaService = {
         firma: { fontSize: 10, color: '#333', margin: [0, 5, 0, 0] },
         nombreFirma: { fontSize: 9, color: '#888', margin: [0, 2, 0, 0] },
         folioLabel: { fontSize: 9, bold: true, color: 'white', alignment: 'center', margin: [0, 2, 0, 2] },
-        folioValue: { fontSize: 11, bold: true, color: '#C62828', alignment: 'center', margin: [0, 2, 0, 2] }
+        folioValue: { fontSize: 11, bold: true, color: '#C62828', alignment: 'center', margin: [0, 2, 0, 2] },
+        tableHeaderTarima: { bold: true, fontSize: 10, color: 'white', fillColor: '#F15A24', alignment: 'center' },
+        totalRowTarima: { bold: true, fillColor: '#E6F4EA', fontSize: 9, color: '#4BB543', alignment: 'right' },
       },
       footer: function(currentPage: number, pageCount: number) {
         return {
