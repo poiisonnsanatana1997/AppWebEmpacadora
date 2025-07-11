@@ -31,7 +31,13 @@ const formSchema = z.object({
     nombre: z.string()
   }),
   fecha: z.string().min(1, 'Debe seleccionar una fecha'),
-  estado: z.enum(['Pendiente', 'Procesando', 'Recibida', 'Cancelada'] as const),
+  estado: z.enum([
+    ESTADO_ORDEN.PENDIENTE,
+    ESTADO_ORDEN.PROCESANDO,
+    ESTADO_ORDEN.RECIBIDA,
+    ESTADO_ORDEN.CANCELADA,
+    ESTADO_ORDEN.CLASIFICADO
+  ] as [string, string, string, string, string]),
   observaciones: z.string(),
   productos: z.object({
     id: z.string().min(1, 'Debe seleccionar un producto'),

@@ -21,7 +21,12 @@ export const useOrdenesEntrada = () => {
         OrdenesEntradaService.obtenerOrdenesPendientesHoy()
       ]);
 
-      setOrdenes(ordenesData);
+      // Ordenar las órdenes por fecha de registro (más recientes primero)
+      const ordenesOrdenadas = ordenesData.sort((a, b) => 
+        new Date(b.fechaRegistro).getTime() - new Date(a.fechaRegistro).getTime()
+      );
+
+      setOrdenes(ordenesOrdenadas);
       setPesoTotalRecibidoHoy(pesoTotal);
       setOrdenesPendientesHoy(pendientes);
     } catch (err) {
@@ -37,7 +42,13 @@ export const useOrdenesEntrada = () => {
       setLoading(true);
       setError(null);
       const nuevaOrden = await OrdenesEntradaService.crearOrden(orden);
-      setOrdenes((prev) => [...prev, nuevaOrden]);
+      setOrdenes((prev) => {
+        const ordenesActualizadas = [...prev, nuevaOrden];
+        // Mantener el ordenamiento por fecha de registro
+        return ordenesActualizadas.sort((a, b) => 
+          new Date(b.fechaRegistro).getTime() - new Date(a.fechaRegistro).getTime()
+        );
+      });
       // Actualizar indicadores después de crear
       await cargarOrdenes();
       return nuevaOrden;
@@ -56,9 +67,13 @@ export const useOrdenesEntrada = () => {
       setError(null);
       const ordenActualizada = await OrdenesEntradaService.actualizarOrden(codigo, orden);
       if (ordenActualizada) {
-        setOrdenes((prev) =>
-          prev.map((o) => (o.codigo === codigo ? ordenActualizada : o))
-        );
+        setOrdenes((prev) => {
+          const ordenesActualizadas = prev.map((o) => (o.codigo === codigo ? ordenActualizada : o));
+          // Mantener el ordenamiento por fecha de registro
+          return ordenesActualizadas.sort((a, b) => 
+            new Date(b.fechaRegistro).getTime() - new Date(a.fechaRegistro).getTime()
+          );
+        });
         // Actualizar indicadores después de actualizar
         await cargarOrdenes();
       }
@@ -77,7 +92,13 @@ export const useOrdenesEntrada = () => {
       setLoading(true);
       setError(null);
       await OrdenesEntradaService.eliminarOrden(codigo);
-      setOrdenes((prev) => prev.filter((o) => o.codigo !== codigo));
+      setOrdenes((prev) => {
+        const ordenesFiltradas = prev.filter((o) => o.codigo !== codigo);
+        // Mantener el ordenamiento por fecha de registro
+        return ordenesFiltradas.sort((a, b) => 
+          new Date(b.fechaRegistro).getTime() - new Date(a.fechaRegistro).getTime()
+        );
+      });
       // Actualizar indicadores después de eliminar
       await cargarOrdenes();
     } catch (err) {
@@ -94,7 +115,13 @@ export const useOrdenesEntrada = () => {
       setLoading(true);
       setError(null);
       const ordenesImportadas = await OrdenesEntradaService.importarOrdenes(archivo);
-      setOrdenes((prev) => [...prev, ...ordenesImportadas]);
+      setOrdenes((prev) => {
+        const ordenesActualizadas = [...prev, ...ordenesImportadas];
+        // Mantener el ordenamiento por fecha de registro
+        return ordenesActualizadas.sort((a, b) => 
+          new Date(b.fechaRegistro).getTime() - new Date(a.fechaRegistro).getTime()
+        );
+      });
       // Actualizar indicadores después de importar
       await cargarOrdenes();
       return ordenesImportadas;

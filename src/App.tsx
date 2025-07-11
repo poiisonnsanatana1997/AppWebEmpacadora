@@ -12,6 +12,7 @@ import Usuarios from './pages/Usuarios'
 import { useAuth } from './contexts/AuthContext'
 import Layout from './components/Layout'
 import Proveedores from './pages/Proveedores'
+import ClasificacionOrdenEntrada from './pages/ClasificacionOrdenEntrada'
 
 // Componente para proteger rutas
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
@@ -121,6 +122,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <Proveedores />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/clasificacion-orden/:idOrdenEntrada" 
+              element={
+                <PrivateRoute>
+                  <ClasificacionOrdenEntrada />
                 </PrivateRoute>
               } 
             />

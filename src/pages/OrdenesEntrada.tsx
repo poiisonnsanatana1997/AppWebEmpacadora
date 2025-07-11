@@ -8,6 +8,8 @@ import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { motion } from 'motion/react';
 import { toast, Toaster } from 'sonner';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 // Importaciones de componentes personalizados
 import { NuevaOrdenEntradaModal } from '../components/OrdenesEntrada/NuevaOrdenEntradaModal';
@@ -16,10 +18,12 @@ import { OrdenesEntradaTable } from '@/components/OrdenesEntrada/OrdenesEntradaT
 import { ImportarOrdenesModal } from '@/components/OrdenesEntrada/ImportarOrdenesModal';
 import { TableHeader } from '@/components/OrdenesEntrada/TableHeader';
 import { Indicators } from '@/components/OrdenesEntrada/Indicators';
+import { ConfirmarClasificacionModal } from '@/components/Clasificacion/ConfirmarClasificacionModal';
 
 // Importaciones de hooks y tipos
 import { useOrdenesEntrada } from '@/hooks/OrdenesEntrada/useOrdenesEntrada';
 import { ESTADO_ORDEN, OrdenEntradaDto, OrdenEntradaFormData, CrearOrdenEntradaDto, ActualizarOrdenEntradaDto } from '@/types/OrdenesEntrada/ordenesEntrada.types';
+import { ClasificacionService } from '@/services/clasificacion.service';
 
 // Componentes estilizados para la interfaz
 const PageContainer = styled(motion.div)`
@@ -124,6 +128,10 @@ export default function OrdenesEntrada() {
   const [modalActualizarOpen, setModalActualizarOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [ordenSeleccionada, setOrdenSeleccionada] = useState<OrdenEntradaDto | undefined>();
+  const [modalClasificacionOpen, setModalClasificacionOpen] = useState(false);
+  const [ordenParaClasificar, setOrdenParaClasificar] = useState<OrdenEntradaDto | null>(null);
+
+  const navigate = useNavigate();
 
   // Efecto para cargar las órdenes al montar el componente
   useEffect(() => {
@@ -271,6 +279,30 @@ export default function OrdenesEntrada() {
     }
   };
 
+  // Manejador para abrir el modal de clasificación
+  const handleRegistrarClasificacion = (orden: OrdenEntradaDto) => {
+    setOrdenParaClasificar(orden);
+    setModalClasificacionOpen(true);
+  };
+
+  // Manejador para confirmar la clasificación
+  const handleConfirmarClasificacion = async () => {
+    if (!ordenParaClasificar) return;
+    try {
+      const response = await ClasificacionService.create({ idPedidoProveedor: ordenParaClasificar.id });
+      setModalClasificacionOpen(false);
+      setOrdenParaClasificar(null);
+      await cargarOrdenes();
+      toast.success('Clasificación registrada correctamente');
+      // Navegar automáticamente al detalle de clasificación después de un breve delay
+      setTimeout(() => {
+        navigate(`/clasificacion-orden/${ordenParaClasificar.id}`);
+      }, 1000);
+    } catch (error) {
+      toast.error('Error al registrar la clasificación');
+    }
+  };
+
   // Renderizado del componente
   return (
     <PageContainer
@@ -328,6 +360,7 @@ export default function OrdenesEntrada() {
                 onEdit={handleOpenModalActualizar}
                 onDelete={handleEliminar}
                 onReactivate={handleReactivate}
+                onRegistrarClasificacion={handleRegistrarClasificacion}
               />
             </StyledTable>
           </TableContentSection>
@@ -354,6 +387,12 @@ export default function OrdenesEntrada() {
         open={importModalOpen}
         onClose={() => setImportModalOpen(false)}
         onImport={handleImportar}
+      />
+
+      <ConfirmarClasificacionModal
+        isOpen={modalClasificacionOpen}
+        onClose={() => { setModalClasificacionOpen(false); setOrdenParaClasificar(null); }}
+        onConfirm={handleConfirmarClasificacion}
       />
     </PageContainer>
   );

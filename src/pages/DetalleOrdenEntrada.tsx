@@ -301,7 +301,10 @@ export default function DetalleOrdenEntrada() {
             orden.estado === ESTADO_ORDEN.PENDIENTE ? 'bg-yellow-200 text-yellow-800 hover:bg-yellow-300 font-semibold' :
             orden.estado === ESTADO_ORDEN.PROCESANDO ? 'bg-blue-200 text-blue-800 hover:bg-blue-300 font-semibold' :
             orden.estado === ESTADO_ORDEN.RECIBIDA ? 'bg-green-200 text-green-800 hover:bg-green-300 font-semibold' :
-            'bg-red-200 text-red-800 hover:bg-red-300 font-semibold'
+            orden.estado === ESTADO_ORDEN.CLASIFICANDO ? 'bg-purple-200 text-purple-800 hover:bg-purple-300 font-semibold' :
+            orden.estado === ESTADO_ORDEN.CLASIFICADO ? 'bg-indigo-200 text-indigo-800 hover:bg-indigo-300 font-semibold' :
+            orden.estado === ESTADO_ORDEN.CANCELADA ? 'bg-red-200 text-red-800 hover:bg-red-300 font-semibold' :
+            'bg-gray-200 text-gray-800 hover:bg-gray-300 font-semibold'
           }`} variant="secondary">{orden.estado}</Badge>
         </TitleContainer>
       </HeaderContainer>

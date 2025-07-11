@@ -33,9 +33,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 // Iconos
-import { Edit2, ChevronDown, ChevronUp, ChevronsUpDown, X, RefreshCw, Clock, ClipboardX } from 'lucide-react';
+import { Edit2, ChevronDown, ChevronUp, ChevronsUpDown, X, RefreshCw, Clock, ClipboardX, Eye, ListChecks, MoreVertical, CheckCircle } from 'lucide-react';
 
 // Utilidades y tipos
 import clsx from 'clsx';
@@ -75,7 +76,7 @@ const TodayIcon = styled(Clock)`
  * - Filtrado por fecha: Filtrar por hoy, próximos 7 días, etc.
  * - Diálogos de confirmación: Para acciones destructivas
  */
-export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onReactivate }: OrdenesEntradaTableProps) {
+export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onReactivate, onRegistrarClasificacion }: OrdenesEntradaTableProps) {
   const {
     sorting,
     setSorting,
@@ -339,6 +340,8 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onReactivate }:
                   { value: "Pendiente", label: "Pendiente" },
                   { value: "Procesando", label: "Procesando" },
                   { value: "Recibida", label: "Recibida" },
+                  { value: "Clasificando", label: "Clasificando" },
+                  { value: "Clasificado", label: "Clasificado" },
                   { value: "Cancelada", label: "Cancelada" },
                 ]}
                 placeholder="Seleccionar estado"
@@ -356,7 +359,10 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onReactivate }:
               estado === ESTADO_ORDEN.PENDIENTE ? 'bg-yellow-200 text-yellow-800 hover:bg-yellow-300 font-semibold' :
               estado === ESTADO_ORDEN.PROCESANDO ? 'bg-blue-200 text-blue-800 hover:bg-blue-300 font-semibold' :
               estado === ESTADO_ORDEN.RECIBIDA ? 'bg-green-200 text-green-800 hover:bg-green-300 font-semibold' :
-              'bg-red-200 text-red-800 hover:bg-red-300 font-semibold'
+              estado === ESTADO_ORDEN.CLASIFICANDO ? 'bg-purple-200 text-purple-800 hover:bg-purple-300 font-semibold' :
+              estado === ESTADO_ORDEN.CLASIFICADO ? 'bg-indigo-200 text-indigo-800 hover:bg-indigo-300 font-semibold' :
+              estado === ESTADO_ORDEN.CANCELADA ? 'bg-red-200 text-red-800 hover:bg-red-300 font-semibold' :
+              'bg-gray-200 text-gray-800 hover:bg-gray-300 font-semibold'
             }
           >
             {estado}
@@ -369,83 +375,92 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onReactivate }:
       },
     },
     {
-      id: 'detalle',
-      header: 'Detalle',
-      cell: ({ row }) => (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate(`/ordenes-entrada/${row.original.codigo}`)}
-        >
-          Ver Detalle
-        </Button>
-      ),
-    },
-    {
       id: 'acciones',
       header: 'Acciones',
       cell: ({ row }) => {
-        const estado = row.original.estado;
+        const orden = row.original;
+        let principalIcon = null;
+        let principalAction = () => {};
+        let principalTooltip = '';
+        let principalColor = '';
+        let menuItems = [];
+        if (orden.estado === ESTADO_ORDEN.PENDIENTE) {
+          principalIcon = <Eye className="w-4 h-4 text-blue-600" />;
+          principalTooltip = 'Ir a pesaje';
+          principalColor = 'bg-blue-100 hover:bg-blue-200';
+          principalAction = () => navigate(`/ordenes-entrada/${orden.codigo}`);
+          menuItems = [
+            <DropdownMenuItem key="editar" onClick={() => onEdit(orden.codigo)}><Edit2 className="w-4 h-4 mr-2" />Editar</DropdownMenuItem>,
+            <DropdownMenuItem key="cancelar" onClick={() => onDelete(orden.codigo)}><ClipboardX className="w-4 h-4 mr-2 text-red-600" />Cancelar</DropdownMenuItem>,
+            <DropdownMenuItem key="clasificar" onClick={() => onRegistrarClasificacion(orden)}><ListChecks className="w-4 h-4 mr-2 text-green-600" />Clasificar</DropdownMenuItem>,
+          ];
+        } else if (orden.estado === ESTADO_ORDEN.RECIBIDA) {
+          principalIcon = <ListChecks className="w-4 h-4 text-green-600" />;
+          principalTooltip = 'Clasificar';
+          principalColor = 'bg-green-100 hover:bg-green-200';
+          principalAction = () => onRegistrarClasificacion(orden);
+          menuItems = [
+            <DropdownMenuItem key="pesaje" onClick={() => navigate(`/ordenes-entrada/${orden.codigo}`)}><Eye className="w-4 h-4 mr-2 text-blue-600" />Pesaje</DropdownMenuItem>,
+            <DropdownMenuItem key="editar" onClick={() => onEdit(orden.codigo)}><Edit2 className="w-4 h-4 mr-2" />Editar</DropdownMenuItem>,
+            <DropdownMenuItem key="cancelar" onClick={() => onDelete(orden.codigo)}><ClipboardX className="w-4 h-4 mr-2 text-red-600" />Cancelar</DropdownMenuItem>,
+          ];
+        } else if (orden.estado === ESTADO_ORDEN.CLASIFICADO || orden.estado === ESTADO_ORDEN.CLASIFICANDO) {
+          principalIcon = <CheckCircle className="w-4 h-4 text-purple-600" />;
+          principalTooltip = 'Ver clasificación';
+          principalColor = 'bg-purple-100 hover:bg-purple-200';
+          principalAction = () => navigate(`/clasificacion-orden/${orden.id}`);
+          menuItems = [
+            <DropdownMenuItem key="verclasif" onClick={() => navigate(`/clasificacion-orden/${orden.id}`)}><CheckCircle className="w-4 h-4 mr-2 text-purple-600" />Ver Clasificación</DropdownMenuItem>,
+          ];
+        } else if (orden.estado === ESTADO_ORDEN.PROCESANDO) {
+          principalIcon = <Eye className="w-4 h-4 text-blue-600" />;
+          principalTooltip = 'Ir a pesaje';
+          principalColor = 'bg-blue-100 hover:bg-blue-200';
+          principalAction = () => navigate(`/ordenes-entrada/${orden.codigo}`);
+          menuItems = [
+            <DropdownMenuItem key="editar" onClick={() => onEdit(orden.codigo)}><Edit2 className="w-4 h-4 mr-2" />Editar</DropdownMenuItem>,
+            <DropdownMenuItem key="cancelar" onClick={() => onDelete(orden.codigo)}><ClipboardX className="w-4 h-4 mr-2 text-red-600" />Cancelar</DropdownMenuItem>,
+            <DropdownMenuItem key="pesaje" onClick={() => navigate(`/ordenes-entrada/${orden.codigo}`)}><Eye className="w-4 h-4 mr-2 text-blue-600" />Pesaje</DropdownMenuItem>,
+          ];
+        } else if (orden.estado === ESTADO_ORDEN.CANCELADA) {
+          principalIcon = <RefreshCw className="w-4 h-4 text-gray-600" />;
+          principalTooltip = 'Reactivar';
+          principalColor = 'bg-gray-100 hover:bg-gray-200';
+          principalAction = () => onReactivate(orden.codigo);
+          menuItems = [
+            <DropdownMenuItem key="pesaje" onClick={() => navigate(`/ordenes-entrada/${orden.codigo}`)}><Eye className="w-4 h-4 mr-2 text-blue-600" />Pesaje</DropdownMenuItem>,
+            <DropdownMenuItem key="reactivar" onClick={() => onReactivate(orden.codigo)}><RefreshCw className="w-4 h-4 mr-2 text-gray-600" />Reactivar</DropdownMenuItem>,
+          ];
+        }
         return (
           <div className="flex items-center gap-2">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onEdit(row.original.codigo!)}
-                    disabled={estado !== ESTADO_ORDEN.PENDIENTE}
-                  >
-                    <Edit2 className="h-4 w-4" />
+                  <Button size="icon" variant="ghost" className={principalColor} onClick={principalAction} aria-label={principalTooltip}>
+                    {principalIcon}
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p>{estado !== ESTADO_ORDEN.PENDIENTE ? 'Solo se pueden editar órdenes en estado Pendiente' : 'Editar orden'}</p>
-                </TooltipContent>
+                <TooltipContent>{principalTooltip}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
-
-            {estado === ESTADO_ORDEN.CANCELADA ? (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleReactivarOrden(row.original.codigo!)}
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Reactivar orden</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ) : estado === ESTADO_ORDEN.PENDIENTE ? (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleCancelarOrden(row.original.codigo!)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Cancelar orden</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ) : null}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon" variant="outline" aria-label="Más acciones">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {menuItems}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         );
       },
+      enableSorting: false,
+      enableColumnFilter: false,
     },
-  ], [navigate, onEdit, fechaFilterValue, setSorting]);
+  ], [onEdit, onDelete, onReactivate, onRegistrarClasificacion, fechaFilterValue, setSorting, navigate]);
 
   // Instancia de tabla con todas las características habilitadas
   const table = useReactTable({

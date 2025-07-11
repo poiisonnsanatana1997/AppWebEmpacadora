@@ -1,4 +1,5 @@
-import { ProveedorDto, ProductoDto, OrdenEntradaDto, PesajeTarimaDto, DetalleOrdenEntradaDto, CrearOrdenEntradaDto, ActualizarOrdenEntradaDto } from '../types/OrdenesEntrada/ordenesEntrada.types';
+import { ProveedorDto, ProductoDto, OrdenEntradaDto, PesajeTarimaDto, DetalleOrdenEntradaDto, CrearOrdenEntradaDto, ActualizarOrdenEntradaDto, ESTADO_ORDEN } from '../types/OrdenesEntrada/ordenesEntrada.types';
+import { PedidoCompletoDTO } from '../types/OrdenesEntrada/ordenesEntradaCompleto.types';
 // @ts-ignore
 import pdfMake from "pdfmake/build/pdfmake";
 // @ts-ignore
@@ -32,7 +33,11 @@ export const OrdenesEntradaService = {
    */
   async obtenerOrdenes(): Promise<OrdenEntradaDto[]> {
     const { data } = await api.get<OrdenEntradaDto[]>('/OrdenEntrada');
-    return data;
+    // Normalizar el campo 'estado' para cada orden
+    return data.map((orden) => ({
+      ...orden,
+      estado: normalizarEstadoOrden(orden.estado)
+    }));
   },
 
   /**
@@ -683,4 +688,79 @@ export const OrdenesEntradaService = {
       return 0;
     }
   },
+
+  /**
+   * Obtiene la información completa de un pedido de entrada por su ID de pedido proveedor
+   * Endpoint: GET /OrdenEntrada/pedido/{idPedidoProveedor}/completo
+   */
+  async obtenerPedidoCompleto(idPedidoProveedor: number): Promise<PedidoCompletoDTO> {
+    try {
+      const { data } = await api.get<PedidoCompletoDTO>(`/OrdenEntrada/pedido/${idPedidoProveedor}/completo`);
+      return data;
+    } catch (error: any) {
+      if (error.response) {
+        const status = error.response.status;
+        const data = error.response.data;
+        if (status === 400) {
+          throw {
+            message: data.message || 'Datos inválidos. Por favor, verifica la información proporcionada',
+            code: 'INVALID_DATA',
+            status
+          };
+        } else if (status === 404) {
+          throw {
+            message: 'Pedido no encontrado',
+            code: 'NOT_FOUND',
+            status
+          };
+        } else if (status >= 500) {
+          throw {
+            message: 'Error en el servidor. Por favor, intenta más tarde',
+            code: 'SERVER_ERROR',
+            status
+          };
+        } else {
+          throw {
+            message: data.message || 'Error al obtener el pedido completo',
+            code: data.code || 'UNKNOWN_ERROR',
+            status
+          };
+        }
+      } else if (error.request) {
+        throw {
+          message: 'No se pudo conectar con el servidor. Verifica tu conexión a internet',
+          code: 'NETWORK_ERROR'
+        };
+      } else {
+        throw {
+          message: 'Error al procesar la solicitud',
+          code: 'REQUEST_ERROR'
+        };
+      }
+    }
+  },
+
+
 }; 
+
+// Función para normalizar el campo 'estado' de una orden
+function normalizarEstadoOrden(estado: string): ESTADO_ORDEN {
+  const estadoLimpio = estado.trim().toLowerCase();
+  switch (estadoLimpio) {
+    case 'pendiente':
+      return ESTADO_ORDEN.PENDIENTE;
+    case 'procesando':
+      return ESTADO_ORDEN.PROCESANDO;
+    case 'recibida':
+      return ESTADO_ORDEN.RECIBIDA;
+    case 'cancelada':
+      return ESTADO_ORDEN.CANCELADA;
+    case 'clasificando':
+      return ESTADO_ORDEN.CLASIFICANDO;
+    case 'clasificado':
+      return ESTADO_ORDEN.CLASIFICADO;
+    default:
+      // Si no coincide, devolver el valor original (o podrías lanzar un error/log)
+      return estado as ESTADO_ORDEN;
+  }
+} 

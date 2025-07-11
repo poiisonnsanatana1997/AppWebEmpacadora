@@ -2,7 +2,9 @@ export enum ESTADO_ORDEN {
   PENDIENTE = 'Pendiente',
   PROCESANDO = 'Procesando',
   RECIBIDA = 'Recibida',
-  CANCELADA = 'Cancelada'
+  CANCELADA = 'Cancelada',
+  CLASIFICANDO = 'Clasificando',
+  CLASIFICADO = 'Clasificado'
 }
 
 export type EstadoOrden = typeof ESTADO_ORDEN[keyof typeof ESTADO_ORDEN];
@@ -43,6 +45,7 @@ export interface ProductoDto {
 }
 
 export interface OrdenEntradaDto {
+  id: number;
   codigo: string;
   proveedor: ProveedorDto;
   producto: ProductoDto;
@@ -89,7 +92,7 @@ export interface PesajeTarimaDto {
 
 export const estadoOrdenUtils = {
   estaCompletada: (estado: EstadoOrden): boolean => {
-    return estado === ESTADO_ORDEN.RECIBIDA;
+    return estado === ESTADO_ORDEN.RECIBIDA || estado === ESTADO_ORDEN.CLASIFICADO;
   },
   puedeEditar: (estado: EstadoOrden): boolean => {
     return estado === ESTADO_ORDEN.PENDIENTE || estado === ESTADO_ORDEN.PROCESANDO;
@@ -103,18 +106,22 @@ export const estadoOrdenUtils = {
   esValidaTransicion: (estadoActual: EstadoOrden, nuevoEstado: EstadoOrden): boolean => {
     const transicionesPermitidas: Record<EstadoOrden, EstadoOrden[]> = {
       [ESTADO_ORDEN.PENDIENTE]: [ESTADO_ORDEN.PROCESANDO, ESTADO_ORDEN.CANCELADA],
-      [ESTADO_ORDEN.PROCESANDO]: [ESTADO_ORDEN.RECIBIDA, ESTADO_ORDEN.CANCELADA],
-      [ESTADO_ORDEN.RECIBIDA]: [],
-      [ESTADO_ORDEN.CANCELADA]: [ESTADO_ORDEN.PENDIENTE]
+      [ESTADO_ORDEN.PROCESANDO]: [ESTADO_ORDEN.RECIBIDA, ESTADO_ORDEN.CANCELADA, ESTADO_ORDEN.CLASIFICANDO],
+      [ESTADO_ORDEN.RECIBIDA]: [ESTADO_ORDEN.CLASIFICANDO],
+      [ESTADO_ORDEN.CANCELADA]: [ESTADO_ORDEN.PENDIENTE],
+      [ESTADO_ORDEN.CLASIFICANDO]: [ESTADO_ORDEN.CLASIFICADO],
+      [ESTADO_ORDEN.CLASIFICADO]: [],
     };
     return transicionesPermitidas[estadoActual].includes(nuevoEstado);
   },
   obtenerEstadosSiguientes: (estadoActual: EstadoOrden): EstadoOrden[] => {
     const transicionesPermitidas: Record<EstadoOrden, EstadoOrden[]> = {
       [ESTADO_ORDEN.PENDIENTE]: [ESTADO_ORDEN.PROCESANDO, ESTADO_ORDEN.CANCELADA],
-      [ESTADO_ORDEN.PROCESANDO]: [ESTADO_ORDEN.RECIBIDA, ESTADO_ORDEN.CANCELADA],
-      [ESTADO_ORDEN.RECIBIDA]: [],
-      [ESTADO_ORDEN.CANCELADA]: [ESTADO_ORDEN.PENDIENTE]
+      [ESTADO_ORDEN.PROCESANDO]: [ESTADO_ORDEN.RECIBIDA, ESTADO_ORDEN.CANCELADA, ESTADO_ORDEN.CLASIFICANDO],
+      [ESTADO_ORDEN.RECIBIDA]: [ESTADO_ORDEN.CLASIFICANDO],
+      [ESTADO_ORDEN.CANCELADA]: [ESTADO_ORDEN.PENDIENTE],
+      [ESTADO_ORDEN.CLASIFICANDO]: [ESTADO_ORDEN.CLASIFICADO],
+      [ESTADO_ORDEN.CLASIFICADO]: [],
     };
     return transicionesPermitidas[estadoActual];
   }
