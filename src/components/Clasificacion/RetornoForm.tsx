@@ -14,9 +14,10 @@ interface RetornoFormProps {
   isSubmitting: boolean;
   clasificaciones?: any[];
   onValidate?: (peso: number) => { isValid: boolean; message: string };
+  loadingRetornos?: boolean;
 }
 
-export const RetornoForm: React.FC<RetornoFormProps> = ({ onSubmit, onCancel, isSubmitting, clasificaciones = [], onValidate }) => {
+export const RetornoForm: React.FC<RetornoFormProps> = ({ onSubmit, onCancel, isSubmitting, clasificaciones = [], onValidate, loadingRetornos = false }) => {
   const form = useFormContext();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -45,10 +46,19 @@ export const RetornoForm: React.FC<RetornoFormProps> = ({ onSubmit, onCancel, is
             <FormItem>
               <FormLabel>Número de Retorno *</FormLabel>
               <FormControl>
-                <Input
-                  placeholder="Ej: RET-001"
-                  {...field}
-                />
+                <div className="relative">
+                  <Input
+                    placeholder={loadingRetornos ? "Cargando..." : "Generando número..."}
+                    {...field}
+                    readOnly
+                    className="bg-gray-50 cursor-not-allowed pr-10"
+                  />
+                  {loadingRetornos && (
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                    </div>
+                  )}
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>

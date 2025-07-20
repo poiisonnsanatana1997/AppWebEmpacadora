@@ -98,17 +98,23 @@ export const estadoOrdenUtils = {
     return estado === ESTADO_ORDEN.PENDIENTE || estado === ESTADO_ORDEN.PROCESANDO;
   },
   esCancelable: (estado: EstadoOrden): boolean => {
-    return estado === ESTADO_ORDEN.PENDIENTE || estado === ESTADO_ORDEN.PROCESANDO;
+    return estado === ESTADO_ORDEN.PENDIENTE || estado === ESTADO_ORDEN.PROCESANDO || estado === ESTADO_ORDEN.RECIBIDA;
   },
-  esReactivable: (estado: EstadoOrden): boolean => {
-    return estado === ESTADO_ORDEN.CANCELADA;
+  puedeClasificar: (estado: EstadoOrden): boolean => {
+    return estado === ESTADO_ORDEN.RECIBIDA;
+  },
+  puedeVerPesaje: (estado: EstadoOrden): boolean => {
+    return estado !== ESTADO_ORDEN.CANCELADA;
+  },
+  puedeVerClasificacion: (estado: EstadoOrden): boolean => {
+    return estado === ESTADO_ORDEN.CLASIFICANDO || estado === ESTADO_ORDEN.CLASIFICADO;
   },
   esValidaTransicion: (estadoActual: EstadoOrden, nuevoEstado: EstadoOrden): boolean => {
     const transicionesPermitidas: Record<EstadoOrden, EstadoOrden[]> = {
       [ESTADO_ORDEN.PENDIENTE]: [ESTADO_ORDEN.PROCESANDO, ESTADO_ORDEN.CANCELADA],
-      [ESTADO_ORDEN.PROCESANDO]: [ESTADO_ORDEN.RECIBIDA, ESTADO_ORDEN.CANCELADA, ESTADO_ORDEN.CLASIFICANDO],
-      [ESTADO_ORDEN.RECIBIDA]: [ESTADO_ORDEN.CLASIFICANDO],
-      [ESTADO_ORDEN.CANCELADA]: [ESTADO_ORDEN.PENDIENTE],
+      [ESTADO_ORDEN.PROCESANDO]: [ESTADO_ORDEN.RECIBIDA, ESTADO_ORDEN.CANCELADA],
+      [ESTADO_ORDEN.RECIBIDA]: [ESTADO_ORDEN.CLASIFICANDO, ESTADO_ORDEN.CANCELADA],
+      [ESTADO_ORDEN.CANCELADA]: [], // No se puede reactivar
       [ESTADO_ORDEN.CLASIFICANDO]: [ESTADO_ORDEN.CLASIFICADO],
       [ESTADO_ORDEN.CLASIFICADO]: [],
     };
@@ -117,9 +123,9 @@ export const estadoOrdenUtils = {
   obtenerEstadosSiguientes: (estadoActual: EstadoOrden): EstadoOrden[] => {
     const transicionesPermitidas: Record<EstadoOrden, EstadoOrden[]> = {
       [ESTADO_ORDEN.PENDIENTE]: [ESTADO_ORDEN.PROCESANDO, ESTADO_ORDEN.CANCELADA],
-      [ESTADO_ORDEN.PROCESANDO]: [ESTADO_ORDEN.RECIBIDA, ESTADO_ORDEN.CANCELADA, ESTADO_ORDEN.CLASIFICANDO],
-      [ESTADO_ORDEN.RECIBIDA]: [ESTADO_ORDEN.CLASIFICANDO],
-      [ESTADO_ORDEN.CANCELADA]: [ESTADO_ORDEN.PENDIENTE],
+      [ESTADO_ORDEN.PROCESANDO]: [ESTADO_ORDEN.RECIBIDA, ESTADO_ORDEN.CANCELADA],
+      [ESTADO_ORDEN.RECIBIDA]: [ESTADO_ORDEN.CLASIFICANDO, ESTADO_ORDEN.CANCELADA],
+      [ESTADO_ORDEN.CANCELADA]: [], // No se puede reactivar
       [ESTADO_ORDEN.CLASIFICANDO]: [ESTADO_ORDEN.CLASIFICADO],
       [ESTADO_ORDEN.CLASIFICADO]: [],
     };

@@ -61,8 +61,8 @@ export const useAgregarCantidadForm = ({
     // Mostrar resumen antes de enviar
     const resumen = `📋 Resumen de la operación:
 • Cantidad nueva a agregar: ${data.cantidad} caja(s)
-• Cantidad actual de la tarima: ${tarimaActual.cantidad} caja(s)
-• Cantidad total después de agregar: ${tarimaActual.cantidad + (data.cantidad || 0)} caja(s)
+• Cantidad actual de la tarima: ${tarimaActual.tarimasClasificaciones[0]?.cantidad || 0} caja(s)
+• Cantidad total después de agregar: ${tarimaActual.tarimasClasificaciones[0]?.cantidad + (data.cantidad || 0)} caja(s)
 • Peso por caja: ${tarimaActual.peso.toFixed(2)} kg
 • Peso total a agregar: ${pesoTotalAgregar.toFixed(2)} kg
 • Estado final: ${data.estadoTarima === 'completo' ? 'Completa' : 'Parcial'}

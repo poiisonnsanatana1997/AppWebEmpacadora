@@ -6,7 +6,6 @@ export interface TarimaParcialSeleccionadaDTO {
   fechaActualizacion: string;
   usuarioRegistro: string;
   usuarioModificacion: string;
-  cantidad: number;
   observaciones?: string;
   upc?: string;
   peso: number;
@@ -19,6 +18,7 @@ export interface TarimaClasificacionParcialDTO {
   lote: string;
   peso: number;
   tipo: string;
+  cantidad: number;
   pesoTotal: number;
   fechaRegistro: string;
   usuarioRegistro: string;

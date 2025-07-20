@@ -6,8 +6,8 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { MermasDetalle } from './MermasDetalle';
 import { RetornosDetalle } from './RetornosDetalle';
-import { ChevronDown, ChevronUp, ClipboardList, Hash, Scale, Target } from 'lucide-react';
-import { EditarClasificacionModal } from './EditarClasificacionModal';
+import { ChevronDown, ChevronUp, ClipboardList, Hash, Scale, Target, DollarSign } from 'lucide-react';
+import { EditarPreciosClasificacionModal } from './EditarPreciosClasificacionModal';
 import { useIndicadoresPesos, IndicadoresPesosData } from '../../hooks/Clasificacion/useIndicadoresPesos';
 import PesosPorTipoBarChart from './PesosPorTipoBarChart';
 
@@ -98,9 +98,10 @@ export const ClasificacionDetalle: React.FC<ClasificacionDetalleProps> = ({ clas
               size="sm"
               onClick={handleOpenModal}
               disabled={estaFinalizada}
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-medium text-sm transition-colors duration-200"
               title={estaFinalizada ? 'No se pueden editar precios cuando la clasificación está finalizada' : 'Editar precios'}
             >
+              <DollarSign className="h-4 w-4" />
               Editar precios
             </Button>
             <Button
@@ -108,7 +109,7 @@ export const ClasificacionDetalle: React.FC<ClasificacionDetalleProps> = ({ clas
               size="sm"
               onClick={handleAjustarPesos}
               disabled={estaFinalizada}
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-medium text-sm transition-colors duration-200"
               title={estaFinalizada ? 'No se pueden ajustar pesos cuando la clasificación está finalizada' : 'Ajustar pesos'}
             >
               <Scale className="h-4 w-4" />
@@ -118,7 +119,7 @@ export const ClasificacionDetalle: React.FC<ClasificacionDetalleProps> = ({ clas
               variant="ghost"
               size="sm"
               onClick={() => setMostrarDetalle(!mostrarDetalle)}
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 text-gray-600 hover:text-gray-800 hover:bg-gray-100 px-3 py-1 rounded-md transition-colors duration-200"
             >
               {mostrarDetalle ? (
                 <>
@@ -193,30 +194,66 @@ export const ClasificacionDetalle: React.FC<ClasificacionDetalleProps> = ({ clas
           </div>
         </div>
         {/* Tarjeta de Precios */}
-        <div className="bg-white rounded-lg shadow p-6 border">
-          <h4 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <span>Precios por kg</span>
-          </h4>
-          <div className="grid grid-cols-5 gap-4 text-center">
-            <div>
-              <div className="text-purple-600 font-bold text-xl">{formatoMoneda(clasificacion.xl)}</div>
-              <div className="text-xs text-gray-500 mt-1">XL</div>
+        <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+              <DollarSign className="h-4 w-4 text-white" />
             </div>
             <div>
-              <div className="text-green-600 font-bold text-xl">{formatoMoneda(clasificacion.l)}</div>
-              <div className="text-xs text-gray-500 mt-1">L</div>
+              <h4 className="text-base font-semibold text-gray-900">Precios por Kilogramo</h4>
+              <p className="text-xs text-gray-500">Valores establecidos para cada tipo de clasificación</p>
             </div>
-            <div>
-              <div className="text-yellow-600 font-bold text-xl">{formatoMoneda(clasificacion.m)}</div>
-              <div className="text-xs text-gray-500 mt-1">M</div>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {/* XL */}
+            <div className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="flex items-center gap-1 mb-1">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <span className="text-xs font-medium text-gray-700">XL</span>
+              </div>
+              <div className="text-lg font-bold text-purple-600 mb-0.5">{formatoMoneda(clasificacion.xl)}</div>
+              <div className="text-xs text-gray-500">por kg</div>
             </div>
-            <div>
-              <div className="text-red-600 font-bold text-xl">{formatoMoneda(clasificacion.s)}</div>
-              <div className="text-xs text-gray-500 mt-1">S</div>
+            
+            {/* L */}
+            <div className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="flex items-center gap-1 mb-1">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-xs font-medium text-gray-700">L</span>
+              </div>
+              <div className="text-lg font-bold text-blue-600 mb-0.5">{formatoMoneda(clasificacion.l)}</div>
+              <div className="text-xs text-gray-500">por kg</div>
             </div>
-            <div>
-              <div className="text-orange-600 font-bold text-xl">{formatoMoneda(clasificacion.retornos)}</div>
-              <div className="text-xs text-gray-500 mt-1">Retornos</div>
+            
+            {/* M */}
+            <div className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="flex items-center gap-1 mb-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-xs font-medium text-gray-700">M</span>
+              </div>
+              <div className="text-lg font-bold text-green-600 mb-0.5">{formatoMoneda(clasificacion.m)}</div>
+              <div className="text-xs text-gray-500">por kg</div>
+            </div>
+            
+            {/* S */}
+            <div className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="flex items-center gap-1 mb-1">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                <span className="text-xs font-medium text-gray-700">S</span>
+              </div>
+              <div className="text-lg font-bold text-red-600 mb-0.5">{formatoMoneda(clasificacion.s)}</div>
+              <div className="text-xs text-gray-500">por kg</div>
+            </div>
+            
+            {/* Retornos */}
+            <div className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 md:col-span-1 col-span-2">
+              <div className="flex items-center gap-1 mb-1">
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <span className="text-xs font-medium text-gray-700">Retornos</span>
+              </div>
+              <div className="text-lg font-bold text-orange-600 mb-0.5">{formatoMoneda(clasificacion.retornos)}</div>
+              <div className="text-xs text-gray-500">por kg</div>
             </div>
           </div>
         </div>
@@ -244,7 +281,7 @@ export const ClasificacionDetalle: React.FC<ClasificacionDetalleProps> = ({ clas
         )}
         {/* Modal de edición de precios */}
         {clasificacionEdit && (
-          <EditarClasificacionModal
+          <EditarPreciosClasificacionModal
             open={modalOpen}
             clasificacion={clasificacionEdit}
             onClose={handleCloseModal}

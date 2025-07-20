@@ -117,7 +117,7 @@ export const AgregarCantidadForm: React.FC<AgregarCantidadFormProps> = ({
           <div className="grid grid-cols-3 gap-4 text-xs">
             <div>
               <span className="text-gray-500">Cantidad actual:</span>
-              <span className="ml-1 font-medium">{tarimaActual.cantidad} cajas</span>
+              <span className="ml-1 font-medium">{tarimaActual.tarimasClasificaciones[0]?.cantidad} cajas</span>
             </div>
             <div>
               <span className="text-gray-500">Peso por caja:</span>
@@ -169,7 +169,7 @@ export const AgregarCantidadForm: React.FC<AgregarCantidadFormProps> = ({
               Resumen: {form.watch('cantidad')} cajas × {tarimaActual.peso?.toFixed(2) ?? '0.00'} kg = {pesoTotal.toFixed(2)} kg adicionales
             </div>
             <div className="text-xs text-blue-700 mt-1">
-              Total después de agregar: {(tarimaActual.cantidad + (form.watch('cantidad') || 0))} cajas, {(tarimaActual.peso + pesoTotal).toFixed(2)} kg
+              Total después de agregar: {(tarimaActual.tarimasClasificaciones[0]?.cantidad + (form.watch('cantidad') || 0))} cajas, {(tarimaActual.tarimasClasificaciones[0]?.peso + pesoTotal).toFixed(2)} kg
             </div>
           </div>
         </FormSection>
@@ -275,7 +275,7 @@ export const AgregarCantidadForm: React.FC<AgregarCantidadFormProps> = ({
           <Button
             type="submit"
             disabled={isSubmitting || !estadoSeleccionado}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+            className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-medium transition-colors duration-200"
           >
             <Save className="h-4 w-4" />
             {isSubmitting ? 'Guardando...' : 'Guardar Cantidad'}

@@ -57,6 +57,7 @@ export interface TarimaClasificacionParcialDTO {
   lote: string;
   peso: number;
   tipo: string;
+  cantidad: number;
   pesoTotal: number;
   fechaRegistro: string; // ISO string
   usuarioRegistro: string;
@@ -70,7 +71,6 @@ export interface TarimaParcialCompletaDTO {
   fechaActualizacion: string; // ISO string
   usuarioRegistro: string;
   usuarioModificacion: string;
-  cantidad: number;
   observaciones?: string;
   upc?: string;
   peso: number;

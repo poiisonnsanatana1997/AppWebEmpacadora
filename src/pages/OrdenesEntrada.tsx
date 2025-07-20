@@ -22,7 +22,7 @@ import { ConfirmarClasificacionModal } from '@/components/Clasificacion/Confirma
 
 // Importaciones de hooks y tipos
 import { useOrdenesEntrada } from '@/hooks/OrdenesEntrada/useOrdenesEntrada';
-import { ESTADO_ORDEN, OrdenEntradaDto, OrdenEntradaFormData, CrearOrdenEntradaDto, ActualizarOrdenEntradaDto } from '@/types/OrdenesEntrada/ordenesEntrada.types';
+import { ESTADO_ORDEN, OrdenEntradaDto, OrdenEntradaFormData, CrearOrdenEntradaDto, ActualizarOrdenEntradaDto, estadoOrdenUtils } from '@/types/OrdenesEntrada/ordenesEntrada.types';
 import { ClasificacionService } from '@/services/clasificacion.service';
 
 // Componentes estilizados para la interfaz
@@ -156,7 +156,7 @@ export default function OrdenesEntrada() {
   const handleOpenModalActualizar = (codigo: string) => {
     const orden = ordenes.find(o => o.codigo === codigo);
     if (orden) {
-      if (orden.estado !== ESTADO_ORDEN.PENDIENTE) {
+      if (!estadoOrdenUtils.puedeEditar(orden.estado)) {
         toast.error('Solo se pueden editar órdenes en estado Pendiente');
         return;
       }
@@ -219,8 +219,8 @@ export default function OrdenesEntrada() {
       const orden = ordenes.find(o => o.codigo === codigo);
       if (!orden) return;
 
-      if (orden.estado !== ESTADO_ORDEN.PENDIENTE) {
-        toast.error('Solo se pueden cancelar órdenes en estado Pendiente');
+      if (!estadoOrdenUtils.esCancelable(orden.estado)) {
+        toast.error('Solo se pueden cancelar órdenes en estado Pendiente, Procesando o Recibida');
         return;
       }
 
@@ -241,32 +241,7 @@ export default function OrdenesEntrada() {
     }
   };
 
-  const handleReactivate = async (codigo: string) => {
-    try {
-      const orden = ordenes.find(o => o.codigo === codigo);
-      if (!orden) return;
 
-      if (orden.estado !== ESTADO_ORDEN.CANCELADA) {
-        toast.error('Solo se pueden reactivar órdenes en estado Cancelada');
-        return;
-      }
-
-      const ordenParaAPI: ActualizarOrdenEntradaDto = {
-        proveedorId: orden.proveedor.id,
-        productoId: orden.producto.id,
-        fechaEstimada: orden.fechaEstimada,
-        fechaRecepcion: orden.fechaRecepcion,
-        estado: ESTADO_ORDEN.PENDIENTE,
-        observaciones: orden.observaciones
-      };
-
-      await actualizarOrden(codigo, ordenParaAPI);
-      toast.success('Orden reactivada exitosamente');
-    } catch (error) {
-      console.error('Error al reactivar la orden:', error);
-      toast.error('Error al reactivar la orden');
-    }
-  };
 
   // Función para manejar la importación de órdenes
   const handleImportar = async (file: File) => {
@@ -359,7 +334,6 @@ export default function OrdenesEntrada() {
                 ordenes={ordenes}
                 onEdit={handleOpenModalActualizar}
                 onDelete={handleEliminar}
-                onReactivate={handleReactivate}
                 onRegistrarClasificacion={handleRegistrarClasificacion}
               />
             </StyledTable>

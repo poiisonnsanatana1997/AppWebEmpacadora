@@ -4,7 +4,6 @@ export interface OrdenesEntradaTableProps {
   ordenes: OrdenEntradaDto[];
   onEdit: (codigo: string) => void;
   onDelete: (codigo: string) => void;
-  onReactivate: (codigo: string) => void;
   onRegistrarClasificacion: (orden: OrdenEntradaDto) => void;
 }
 
@@ -27,6 +26,5 @@ export interface TableState {
   rowSelection: Record<string, boolean>;
   columnVisibility: Record<string, boolean>;
   ordenACancelar: string | null;
-  ordenAReactivar: string | null;
   filters: FilterOptions;
 } 

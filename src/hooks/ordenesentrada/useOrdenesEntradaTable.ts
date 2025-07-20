@@ -9,13 +9,12 @@ import {
 
 interface UseOrdenesEntradaTableProps {
   onDelete: (id: string) => void;
-  onReactivate: (id: string) => void;
 }
 
 /**
  * Hook personalizado para manejar el estado y la lógica de la tabla de órdenes de entrada
  */
-export const useOrdenesEntradaTable = ({ onDelete, onReactivate }: UseOrdenesEntradaTableProps) => {
+export const useOrdenesEntradaTable = ({ onDelete }: UseOrdenesEntradaTableProps) => {
   const navigate = useNavigate();
   
   // Estado de la tabla
@@ -24,28 +23,16 @@ export const useOrdenesEntradaTable = ({ onDelete, onReactivate }: UseOrdenesEnt
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [ordenACancelar, setOrdenACancelar] = useState<string | null>(null);
-  const [ordenAReactivar, setOrdenAReactivar] = useState<string | null>(null);
 
   // Handlers
   const handleCancelarOrden = (id: string | null): void => {
     setOrdenACancelar(id);
   };
 
-  const handleReactivarOrden = (id: string | null): void => {
-    setOrdenAReactivar(id);
-  };
-
   const handleConfirmarCancelacion = (): void => {
     if (ordenACancelar) {
       onDelete(ordenACancelar);
       setOrdenACancelar(null);
-    }
-  };
-
-  const handleConfirmarReactivacion = (): void => {
-    if (ordenAReactivar) {
-      onReactivate(ordenAReactivar);
-      setOrdenAReactivar(null);
     }
   };
 
@@ -60,13 +47,10 @@ export const useOrdenesEntradaTable = ({ onDelete, onReactivate }: UseOrdenesEnt
     columnVisibility,
     setColumnVisibility,
     ordenACancelar,
-    ordenAReactivar,
     
     // Handlers
     handleCancelarOrden,
-    handleReactivarOrden,
     handleConfirmarCancelacion,
-    handleConfirmarReactivacion,
     
     // Utilidades
     navigate

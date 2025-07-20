@@ -57,5 +57,6 @@ export interface TarimaClasificacionDTO {
   idClasificacion: number;
   peso: number;
   tipo: string;
+  cantidad: number;
   tarima: TarimaDTO;
 } 

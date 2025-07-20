@@ -1,15 +1,31 @@
 import { useState, useEffect, useCallback } from 'react';
 import { TarimasService } from '../../services/tarimas.service';
 import { TarimaParcialSeleccionadaDTO, TarimaParcialFiltradaDTO, TarimaUpdateParcialDTO } from '../../types/Tarimas/tarimaParcial.types';
+import { TarimaParcialCompletaDTO } from '../../types/Tarimas/tarima.types';
 import { toast } from 'sonner';
 
 export const useTarimasParciales = () => {
-  const [tarimasParciales, setTarimasParciales] = useState<TarimaParcialSeleccionadaDTO[]>([]);
-  const [tarimaSeleccionada, setTarimaSeleccionada] = useState<TarimaParcialSeleccionadaDTO | null>(null);
+  const [tarimasParciales, setTarimasParciales] = useState<TarimaParcialCompletaDTO[]>([]);
+  const [tarimaSeleccionada, setTarimaSeleccionada] = useState<TarimaParcialCompletaDTO | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTipo, setFilterTipo] = useState('all');
+
+  // Funciones de cálculo para cantidad y peso total desde las relaciones
+  const calcularCantidadTotal = useCallback((tarima: TarimaParcialCompletaDTO): number => {
+    // Sumamos las cantidades de todas las clasificaciones
+    return tarima.tarimasClasificaciones?.reduce((total, tc) => {
+      return total + (tc.cantidad || 0);
+    }, 0) || 0;
+  }, []);
+
+  const calcularPesoTotal = useCallback((tarima: TarimaParcialCompletaDTO): number => {
+    // Sumamos los pesos de todas las clasificaciones
+    return tarima.tarimasClasificaciones?.reduce((total, tc) => {
+      return total + (tc.peso || 0);
+    }, 0) || 0;
+  }, []);
 
   // Cargar tarimas parciales
   const cargarTarimasParciales = useCallback(async () => {
@@ -17,12 +33,6 @@ export const useTarimasParciales = () => {
     try {
       const data = await TarimasService.getTarimasParciales();
       setTarimasParciales(data);
-      
-      if (data.length === 0) {
-        toast.info('No se encontraron tarimas parciales disponibles');
-      } else {
-        toast.success(`Se cargaron ${data.length} tarima(s) parcial(es) correctamente`);
-      }
     } catch (error: any) {
       console.error('Error al cargar tarimas parciales:', error);
       
@@ -109,8 +119,8 @@ export const useTarimasParciales = () => {
         id: tarima.id,
         codigo: tarima.codigo,
         estatus: tarima.estatus,
-        cantidad: tarima.cantidad,
-        peso: tarima.peso,
+        cantidad: calcularCantidadTotal(tarima),
+        peso: calcularPesoTotal(tarima),
         tipo: clasificacion?.tipo || 'N/A',
         lote: clasificacion?.lote || 'N/A',
         cliente: pedido?.nombreCliente || 'N/A',
@@ -131,7 +141,7 @@ export const useTarimasParciales = () => {
     });
 
   // Seleccionar tarima
-  const seleccionarTarima = useCallback((tarima: TarimaParcialSeleccionadaDTO) => {
+  const seleccionarTarima = useCallback((tarima: TarimaParcialCompletaDTO) => {
     setTarimaSeleccionada(tarima);
   }, []);
 

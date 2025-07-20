@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from '../ui/badge';
 import { Plus, X, Filter, Search } from 'lucide-react';
 import { useTarimasParciales } from '../../hooks/Clasificacion/useTarimasParciales';
-import { TarimaParcialSeleccionadaDTO } from '../../types/Tarimas/tarimaParcial.types';
+import { TarimaParcialCompletaDTO } from '../../types/Tarimas/tarima.types';
 import { AgregarCantidadForm } from './AgregarCantidadForm';
 import { toast } from 'sonner';
 
@@ -16,6 +16,7 @@ interface TarimasParcialesModalProps {
   clasificacionId: number;
   clasificaciones: any[];
   onValidate: (cantidad: number) => { isValid: boolean; message: string };
+  onSuccess?: () => void;
 }
 
 const TIPO_OPTIONS = [
@@ -26,7 +27,7 @@ const TIPO_OPTIONS = [
   { value: 'S', label: 'S' },
 ];
 
-export const TarimasParcialesModal: React.FC<TarimasParcialesModalProps> = ({ open, onClose, clasificacionId, clasificaciones, onValidate }) => {
+export const TarimasParcialesModal: React.FC<TarimasParcialesModalProps> = ({ open, onClose, clasificacionId, clasificaciones, onValidate, onSuccess }) => {
   const {
     tarimasParciales,
     tarimasFiltradas,
@@ -45,6 +46,21 @@ export const TarimasParcialesModal: React.FC<TarimasParcialesModalProps> = ({ op
 
   const [view, setView] = useState<'list' | 'detail'>('list');
 
+  // Funciones de cálculo para cantidad y peso total desde las relaciones
+  const calcularCantidadTotal = useCallback((tarima: TarimaParcialCompletaDTO): number => {
+    // Sumamos las cantidades de todas las clasificaciones
+    return tarima.tarimasClasificaciones?.reduce((total, tc) => {
+      return total + (tc.cantidad || 0);
+    }, 0) || 0;
+  }, []);
+
+  const calcularPesoTotal = useCallback((tarima: TarimaParcialCompletaDTO): number => {
+    // Sumamos los pesos de todas las clasificaciones
+    return tarima.tarimasClasificaciones?.reduce((total, tc) => {
+      return total + (tc.peso || 0);
+    }, 0) || 0;
+  }, []);
+
   // Cargar tarimas parciales cuando el modal se abre
   useEffect(() => {
     if (open) {
@@ -59,7 +75,7 @@ export const TarimasParcialesModal: React.FC<TarimasParcialesModalProps> = ({ op
     onClose();
   };
 
-  const handleSelectTarima = (tarima: TarimaParcialSeleccionadaDTO) => {
+  const handleSelectTarima = (tarima: TarimaParcialCompletaDTO) => {
     seleccionarTarima(tarima);
     setView('detail');
   };
@@ -92,7 +108,7 @@ export const TarimasParcialesModal: React.FC<TarimasParcialesModalProps> = ({ op
   };
 
   // Suma de cantidades ya gestionadas
-  const cantidadYaGestionada = tarimasParciales.reduce((acc, t) => acc + t.cantidad, 0);
+  const cantidadYaGestionada = tarimasParciales.reduce((acc, t) => acc + calcularCantidadTotal(t), 0);
 
   // Función de validación
   const onValidateCantidadTarimaParcial = (cantidadAAgregar: number) => {
@@ -102,6 +118,8 @@ export const TarimasParcialesModal: React.FC<TarimasParcialesModalProps> = ({ op
   const handleSuccess = () => {
     // Recargar tarimas parciales y cerrar modal
     cargarTarimasParciales();
+    // Llamar al callback para actualizar los datos de la clasificación principal
+    onSuccess?.();
     handleClose();
   };
 
@@ -171,35 +189,37 @@ export const TarimasParcialesModal: React.FC<TarimasParcialesModalProps> = ({ op
                     <td colSpan={9} className="text-center py-8 text-gray-400">No se encontraron tarimas parciales</td>
                   </tr>
                 ) : (
-                  tarimasFiltradas.map((tarima) => (
-                    <tr key={tarima.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="px-2 py-1 text-center whitespace-nowrap">
-                        <Button
-                          onClick={() => {
-                            const tarimaCompleta = tarimasParciales.find(t => t.id === tarima.id);
-                            if (tarimaCompleta) {
-                              handleSelectTarima(tarimaCompleta);
-                            }
-                          }}
-                          className="bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 hover:border-blue-700 hover:text-blue-700 focus:ring-2 focus:ring-blue-400 focus:outline-none shadow-md transition duration-150 ease-in-out rounded-full w-8 h-8 flex items-center justify-center active:scale-95"
-                          aria-label="Gestionar tarima"
-                          tabIndex={0}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </td>
-                      <td className="px-2 py-1 text-center whitespace-nowrap">{tarima.cantidad}</td>
-                      <td className="px-2 py-1 font-medium whitespace-nowrap max-w-[120px] truncate" title={tarima.codigo}>{tarima.codigo}</td>
-                      <td className="px-2 py-1 whitespace-nowrap">
-                        <Badge className={getTipoColor(tarima.tipo)}>{tarima.tipo}</Badge>
-                      </td>
-                      <td className="px-2 py-1 whitespace-nowrap max-w-[120px] truncate" title={tarima.lote}>{tarima.lote}</td>
-                      <td className="px-2 py-1 whitespace-nowrap max-w-[140px] truncate" title={tarima.cliente}>{tarima.cliente}</td>
-                      <td className="px-2 py-1 whitespace-nowrap max-w-[120px] truncate" title={tarima.sucursal}>{tarima.sucursal}</td>
-                      <td className="px-2 py-1 text-center whitespace-nowrap">{formatWeight(tarima.peso)}</td>
-                      <td className="px-2 py-1 text-center whitespace-nowrap">{formatDate(tarima.fechaRegistro)}</td>
-                    </tr>
-                  ))
+                  tarimasFiltradas.map((tarima) => {
+                    const tarimaCompleta = tarimasParciales.find(t => t.id === tarima.id);
+                    return (
+                      <tr key={tarima.id} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="px-2 py-1 text-center whitespace-nowrap">
+                          <Button
+                            onClick={() => {
+                              if (tarimaCompleta) {
+                                handleSelectTarima(tarimaCompleta);
+                              }
+                            }}
+                            className="bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-700 focus:ring-2 focus:ring-gray-400 focus:outline-none transition-colors duration-200 rounded-md w-8 h-8 flex items-center justify-center"
+                            aria-label="Gestionar tarima"
+                            tabIndex={0}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </td>
+                        <td className="px-2 py-1 text-center whitespace-nowrap">{tarimaCompleta ? calcularCantidadTotal(tarimaCompleta) : tarima.cantidad}</td>
+                        <td className="px-2 py-1 font-medium whitespace-nowrap max-w-[120px] truncate" title={tarima.codigo}>{tarima.codigo}</td>
+                        <td className="px-2 py-1 whitespace-nowrap">
+                          <Badge className={getTipoColor(tarima.tipo)}>{tarima.tipo}</Badge>
+                        </td>
+                        <td className="px-2 py-1 whitespace-nowrap max-w-[120px] truncate" title={tarima.lote}>{tarima.lote}</td>
+                        <td className="px-2 py-1 whitespace-nowrap max-w-[140px] truncate" title={tarima.cliente}>{tarima.cliente}</td>
+                        <td className="px-2 py-1 whitespace-nowrap max-w-[120px] truncate" title={tarima.sucursal}>{tarima.sucursal}</td>
+                        <td className="px-2 py-1 text-center whitespace-nowrap">{formatWeight(tarimaCompleta ? calcularPesoTotal(tarimaCompleta) : tarima.peso)}</td>
+                        <td className="px-2 py-1 text-center whitespace-nowrap">{formatDate(tarima.fechaRegistro)}</td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -212,7 +232,7 @@ export const TarimasParcialesModal: React.FC<TarimasParcialesModalProps> = ({ op
               variant="ghost"
               size="sm"
               onClick={handleBackToList}
-              className="mb-2 text-xs text-blue-600 hover:underline"
+              className="mb-2 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-100 px-3 py-1 rounded-md transition-colors duration-200"
               aria-label="Volver a la lista"
               tabIndex={0}
             >
@@ -230,7 +250,7 @@ export const TarimasParcialesModal: React.FC<TarimasParcialesModalProps> = ({ op
             <AgregarCantidadForm
               onSuccess={handleSuccess}
               onCancel={handleBackToList}
-              tarimaActual={tarimaSeleccionada}
+              tarimaActual={tarimaSeleccionada as any}
               clasificacionId={clasificacionId}
               onValidate={onValidateCantidadTarimaParcial}
             />

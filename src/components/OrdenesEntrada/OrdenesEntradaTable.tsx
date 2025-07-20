@@ -33,16 +33,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 
 // Iconos
-import { Edit2, ChevronDown, ChevronUp, ChevronsUpDown, X, RefreshCw, Clock, ClipboardX, Eye, ListChecks, MoreVertical, CheckCircle } from 'lucide-react';
+import { Edit2, ChevronDown, ChevronUp, ChevronsUpDown, X, Clock, ClipboardX, Eye, ListChecks, CheckCircle, MoreHorizontal } from 'lucide-react';
 
 // Utilidades y tipos
 import clsx from 'clsx';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ESTADO_ORDEN, OrdenEntradaDto } from '@/types/OrdenesEntrada/ordenesEntrada.types';
+import { ESTADO_ORDEN, OrdenEntradaDto, estadoOrdenUtils } from '@/types/OrdenesEntrada/ordenesEntrada.types';
 import { OrdenesEntradaTableProps } from '@/types/OrdenesEntrada/ordenesEntradaTable.types';
 import { useOrdenesEntradaTable } from '@/hooks/OrdenesEntrada/useOrdenesEntradaTable';
 import { FilterInput } from './FilterInput';
@@ -76,7 +83,7 @@ const TodayIcon = styled(Clock)`
  * - Filtrado por fecha: Filtrar por hoy, próximos 7 días, etc.
  * - Diálogos de confirmación: Para acciones destructivas
  */
-export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onReactivate, onRegistrarClasificacion }: OrdenesEntradaTableProps) {
+export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onRegistrarClasificacion }: OrdenesEntradaTableProps) {
   const {
     sorting,
     setSorting,
@@ -87,13 +94,10 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onReactivate, o
     columnVisibility,
     setColumnVisibility,
     ordenACancelar,
-    ordenAReactivar,
     handleCancelarOrden,
-    handleReactivarOrden,
     handleConfirmarCancelacion,
-    handleConfirmarReactivacion,
     navigate
-  } = useOrdenesEntradaTable({ onDelete, onReactivate });
+  } = useOrdenesEntradaTable({ onDelete });
 
   // Estado local para controlar el valor del select de fecha
   const [fechaFilterValue, setFechaFilterValue] = React.useState("all");
@@ -379,88 +383,86 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onReactivate, o
       header: 'Acciones',
       cell: ({ row }) => {
         const orden = row.original;
-        let principalIcon = null;
-        let principalAction = () => {};
-        let principalTooltip = '';
-        let principalColor = '';
-        let menuItems = [];
-        if (orden.estado === ESTADO_ORDEN.PENDIENTE) {
-          principalIcon = <Eye className="w-4 h-4 text-blue-600" />;
-          principalTooltip = 'Ir a pesaje';
-          principalColor = 'bg-blue-100 hover:bg-blue-200';
-          principalAction = () => navigate(`/ordenes-entrada/${orden.codigo}`);
-          menuItems = [
-            <DropdownMenuItem key="editar" onClick={() => onEdit(orden.codigo)}><Edit2 className="w-4 h-4 mr-2" />Editar</DropdownMenuItem>,
-            <DropdownMenuItem key="cancelar" onClick={() => onDelete(orden.codigo)}><ClipboardX className="w-4 h-4 mr-2 text-red-600" />Cancelar</DropdownMenuItem>,
-            <DropdownMenuItem key="clasificar" onClick={() => onRegistrarClasificacion(orden)}><ListChecks className="w-4 h-4 mr-2 text-green-600" />Clasificar</DropdownMenuItem>,
-          ];
-        } else if (orden.estado === ESTADO_ORDEN.RECIBIDA) {
-          principalIcon = <ListChecks className="w-4 h-4 text-green-600" />;
-          principalTooltip = 'Clasificar';
-          principalColor = 'bg-green-100 hover:bg-green-200';
-          principalAction = () => onRegistrarClasificacion(orden);
-          menuItems = [
-            <DropdownMenuItem key="pesaje" onClick={() => navigate(`/ordenes-entrada/${orden.codigo}`)}><Eye className="w-4 h-4 mr-2 text-blue-600" />Pesaje</DropdownMenuItem>,
-            <DropdownMenuItem key="editar" onClick={() => onEdit(orden.codigo)}><Edit2 className="w-4 h-4 mr-2" />Editar</DropdownMenuItem>,
-            <DropdownMenuItem key="cancelar" onClick={() => onDelete(orden.codigo)}><ClipboardX className="w-4 h-4 mr-2 text-red-600" />Cancelar</DropdownMenuItem>,
-          ];
-        } else if (orden.estado === ESTADO_ORDEN.CLASIFICADO || orden.estado === ESTADO_ORDEN.CLASIFICANDO) {
-          principalIcon = <CheckCircle className="w-4 h-4 text-purple-600" />;
-          principalTooltip = 'Ver clasificación';
-          principalColor = 'bg-purple-100 hover:bg-purple-200';
-          principalAction = () => navigate(`/clasificacion-orden/${orden.id}`);
-          menuItems = [
-            <DropdownMenuItem key="verclasif" onClick={() => navigate(`/clasificacion-orden/${orden.id}`)}><CheckCircle className="w-4 h-4 mr-2 text-purple-600" />Ver Clasificación</DropdownMenuItem>,
-          ];
-        } else if (orden.estado === ESTADO_ORDEN.PROCESANDO) {
-          principalIcon = <Eye className="w-4 h-4 text-blue-600" />;
-          principalTooltip = 'Ir a pesaje';
-          principalColor = 'bg-blue-100 hover:bg-blue-200';
-          principalAction = () => navigate(`/ordenes-entrada/${orden.codigo}`);
-          menuItems = [
-            <DropdownMenuItem key="editar" onClick={() => onEdit(orden.codigo)}><Edit2 className="w-4 h-4 mr-2" />Editar</DropdownMenuItem>,
-            <DropdownMenuItem key="cancelar" onClick={() => onDelete(orden.codigo)}><ClipboardX className="w-4 h-4 mr-2 text-red-600" />Cancelar</DropdownMenuItem>,
-            <DropdownMenuItem key="pesaje" onClick={() => navigate(`/ordenes-entrada/${orden.codigo}`)}><Eye className="w-4 h-4 mr-2 text-blue-600" />Pesaje</DropdownMenuItem>,
-          ];
-        } else if (orden.estado === ESTADO_ORDEN.CANCELADA) {
-          principalIcon = <RefreshCw className="w-4 h-4 text-gray-600" />;
-          principalTooltip = 'Reactivar';
-          principalColor = 'bg-gray-100 hover:bg-gray-200';
-          principalAction = () => onReactivate(orden.codigo);
-          menuItems = [
-            <DropdownMenuItem key="pesaje" onClick={() => navigate(`/ordenes-entrada/${orden.codigo}`)}><Eye className="w-4 h-4 mr-2 text-blue-600" />Pesaje</DropdownMenuItem>,
-            <DropdownMenuItem key="reactivar" onClick={() => onReactivate(orden.codigo)}><RefreshCw className="w-4 h-4 mr-2 text-gray-600" />Reactivar</DropdownMenuItem>,
-          ];
-        }
+        
         return (
-          <div className="flex items-center gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button size="icon" variant="ghost" className={principalColor} onClick={principalAction} aria-label={principalTooltip}>
-                    {principalIcon}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{principalTooltip}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="icon" variant="outline" aria-label="Más acciones">
-                  <MoreVertical className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {menuItems}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                className="h-8 w-8 p-0 hover:bg-gray-100"
+                aria-label="Acciones de la orden"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {/* Ver Detalles/Pesaje - Siempre disponible excepto cancelado */}
+              {estadoOrdenUtils.puedeVerPesaje(orden.estado) && (
+                <DropdownMenuItem 
+                  onClick={() => navigate(`/ordenes-entrada/${orden.codigo}`)}
+                  className="cursor-pointer"
+                >
+                  <Eye className="mr-2 h-4 w-4 text-blue-600" />
+                  <span>Ver detalles y pesaje</span>
+                </DropdownMenuItem>
+              )}
+
+              {/* Editar - Solo para órdenes pendientes */}
+              {estadoOrdenUtils.puedeEditar(orden.estado) && (
+                <DropdownMenuItem 
+                  onClick={() => onEdit(orden.codigo)}
+                  className="cursor-pointer"
+                >
+                  <Edit2 className="mr-2 h-4 w-4 text-yellow-600" />
+                  <span>Editar orden</span>
+                </DropdownMenuItem>
+              )}
+
+              {/* Clasificar - Solo para órdenes recibidas */}
+              {estadoOrdenUtils.puedeClasificar(orden.estado) && (
+                <DropdownMenuItem 
+                  onClick={() => onRegistrarClasificacion(orden)}
+                  className="cursor-pointer"
+                >
+                  <ListChecks className="mr-2 h-4 w-4 text-green-600" />
+                  <span>Iniciar clasificación</span>
+                </DropdownMenuItem>
+              )}
+
+              {/* Ver Clasificación - Solo para órdenes clasificadas */}
+              {estadoOrdenUtils.puedeVerClasificacion(orden.estado) && (
+                <DropdownMenuItem 
+                  onClick={() => navigate(`/clasificacion-orden/${orden.id}`)}
+                  className="cursor-pointer"
+                >
+                  <CheckCircle className="mr-2 h-4 w-4 text-purple-600" />
+                  <span>Ver clasificación</span>
+                </DropdownMenuItem>
+              )}
+
+              {/* Separador antes de acciones destructivas */}
+              {estadoOrdenUtils.esCancelable(orden.estado) && (
+                <DropdownMenuSeparator />
+              )}
+
+              {/* Cancelar - Solo para órdenes cancelables */}
+              {estadoOrdenUtils.esCancelable(orden.estado) && (
+                <DropdownMenuItem 
+                  onClick={() => handleCancelarOrden(orden.codigo)}
+                  className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                >
+                  <ClipboardX className="mr-2 h-4 w-4" />
+                  <span>Cancelar orden</span>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         );
       },
       enableSorting: false,
       enableColumnFilter: false,
     },
-  ], [onEdit, onDelete, onReactivate, onRegistrarClasificacion, fechaFilterValue, setSorting, navigate]);
+  ], [onEdit, onDelete, onRegistrarClasificacion, fechaFilterValue, setSorting, navigate]);
 
   // Instancia de tabla con todas las características habilitadas
   const table = useReactTable({
@@ -629,41 +631,60 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onReactivate, o
         open={!!ordenACancelar} 
         onOpenChange={(open) => !open && handleCancelarOrden(null)}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción cancelará la orden y no se podrá deshacer.
+            <AlertDialogTitle className="flex items-center gap-2 text-gray-900">
+              <ClipboardX className="w-5 h-5" />
+              Confirmar Cancelación de Orden
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-sm font-medium text-red-800 mb-2">
+                  ⚠️ Esta acción no se puede deshacer
+                </p>
+                <p className="text-sm text-red-700">
+                  La orden será marcada como cancelada y no podrá ser reactivada posteriormente.
+                </p>
+              </div>
+              
+              {ordenACancelar && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                  <p className="text-sm font-medium text-gray-800 mb-1">
+                    Orden a cancelar:
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <span className="font-semibold">Código:</span> {ordenACancelar}
+                  </p>
+                </div>
+              )}
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm font-medium text-blue-800 mb-1">
+                  ¿Qué sucede al cancelar?
+                </p>
+                <ul className="text-sm text-blue-700 space-y-1">
+                  <li>• La orden cambiará a estado "Cancelada"</li>
+                  <li>• No se podrá procesar ni clasificar</li>
+                  <li>• Se mantendrá en el historial para auditoría</li>
+                </ul>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmarCancelacion}>
-              Confirmar
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="bg-gray-100 hover:bg-gray-200 text-gray-700">
+              Mantener Orden
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmarCancelacion}
+              className="bg-gray-900 hover:bg-gray-800 text-white"
+            >
+              Sí, Cancelar Orden
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog 
-        open={!!ordenAReactivar} 
-        onOpenChange={(open) => !open && handleReactivarOrden(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción reactivará la orden y volverá a su estado pendiente.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmarReactivacion}>
-              Confirmar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+
     </div>
   );
 } 

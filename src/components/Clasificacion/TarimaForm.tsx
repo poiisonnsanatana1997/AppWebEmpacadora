@@ -528,7 +528,7 @@ export const TarimaForm: React.FC<TarimaFormProps> = ({
               <DialogFooter className="mt-6 flex gap-2">
                 <Button 
                   type="button"
-                  className="bg-green-600 text-white hover:bg-green-700" 
+                  className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-medium transition-colors duration-200" 
                   disabled={isSubmitting}
                   onClick={form.handleSubmit(handleSubmitCompleta)}
                 >
@@ -537,7 +537,7 @@ export const TarimaForm: React.FC<TarimaFormProps> = ({
                 </Button>
                 <Button 
                   type="button"
-                  className="bg-orange-600 text-white hover:bg-orange-700" 
+                  className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-medium transition-colors duration-200" 
                   disabled={isSubmitting}
                   onClick={form.handleSubmit(handleSubmitParcial)}
                 >

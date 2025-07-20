@@ -403,7 +403,7 @@ export default function ClasificacionOrdenEntrada() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <Toaster richColors position="top-right" />
       {/* Header con información del pedido */}
       <ClasificacionHeader 
@@ -428,46 +428,46 @@ export default function ClasificacionOrdenEntrada() {
 
       {/* Errores de validación para finalización */}
       {!estaFinalizada && errores.length > 0 && (
-        <Card className="mb-6 border-red-200 bg-red-50">
-          <CardHeader>
-            <CardTitle className="text-red-800 flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" />
+        <Card className="mb-4 border-red-200 bg-red-50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-red-800 flex items-center gap-2 text-base">
+              <AlertTriangle className="h-4 w-4" />
               Validaciones Pendientes para Finalizar
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
+          <CardContent className="pt-0">
+            <div className="space-y-1">
               {errores.map((error, index) => (
                 <div key={index} className="flex items-center gap-2 text-red-700">
-                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
                   <span className="text-sm">{error}</span>
                 </div>
               ))}
             </div>
-            <div className="mt-4 p-3 bg-white rounded-lg border border-red-200">
-              <h4 className="font-semibold text-red-800 mb-2">Detalles de Validación:</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${detallesValidacion.tiposClasificados ? 'bg-green-500' : 'bg-red-500'}`}></div>
+            <div className="mt-3 p-2 bg-white rounded border border-red-200">
+              <h4 className="font-medium text-red-800 mb-1 text-sm">Detalles de Validación:</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <div className={`w-2 h-2 rounded-full ${detallesValidacion.tiposClasificados ? 'bg-green-500' : 'bg-red-500'}`}></div>
                   <span className={detallesValidacion.tiposClasificados ? 'text-green-700' : 'text-red-700'}>
                     Al menos un tipo clasificado
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${detallesValidacion.preciosEstablecidos ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <div className="flex items-center gap-1.5">
+                  <div className={`w-2 h-2 rounded-full ${detallesValidacion.preciosEstablecidos ? 'bg-green-500' : 'bg-red-500'}`}></div>
                   <span className={detallesValidacion.preciosEstablecidos ? 'text-green-700' : 'text-red-700'}>
                     Precios de tipos clasificados
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${detallesValidacion.progresoCompleto ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <div className="flex items-center gap-1.5">
+                  <div className={`w-2 h-2 rounded-full ${detallesValidacion.progresoCompleto ? 'bg-green-500' : 'bg-red-500'}`}></div>
                   <span className={detallesValidacion.progresoCompleto ? 'text-green-700' : 'text-red-700'}>
                     Progreso 100%
                   </span>
                 </div>
               </div>
-              <div className="mt-3 pt-3 border-t border-red-200">
-                <div className="text-xs text-gray-600 mb-2">
+              <div className="mt-2 pt-2 border-t border-red-200">
+                <div className="text-xs text-gray-600 mb-1">
                   <strong>Nota:</strong> Solo se requieren precios para los tipos que han sido clasificados (tienen tarimas). No es obligatorio clasificar todos los tipos.
                 </div>
                 {tiposClasificados.length > 0 && (
@@ -521,31 +521,31 @@ export default function ClasificacionOrdenEntrada() {
                   <>
                     <Button
                       onClick={handleAddTarima}
-                      className="flex items-center gap-2 px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md transition"
+                      className="flex items-center gap-2 px-4 py-2 rounded-md bg-white border border-green-500 text-green-700 hover:bg-green-50 hover:border-green-600 font-medium text-sm transition-colors duration-200"
                     >
-                      <Package className="h-5 w-5" />
+                      <Package className="h-4 w-4" />
                       Agregar Tarima
                     </Button>
                     <Button
-                      onClick={handleCrearMerma}
-                      className="flex items-center gap-2 px-6 py-3 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-semibold shadow-md transition"
+                      onClick={handleGestionarTarimasParciales}
+                      className="flex items-center gap-2 px-4 py-2 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-medium text-sm transition-colors duration-200"
                     >
-                      <AlertTriangle className="h-5 w-5" />
+                      <Package className="h-4 w-4" />
+                      Tarimas Parciales
+                    </Button>
+                    <Button
+                      onClick={handleCrearMerma}
+                      className="flex items-center gap-2 px-4 py-2 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-medium text-sm transition-colors duration-200"
+                    >
+                      <AlertTriangle className="h-4 w-4" />
                       Agregar Merma
                     </Button>
                     <Button
                       onClick={handleCrearRetorno}
-                      className="flex items-center gap-2 px-6 py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold shadow-md transition"
+                      className="flex items-center gap-2 px-4 py-2 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-medium text-sm transition-colors duration-200"
                     >
-                      <RotateCcw className="h-5 w-5" />
+                      <RotateCcw className="h-4 w-4" />
                       Agregar Retorno
-                    </Button>
-                    <Button
-                      onClick={handleGestionarTarimasParciales}
-                      className="flex items-center gap-2 px-6 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-semibold shadow-md transition"
-                    >
-                      <Package className="h-5 w-5" />
-                      Tarimas Parciales
                     </Button>
                   </>
                 )}
@@ -640,6 +640,7 @@ export default function ClasificacionOrdenEntrada() {
           clasificacionId: clasificaciones[0]?.id || 0,
           clasificaciones
         })}
+        onSuccess={handleRefreshData}
       />
       <AjustarPesosModal
         open={ajustePesosModalOpen}

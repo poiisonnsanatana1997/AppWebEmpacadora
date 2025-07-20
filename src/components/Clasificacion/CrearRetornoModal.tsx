@@ -22,7 +22,7 @@ export const CrearRetornoModal: React.FC<CrearRetornoModalProps> = ({
   clasificaciones = [],
   onValidate
 }) => {
-  const { form, onSubmit, isSubmitting } = useRetornoForm(clasificacionId, () => {
+  const { form, onSubmit, isSubmitting, loadingRetornos } = useRetornoForm(clasificacionId, () => {
     onClose();
     onSuccess?.();
   });
@@ -51,6 +51,7 @@ export const CrearRetornoModal: React.FC<CrearRetornoModalProps> = ({
             isSubmitting={isSubmitting}
             clasificaciones={clasificaciones}
             onValidate={onValidate}
+            loadingRetornos={loadingRetornos}
           />
         </Form>
       </DialogContent>

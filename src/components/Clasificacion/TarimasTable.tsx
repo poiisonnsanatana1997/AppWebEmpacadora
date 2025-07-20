@@ -122,9 +122,9 @@ export const TarimasTable: React.FC<TarimasTableProps> = ({ tarimas, onShowDetai
         value === 'all' ? true : row.original.tarima.estatus === value,
     },
     {
-      accessorKey: 'tarima.cantidad',
+      accessorKey: 'cantidad',
       header: () => <span className="font-semibold">Cantidad de Cajas</span>,
-      cell: ({ row }) => <span className="text-slate-700">{row.original.tarima.cantidad}</span>,
+      cell: ({ row }) => <span className="text-slate-700">{row.original.cantidad}</span>,
     },
     {
       accessorKey: 'peso',
@@ -196,7 +196,7 @@ export const TarimasTable: React.FC<TarimasTableProps> = ({ tarimas, onShowDetai
           variant="ghost"
           size="sm"
           onClick={() => onShowDetail(row.original)}
-          className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+          className="h-8 px-3 text-gray-600 hover:text-gray-800 hover:bg-gray-100 border border-gray-200 rounded-md transition-colors duration-200"
         >
           <Eye className="h-3 w-3 mr-1" />
           Ver Detalle

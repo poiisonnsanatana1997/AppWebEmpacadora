@@ -89,7 +89,7 @@ export const TarimaDetalleModal: React.FC<TarimaDetalleModalProps> = ({
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">Cantidad de Cajas</label>
-                <p className="text-lg font-semibold text-gray-900">{tarima.tarima.cantidad}</p>
+                <p className="text-lg font-semibold text-gray-900">{tarima.cantidad}</p>
               </div>
             </div>
           </div>
@@ -108,10 +108,7 @@ export const TarimaDetalleModal: React.FC<TarimaDetalleModalProps> = ({
               <div>
                 <label className="text-sm font-medium text-gray-600">Peso por Caja</label>
                 <p className="text-lg font-semibold text-blue-900">
-                  {tarima.tarima.cantidad > 0 
-                    ? formatWeight(tarima.peso / tarima.tarima.cantidad)
-                    : 'N/A'
-                  }
+                  {tarima.tarima.peso}
                 </p>
               </div>
             </div>
