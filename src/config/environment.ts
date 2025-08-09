@@ -43,8 +43,8 @@ const getEnvVar = (key: string, defaultValue?: string): string => {
  */
 const developmentConfig: EnvironmentConfig = {
   api: {
-    baseUrl: getEnvVar('VITE_API_BASE_URL', 'http://localhost/AppAPIEmpacadora/api'),
-    timeout: 10000,
+    baseUrl: getEnvVar('VITE_API_BASE_URL', 'http://localhost:57664/api'),
+    timeout: 15000,
   },
   app: {
     name: getEnvVar('VITE_APP_NAME', 'AppWebEmpacadora (Dev)'),
@@ -66,7 +66,7 @@ const developmentConfig: EnvironmentConfig = {
  */
 const productionConfig: EnvironmentConfig = {
   api: {
-    baseUrl: getEnvVar('VITE_API_BASE_URL', 'http://18.217.220.233/EM001/api'),
+    baseUrl: getEnvVar('VITE_API_BASE_URL', 'http://18.217.220.233:8080/EM002/api'),
     timeout: 15000,
   },
   app: {

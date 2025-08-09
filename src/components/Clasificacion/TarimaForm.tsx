@@ -14,9 +14,11 @@ import { z } from 'zod';
 import { NumericFormat } from 'react-number-format';
 import { Package, Save, X, Info, ShoppingCart, Loader2, AlertCircle } from 'lucide-react';
 import styled from 'styled-components';
-import { usePedidosCliente } from '@/hooks/Clasificacion/usePedidosCliente';
+
+import { SelectorPedidos } from './SelectorClientes';
 import { TarimasService } from '@/services/tarimas.service';
 import { toast } from 'sonner';
+import { PedidoClientePorAsignarDTO } from '@/types/PedidoCliente/pedidoCliente.types';
 
 // Schema de validación simplificado
 const tarimaFormSchema = z.object({
@@ -96,9 +98,11 @@ interface TarimaFormProps {
   onClose: () => void;
   tarima?: TarimaClasificacionDTO;
   clasificacionId: number;
+  idProducto?: number;
   onSuccess?: () => void;
   clasificaciones?: any[];
   onValidate?: (peso: number) => { isValid: boolean; message: string };
+  pedidoSeleccionado?: PedidoClientePorAsignarDTO | null;
 }
 
 // Componente para input numérico con formato
@@ -147,12 +151,14 @@ export const TarimaForm: React.FC<TarimaFormProps> = ({
   onClose, 
   tarima, 
   clasificacionId,
+  idProducto,
   onSuccess,
   clasificaciones = [],
-  onValidate
+  onValidate,
+  pedidoSeleccionado
 }) => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const { pedidosCliente, isLoading: isLoadingPedidos, error: errorPedidos } = usePedidosCliente();
+  const [pedidoSeleccionadoLocal, setPedidoSeleccionadoLocal] = React.useState<PedidoClientePorAsignarDTO | null>(null);
   const form = useForm<TarimaFormData>({
     resolver: zodResolver(tarimaFormSchema),
     defaultValues: {
@@ -178,10 +184,18 @@ export const TarimaForm: React.FC<TarimaFormProps> = ({
         upc: tarima?.tarima.upc || '',
         observaciones: tarima?.tarima.observaciones || '',
       });
+      setPedidoSeleccionadoLocal(null);
     }
   }, [open, tarima, form]);
 
   const handleSubmitCompleta = async (data: TarimaFormData) => {
+    // Validar cantidad de cajas del pedido
+    const validacionPedido = validarCantidadPedido(data.cantidad, data.cantidadTarimas);
+    if (!validacionPedido.isValid) {
+      toast.error(validacionPedido.message);
+      return;
+    }
+    
     // Validar límite de clasificación
     if (onValidate) {
       console.log('Validando tarima - pesoTotal:', pesoTotal);
@@ -210,6 +224,7 @@ export const TarimaForm: React.FC<TarimaFormProps> = ({
         idPedidoCliente: data.idPedidoCliente || undefined,
         cantidadTarimas: data.cantidadTarimas,
       };
+      console.log('tarimasData', tarimasData);
       await TarimasService.crearTarima(tarimasData);
       toast.success('Tarima(s) guardada(s) correctamente');
       onClose();
@@ -223,6 +238,13 @@ export const TarimaForm: React.FC<TarimaFormProps> = ({
   };
 
   const handleSubmitParcial = async (data: TarimaFormData) => {
+    // Validar cantidad de cajas del pedido
+    const validacionPedido = validarCantidadPedido(data.cantidad, data.cantidadTarimas);
+    if (!validacionPedido.isValid) {
+      toast.error(validacionPedido.message);
+      return;
+    }
+    
     // Validar límite de clasificación
     if (onValidate) {
       console.log('Validando tarima - pesoTotal:', pesoTotal);
@@ -268,6 +290,23 @@ export const TarimaForm: React.FC<TarimaFormProps> = ({
   };
 
   const pesoTotal = form.watch('cantidad') * form.watch('peso') * form.watch('cantidadTarimas');
+  
+  // Función para validar cantidad de cajas del pedido
+  const validarCantidadPedido = (cantidad: number, cantidadTarimas: number) => {
+    if (!pedidoSeleccionadoLocal) return { isValid: true, message: '' };
+    
+    const cantidadTotal = cantidad * cantidadTarimas;
+    const cantidadDisponible = pedidoSeleccionadoLocal.cantidad;
+    
+    if (cantidadTotal > cantidadDisponible) {
+      return {
+        isValid: false,
+        message: `La cantidad total de cajas (${cantidadTotal}) excede la cantidad disponible del pedido (${cantidadDisponible} cajas)`
+      };
+    }
+    
+    return { isValid: true, message: '' };
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleCancel}>
@@ -364,81 +403,44 @@ export const TarimaForm: React.FC<TarimaFormProps> = ({
                 </FormGrid>
               </FormSection>
 
-              {/* Asignación a pedido (opcional) */}
+              {/* Selección de Pedido Cliente */}
               <FormSection>
-                <SectionTitle>
-                  <ShoppingCart className="h-4 w-4" />
-                  Asignar a Pedido (Opcional)
-                </SectionTitle>
                 
-                {isLoadingPedidos && (
-                  <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                    <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                    <span className="text-sm text-blue-700">Cargando pedidos cliente...</span>
-                  </div>
-                )}
-                
-                {errorPedidos && (
-                  <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
-                    <AlertCircle className="h-4 w-4 text-red-600" />
-                    <span className="text-sm text-red-700">Error al cargar pedidos: {errorPedidos}</span>
-                  </div>
-                )}
-                
-                {!isLoadingPedidos && !errorPedidos && pedidosCliente.length > 0 && (
-                  <FormField
-                    control={form.control}
-                    name="idPedidoCliente"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Pedido del Cliente</FormLabel>
-                        <Select
-                          onValueChange={value => {
-                            if (!value || value === "0") {
-                              field.onChange(undefined);
-                              // Limpiar el peso cuando se desasigna
-                              form.setValue('peso', 0);
-                              return;
-                            }
-                            field.onChange(Number(value));
-                            const pedido = pedidosCliente.find(p => p.id === Number(value));
-                            if (pedido) {
-                              form.setValue('peso', pedido.pesoCajaCliente);
-                            }
-                          }}
-                          value={field.value ? field.value.toString() : "0"}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecciona un pedido cliente (opcional)" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="0">Sin asignar</SelectItem>
-                            {pedidosCliente.map(pedido => (
-                              <SelectItem key={pedido.id} value={pedido.id.toString()}>
-                                {pedido.razonSocialCliente} - ID: {pedido.id} - Peso: {pedido.pesoCajaCliente}kg
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Al seleccionar un pedido, el peso por caja se llenará automáticamente. 
-                          Selecciona "Sin asignar" para desasignar el pedido.
-                        </p>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-                
-                {!isLoadingPedidos && !errorPedidos && pedidosCliente.length === 0 && (
-                  <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                    <Info className="h-4 w-4 text-yellow-600" />
-                    <span className="text-sm text-yellow-700">No hay pedidos cliente disponibles</span>
-                  </div>
-                )}
+                <FormField
+                  control={form.control}
+                  name="idPedidoCliente"
+                  render={({ field }) => (
+                    <FormItem>
+                      <SelectorPedidos
+                        tipo={form.watch('tipo')}
+                        idProducto={idProducto}
+                        value={field.value || 0}
+                                                 onValueChange={(value) => {
+                           if (value === 0) {
+                             // Sin asignar
+                             field.onChange(undefined);
+                             form.setValue('peso', 0);
+                           } else {
+                             field.onChange(value);
+                           }
+                         }}
+                         onPedidoSelect={(pedido) => {
+                           setPedidoSeleccionadoLocal(pedido);
+                           if (pedido) {
+                             form.setValue('peso', pedido.pesoCajaCliente);
+                           } else {
+                             form.setValue('peso', 0);
+                           }
+                         }}
+                        disabled={!form.watch('tipo')}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </FormSection>
+
+
 
               {/* Detalles del contenido */}
               <FormSection>
@@ -492,12 +494,17 @@ export const TarimaForm: React.FC<TarimaFormProps> = ({
                   />
                 </FormGrid>
                 
-                {/* Resumen calculado */}
-                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                  <div className="text-sm font-medium text-blue-900">
-                    Resumen: {form.watch('cantidad')} cajas × {form.watch('peso')} kg × {form.watch('cantidadTarimas')} tarimas = {pesoTotal.toFixed(2)} kg total
-                  </div>
-                </div>
+                                 {/* Resumen calculado */}
+                 <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                   <div className="text-sm font-medium text-blue-900">
+                     Resumen: {form.watch('cantidad')} cajas × {form.watch('peso')} kg × {form.watch('cantidadTarimas')} tarimas = {pesoTotal.toFixed(2)} kg total
+                   </div>
+                   {pedidoSeleccionadoLocal && (
+                     <div className="text-sm text-blue-700 mt-2">
+                       <strong>Pedido seleccionado:</strong> {pedidoSeleccionadoLocal.cantidad} cajas disponibles
+                     </div>
+                   )}
+                 </div>
               </FormSection>
 
               {/* Observaciones */}
@@ -525,30 +532,30 @@ export const TarimaForm: React.FC<TarimaFormProps> = ({
                 />
               </FormSection>
               
-              <DialogFooter className="mt-6 flex gap-2">
-                <Button 
-                  type="button"
-                  className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-medium transition-colors duration-200" 
-                  disabled={isSubmitting}
-                  onClick={form.handleSubmit(handleSubmitCompleta)}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {isSubmitting ? 'Guardando...' : 'Guardar Completa'}
-                </Button>
-                <Button 
-                  type="button"
-                  className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-medium transition-colors duration-200" 
-                  disabled={isSubmitting}
-                  onClick={form.handleSubmit(handleSubmitParcial)}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {isSubmitting ? 'Guardando...' : 'Guardar Parcial'}
-                </Button>
-                <Button type="button" variant="outline" onClick={handleCancel}>
-                  <X className="h-4 w-4 mr-2" />
-                  Cancelar
-                </Button>
-              </DialogFooter>
+                             <DialogFooter className="mt-6 flex gap-2">
+                 <Button 
+                   type="button"
+                   className="bg-white border-2 border-green-500 text-green-700 hover:bg-green-50 hover:border-green-600 font-medium transition-colors duration-200" 
+                   disabled={isSubmitting}
+                   onClick={form.handleSubmit(handleSubmitCompleta)}
+                 >
+                   <Save className="h-4 w-4 mr-2" />
+                   {isSubmitting ? 'Guardando...' : 'Guardar Completa'}
+                 </Button>
+                 <Button 
+                   type="button"
+                   className="bg-white border-2 border-blue-500 text-blue-700 hover:bg-blue-50 hover:border-blue-600 font-medium transition-colors duration-200" 
+                   disabled={isSubmitting}
+                   onClick={form.handleSubmit(handleSubmitParcial)}
+                 >
+                   <Save className="h-4 w-4 mr-2" />
+                   {isSubmitting ? 'Guardando...' : 'Guardar Parcial'}
+                 </Button>
+                 <Button type="button" variant="outline" onClick={handleCancel}>
+                   <X className="h-4 w-4 mr-2" />
+                   Cancelar
+                 </Button>
+               </DialogFooter>
             </form>
           </Form>
         </div>

@@ -30,11 +30,49 @@ export const IndicadoresPesos: React.FC<IndicadoresPesosProps> = ({
   // Formateador de peso en kg
   const formatoKg = (valor: number) => `${valor.toFixed(2)} kg`;
 
-  // Peso total clasificado (suma de todos los tipos + retornos + mermas)
-  const pesoTotalClasificado = pesoXL + pesoL + pesoM + pesoS + pesoRetornos + pesoMermas;
+  // Función para obtener colores del progreso según el porcentaje
+  const getProgressColors = (progreso: number) => {
+    if (progreso >= 95) {
+      return {
+        barColor: 'bg-green-500',
+        textColor: 'text-green-600',
+        bgColor: 'bg-green-100'
+      };
+    } else if (progreso >= 80) {
+      return {
+        barColor: 'bg-blue-500',
+        textColor: 'text-blue-600',
+        bgColor: 'bg-blue-100'
+      };
+    } else if (progreso >= 60) {
+      return {
+        barColor: 'bg-yellow-500',
+        textColor: 'text-yellow-600',
+        bgColor: 'bg-yellow-100'
+      };
+    } else if (progreso >= 40) {
+      return {
+        barColor: 'bg-orange-500',
+        textColor: 'text-orange-600',
+        bgColor: 'bg-orange-100'
+      };
+    } else {
+      return {
+        barColor: 'bg-red-500',
+        textColor: 'text-red-600',
+        bgColor: 'bg-red-100'
+      };
+    }
+  };
 
-  // Cálculo del progreso
-  const progreso = pesoTotalEsperado > 0 ? (pesoTotalClasificado / pesoTotalEsperado) * 100 : 0;
+  // Peso total clasificado (SOLO tarimas por tipos, NO incluye retornos ni mermas)
+  const pesoTotalClasificado = pesoXL + pesoL + pesoM + pesoS;
+
+  // Peso total procesado (incluye tarimas + retornos + mermas)
+  const pesoTotalProcesado = pesoTotalClasificado + pesoRetornos + pesoMermas;
+
+  // Cálculo del progreso (incluye tarimas + retornos + mermas)
+  const progreso = pesoTotalEsperado > 0 ? (pesoTotalProcesado / pesoTotalEsperado) * 100 : 0;
 
   if (compact) {
     return (
@@ -68,16 +106,21 @@ export const IndicadoresPesos: React.FC<IndicadoresPesosProps> = ({
             <div className="mt-4 pt-3 border-t">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-600">Progreso:</span>
-                <span className="font-bold text-green-600">{progreso.toFixed(1)}%</span>
+                <span className={`font-bold ${getProgressColors(progreso).textColor}`}>
+                  {progreso >= 99.95 && progreso < 100 
+                    ? progreso.toFixed(2) 
+                    : progreso.toFixed(1)
+                  }%
+                </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
-                  className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                  className={`${getProgressColors(progreso).barColor} h-2 rounded-full transition-all duration-500 ease-in-out`}
                   style={{ width: `${Math.min(progreso, 100)}%` }}
                 ></div>
               </div>
               <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
-                <span>Clasificado: {formatoKg(pesoTotalClasificado)}</span>
+                <span>Procesado: {formatoKg(pesoTotalProcesado)}</span>
                 <span>Esperado: {formatoKg(pesoTotalEsperado)}</span>
               </div>
             </div>
@@ -151,11 +194,16 @@ export const IndicadoresPesos: React.FC<IndicadoresPesosProps> = ({
               <div className="pt-2 border-t">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-sm text-gray-600">Progreso:</span>
-                  <span className="font-bold text-green-600">{progreso.toFixed(1)}%</span>
+                  <span className={`font-bold ${getProgressColors(progreso).textColor}`}>
+                    {progreso >= 99.95 && progreso < 100 
+                      ? progreso.toFixed(2) 
+                      : progreso.toFixed(1)
+                    }%
+                  </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
-                    className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                    className={`${getProgressColors(progreso).barColor} h-2 rounded-full transition-all duration-500 ease-in-out`}
                     style={{ width: `${Math.min(progreso, 100)}%` }}
                   ></div>
                 </div>
@@ -183,9 +231,9 @@ export const IndicadoresPesos: React.FC<IndicadoresPesosProps> = ({
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Diferencia:</span>
-              <span className={`font-medium ${pesoTotalClasificado >= pesoTotalEsperado ? 'text-green-600' : 'text-red-600'}`}>
-                {formatoKg(Math.abs(pesoTotalClasificado - pesoTotalEsperado))}
-                {pesoTotalClasificado >= pesoTotalEsperado ? ' (Sobrante)' : ' (Faltante)'}
+              <span className={`font-medium ${pesoTotalProcesado >= pesoTotalEsperado ? 'text-green-600' : 'text-red-600'}`}>
+                {formatoKg(Math.abs(pesoTotalProcesado - pesoTotalEsperado))}
+                {pesoTotalProcesado >= pesoTotalEsperado ? ' (Sobrante)' : ' (Faltante)'}
               </span>
             </div>
             <div className="pt-2 border-t">

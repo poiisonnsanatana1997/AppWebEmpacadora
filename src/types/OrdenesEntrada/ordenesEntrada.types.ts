@@ -1,3 +1,5 @@
+import { ProductoSimpleDto } from "../Productos/productos.types";
+
 export enum ESTADO_ORDEN {
   PENDIENTE = 'Pendiente',
   PROCESANDO = 'Procesando',
@@ -63,12 +65,7 @@ export interface OrdenEntradaFormData {
     id: number;
     nombre: string;
   };
-  producto: {
-    id: number;
-    nombre: string;
-    codigo: string;
-    variedad: string;
-  };
+  producto: ProductoSimpleDto;
   fechaEstimada: string;
   estado: EstadoOrden;
   observaciones: string;

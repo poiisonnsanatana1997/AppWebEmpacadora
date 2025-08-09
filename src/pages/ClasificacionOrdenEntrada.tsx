@@ -10,6 +10,7 @@ import { MermasModal } from '../components/Clasificacion/MermasModal';
 import { RetornosModal } from '../components/Clasificacion/RetornosModal';
 import { CrearMermaModal } from '../components/Clasificacion/CrearMermaModal';
 import { CrearRetornoModal } from '../components/Clasificacion/CrearRetornoModal';
+import { CajasForm } from '../components/Clasificacion/CajasForm';
 import { PedidoCompletoDTO, TarimaClasificacionDTO, ClasificacionCompletaDTO } from '../types/OrdenesEntrada/ordenesEntradaCompleto.types';
 import { OrdenesEntradaService } from '../services/ordenesEntrada.service';
 import { ClasificacionService } from '../services/clasificacion.service';
@@ -410,10 +411,40 @@ export default function ClasificacionOrdenEntrada() {
         orden={{
           codigo: orden.codigo,
           estatus: orden.estado,
-          proveedor: { razonSocial: orden.proveedor?.nombre }
+          proveedor: { razonSocial: orden.proveedor?.nombre },
+          producto: {
+            nombre: orden.producto?.nombre,
+            codigo: orden.producto?.codigo,
+            variedad: orden.producto?.variedad
+          }
         }}
         clasificaciones={clasificaciones}
       />
+
+      {/* Errores de validación para finalización - Compacto y responsivo */}
+      {!estaFinalizada && errores.length > 0 && (
+        <div className="mb-3 sm:mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0" />
+              <span className="text-xs sm:text-sm font-medium text-red-800">Validaciones pendientes:</span>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-1 sm:gap-2">
+            {errores.map((error, index) => (
+              <Badge key={index} variant="destructive" className="text-xs break-words">
+                {error}
+              </Badge>
+            ))}
+          </div>
+          {tiposClasificados.length > 0 && (
+            <div className="mt-2 text-xs sm:text-sm text-gray-600">
+              <span className="font-medium">Tipos clasificados:</span>{' '}
+              <span className="break-words">{tiposClasificados.join(', ')}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Mensaje de clasificación finalizada */}
       {estaFinalizada && (
@@ -426,61 +457,12 @@ export default function ClasificacionOrdenEntrada() {
         </div>
       )}
 
-      {/* Errores de validación para finalización */}
-      {!estaFinalizada && errores.length > 0 && (
-        <Card className="mb-4 border-red-200 bg-red-50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-red-800 flex items-center gap-2 text-base">
-              <AlertTriangle className="h-4 w-4" />
-              Validaciones Pendientes para Finalizar
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="space-y-1">
-              {errores.map((error, index) => (
-                <div key={index} className="flex items-center gap-2 text-red-700">
-                  <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
-                  <span className="text-sm">{error}</span>
-                </div>
-              ))}
-            </div>
-            <div className="mt-3 p-2 bg-white rounded border border-red-200">
-              <h4 className="font-medium text-red-800 mb-1 text-sm">Detalles de Validación:</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
-                <div className="flex items-center gap-1.5">
-                  <div className={`w-2 h-2 rounded-full ${detallesValidacion.tiposClasificados ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                  <span className={detallesValidacion.tiposClasificados ? 'text-green-700' : 'text-red-700'}>
-                    Al menos un tipo clasificado
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className={`w-2 h-2 rounded-full ${detallesValidacion.preciosEstablecidos ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                  <span className={detallesValidacion.preciosEstablecidos ? 'text-green-700' : 'text-red-700'}>
-                    Precios de tipos clasificados
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className={`w-2 h-2 rounded-full ${detallesValidacion.progresoCompleto ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                  <span className={detallesValidacion.progresoCompleto ? 'text-green-700' : 'text-red-700'}>
-                    Progreso 100%
-                  </span>
-                </div>
-              </div>
-              <div className="mt-2 pt-2 border-t border-red-200">
-                <div className="text-xs text-gray-600 mb-1">
-                  <strong>Nota:</strong> Solo se requieren precios para los tipos que han sido clasificados (tienen tarimas). No es obligatorio clasificar todos los tipos.
-                </div>
-                {tiposClasificados.length > 0 && (
-                  <div className="text-xs">
-                    <span className="text-green-700 font-medium">Tipos clasificados:</span>
-                    <span className="text-green-600 ml-1">{tiposClasificados.join(', ')}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Formulario de Registro de Cajas */}
+      <CajasForm
+        clasificacionId={clasificaciones[0]?.id || 0}
+        onSuccess={handleRefreshData}
+        disabled={estaFinalizada}
+      />
 
       {/* Sección de Clasificaciones */}
       <div className="space-y-6 mb-8">
@@ -577,6 +559,7 @@ export default function ClasificacionOrdenEntrada() {
         onClose={() => setTarimaFormOpen(false)}
         tarima={tarimaToEdit || undefined}
         clasificacionId={clasificaciones[0]?.id || 0}
+        idProducto={orden?.producto.id}
         onSuccess={handleRefreshData}
         clasificaciones={clasificaciones}
         onValidate={(peso) => validateClasificacionLimit({

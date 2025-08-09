@@ -109,6 +109,7 @@ export default function Productos() {
     isLoading,
     isModalOpen,
     selectedProducto,
+    error,
     cargarProductos,
     handleOpenModal,
     handleCloseModal,
@@ -118,7 +119,7 @@ export default function Productos() {
   // Efecto para cargar los productos al montar el componente
   useEffect(() => {
     cargarProductos();
-  }, []); // Solo se ejecuta al montar el componente
+  }, [cargarProductos]);
 
   // Manejadores para abrir y cerrar modales
   const handleOpenModalNuevoProducto = useCallback(() => {
@@ -145,6 +146,17 @@ export default function Productos() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
+        {/* Mensaje de error si existe */}
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-red-500 mb-4 p-4 bg-red-50 border border-red-200 rounded-lg"
+          >
+            Error: {error}
+          </motion.div>
+        )}
+
         {/* Contenedor principal de la tabla de productos */}
         <ProductsTableContainer
           initial={{ opacity: 0, y: 20 }}
@@ -168,7 +180,7 @@ export default function Productos() {
               <ProductoTable
                 productos={productos}
                 loading={isLoading}
-                error={null}
+                error={error}
                 onEdit={handleOpenModalEditar}
               />
             </StyledTable>

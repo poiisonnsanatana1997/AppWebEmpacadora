@@ -22,6 +22,13 @@ export interface BaseProductoDto {
   imagen: string;
 }
 
+export interface ProductoSimpleDto {
+  id: number;
+  nombre: string;
+  codigo: string;
+  variedad: string;
+}
+
 export interface ActualizarProductoDto extends BaseProductoDto {
   id: number;
 }

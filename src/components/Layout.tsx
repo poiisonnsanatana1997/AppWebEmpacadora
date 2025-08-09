@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Menu, X, ChevronLeft, LogOut, Package, ClipboardList, Truck } from "lucide-react";
+import { Users, Menu, X, ChevronLeft, LogOut, Package, ClipboardList, Truck, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "../contexts/AuthContext";
 import logo from '/images/LogoEmpacadora.jpg';
@@ -420,6 +420,7 @@ const LogoutButton = styled(Button)`
 const navItems = [
   { label: "Productos", icon: <Package />, path: "/productos" },
   { label: "Órdenes de Entrada", icon: <ClipboardList />, path: "/ordenes-entrada" },
+  { label: "Pedidos Cliente", icon: <ShoppingCart />, path: "/pedidos-cliente" },
   { label: "Usuarios", icon: <Users className="h-5 w-5" />, path: "/usuarios" },
   { label: "Proveedores", icon: <Truck />, path: "/proveedores" },
 ];

@@ -1,4 +1,4 @@
-import type { TarimaDTO, CreateTarimaDTO, UpdateTarimaDTO } from '@/types/Tarimas/tarima.types';
+import type { TarimaDTO, CreateTarimaDTO, UpdateTarimaDTO, TarimaParcialCompletaDTO } from '@/types/Tarimas/tarima.types';
 import type { PedidoClienteConDetallesDTO } from '@/types/Tarimas/tarima.types';
 import { TarimaUpdateParcialDTO } from '../types/Tarimas/tarimaParcial.types';
 import api from '@/api/axios';
@@ -156,9 +156,9 @@ export const TarimasService = {
    * @returns {Promise<TarimaParcialCompletaDTO[]>} Lista de tarimas parciales
    * @throws {TarimaServiceError} Si hay un error al obtener las tarimas parciales
    */
-  async getTarimasParciales(): Promise<import('@/types/Tarimas/tarima.types').TarimaParcialCompletaDTO[]> {
+  async getTarimasParciales(): Promise<TarimaParcialCompletaDTO[]> {
     try {
-      const response = await api.get<import('@/types/Tarimas/tarima.types').TarimaParcialCompletaDTO[]>('/Tarimas/parciales');
+      const response = await api.get<TarimaParcialCompletaDTO[]>('/Tarimas/parciales');
       return response.data;
     } catch (error) {
       if (error instanceof AxiosError) {

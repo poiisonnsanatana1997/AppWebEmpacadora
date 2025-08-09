@@ -1,100 +1,128 @@
-# Corrección del Problema de Redirección por Expiración de Sesión
+# Solución al Problema de Pérdida de Sesión en Módulos de Órdenes de Entrada y Productos
 
 ## Problema Identificado
 
-La aplicación no redirigía correctamente a `/empacadora/login` cuando expiraba la sesión, sino que intentaba redirigir a `/login`.
+Al entrar a los módulos de **Órdenes de Entrada** y **Productos**, la información de sesión (token, user) se borraba automáticamente, causando que el usuario fuera redirigido al login.
 
-## Causa del Problema
+## Causa Raíz
 
-La aplicación está configurada con `basename="/empacadora"` en el `BrowserRouter`, pero las redirecciones estaban usando rutas absolutas que no consideraban este basename.
+El problema se debía a **dos instancias duplicadas de axios** con interceptores que manejaban errores 401 de manera diferente:
+
+1. **`src/api/axios.ts`** - Instancia principal usada por la mayoría de servicios
+2. **`src/lib/api.ts`** - Instancia duplicada con interceptores conflictivos
+
+### Problemas Específicos:
+
+1. **Interceptores Conflictivos**: Ambas instancias tenían interceptores que borraban el token en errores 401 sin verificar si realmente había expirado.
+
+2. **Manejo Inadecuado de Errores**: Los interceptores no distinguían entre:
+   - Token realmente expirado
+   - Errores de permisos (401 por falta de permisos)
+   - Errores de red temporales
+
+3. **Verificación de Expiración**: No se verificaba la fecha de expiración del token antes de borrarlo.
 
 ## Solución Implementada
 
-### 1. Configuración Centralizada
+### 1. Consolidación de Instancias de Axios
 
-Se agregó configuración para el basename en `src/config/environment.ts`:
+**Antes:**
+```typescript
+// src/api/axios.ts - Instancia principal
+// src/lib/api.ts - Instancia duplicada con interceptores conflictivos
+```
+
+**Después:**
+```typescript
+// src/api/axios.ts - Única instancia con interceptores mejorados
+// src/lib/api.ts - Re-exporta la instancia principal
+```
+
+### 2. Mejora del Interceptor de Respuesta
 
 ```typescript
-interface EnvironmentConfig {
-  app: {
-    basename: string; // Nueva propiedad
-  };
+// Interceptor mejorado que verifica la expiración real del token
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      const token = localStorage.getItem('token');
+      const expiration = localStorage.getItem('tokenExpiration');
+      
+      if (token && expiration) {
+        const expirationTime = new Date(expiration).getTime();
+        const currentTime = new Date().getTime();
+        
+        // Solo borrar el token si realmente expiró
+        if (currentTime >= expirationTime) {
+          console.log('Token expirado, ejecutando logout desde interceptor');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('tokenExpiration');
+          redirectToLogin(true);
+        } else {
+          console.log('Error 401 pero token no expirado, puede ser un problema de permisos');
+          // No borrar el token si no expiró
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+```
+
+### 3. Mejora del Manejo de Errores en Hooks
+
+**En `useProductos.ts` y `useOrdenesEntrada.ts`:**
+```typescript
+try {
+  // ... operaciones de API
+} catch (error: any) {
+  console.error('Error en operación:', error);
+  // No establecer error si es un error de autenticación (401)
+  // ya que el interceptor de axios se encargará de manejar la sesión
+  if (error?.response?.status !== 401) {
+    setError('Error en la operación. Por favor, intenta nuevamente.');
+  }
 }
 ```
 
-### 2. Función de Utilidad
+### 4. Mejora del AuthContext
 
-Se creó una función centralizada en `src/lib/utils.ts`:
+- **Mejor logging** para debug
+- **Manejo de errores** al parsear datos del usuario
+- **Verificación más robusta** de la expiración del token
 
-```typescript
-export const redirectToLogin = (forceReload: boolean = false) => {
-  const loginPath = `${config.app.basename}/login`;
-  
-  if (forceReload) {
-    window.location.href = loginPath;
-  } else {
-    window.location.pathname = loginPath;
-  }
-};
-```
+## Beneficios de la Solución
 
-### 3. Actualización de Archivos
+1. **Eliminación de Conflictos**: Una sola instancia de axios evita comportamientos inesperados.
 
-Se actualizaron los siguientes archivos para usar la nueva función:
+2. **Manejo Inteligente de Errores 401**: Solo se borra la sesión cuando el token realmente expira.
 
-- `src/contexts/AuthContext.tsx`
-- `src/lib/api.ts`
-- `src/api/axios.ts`
+3. **Mejor Experiencia de Usuario**: Los usuarios no son redirigidos al login innecesariamente.
 
-### 4. Logs de Depuración
+4. **Debugging Mejorado**: Logs detallados para identificar problemas de sesión.
 
-Se agregaron logs para facilitar la depuración:
+5. **Robustez**: Manejo de errores más robusto en todos los módulos.
 
-```typescript
-console.log('Verificando expiración del token:', {
-  currentTime: new Date(currentTime).toISOString(),
-  expirationTime: new Date(expirationTime).toISOString(),
-  isExpired: currentTime >= expirationTime
-});
-```
+## Archivos Modificados
 
-### 5. Botón de Prueba
+- `src/api/axios.ts` - Interceptor mejorado
+- `src/lib/api.ts` - Eliminación de instancia duplicada
+- `src/contexts/AuthContext.tsx` - Mejor manejo de sesión
+- `src/hooks/Productos/useProductos.ts` - Manejo de errores mejorado
+- `src/hooks/OrdenesEntrada/useOrdenesEntrada.ts` - Manejo de errores mejorado
+- `src/pages/Productos.tsx` - Visualización de errores
 
-Se agregó un botón de prueba en el Dashboard para simular la expiración de sesión.
+## Pruebas Recomendadas
 
-## Variables de Entorno
+1. **Verificar que la sesión se mantiene** al navegar entre módulos
+2. **Probar con token expirado** para confirmar que se redirige correctamente
+3. **Verificar logs en consola** para confirmar el comportamiento esperado
+4. **Probar con errores de red** para confirmar que no se borra la sesión innecesariamente
 
-Se agregó la variable `VITE_APP_BASENAME` en `env.example`:
+## Notas Importantes
 
-```env
-VITE_APP_BASENAME=/empacadora
-```
-
-## Puntos de Verificación de Expiración
-
-1. **Al cargar la aplicación**: Verifica si el token existe y no ha expirado
-2. **Verificación periódica**: Cada minuto verifica la expiración del token
-3. **Interceptores de Axios**: Manejan respuestas 401 del servidor
-4. **Rutas protegidas**: Verifican autenticación antes de renderizar
-
-## Cómo Probar
-
-1. Inicia sesión en la aplicación
-2. Ve al Dashboard
-3. Usa el botón "Probar Expiración de Sesión" para simular la expiración
-4. Verifica que redirija correctamente a `/empacadora/login`
-
-## Logs de Depuración
-
-Los logs aparecerán en la consola del navegador para ayudar a diagnosticar problemas:
-
-- Verificación de token al cargar
-- Verificación periódica de expiración
-- Proceso de redirección
-- Errores de autenticación
-
-## Consideraciones Adicionales
-
-- La función `redirectToLogin(true)` fuerza una recarga completa de la página
-- Los componentes que usan `navigate()` de React Router no necesitan cambios
-- El basename se puede configurar por entorno usando variables de entorno 
+- Los errores 401 que no son por expiración de token (ej: falta de permisos) no borrarán la sesión
+- Se mantiene el logging detallado para facilitar el debugging
+- La solución es compatible con todos los módulos existentes 

@@ -17,15 +17,22 @@ interface EditarPreciosClasificacionModalProps {
   clasificacion: ClasificacionCompletaDTO;
   onClose: () => void;
   onSave: (clasificacion: ClasificacionCompletaDTO) => Promise<void>;
+  tiposClasificados?: string[];
 }
 
 export const EditarPreciosClasificacionModal: React.FC<EditarPreciosClasificacionModalProps> = ({ 
   open, 
   clasificacion, 
   onClose, 
-  onSave 
+  onSave,
+  tiposClasificados = [] 
 }) => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  // Función para verificar si un tipo puede ser editado
+  const puedeEditarTipo = (tipo: string) => {
+    return tiposClasificados.includes(tipo);
+  };
 
   const form = useForm({
     resolver: zodResolver(clasificacionFormSchema),
@@ -97,14 +104,19 @@ export const EditarPreciosClasificacionModal: React.FC<EditarPreciosClasificacio
                   <h3 className="font-semibold text-blue-900 text-sm sm:text-base">Información Importante</h3>
                 </div>
                 <p className="text-xs sm:text-sm text-blue-800">
-                  Los precios se aplican por kilogramo de producto clasificado. 
-                  Asegúrate de que los valores sean correctos antes de guardar.
+                  Solo puedes editar precios de los tipos que han sido clasificados (tienen tarimas).
+                  Los precios se aplican por kilogramo de producto clasificado.
                 </p>
-                <div className="mt-3 flex items-center gap-2 text-xs text-blue-700">
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-blue-700">
                   <Badge variant="outline" className="text-xs">
                     <Edit3 className="h-3 w-3 mr-1" />
                     Lote: {clasificacion.lote}
                   </Badge>
+                  {tiposClasificados.length > 0 && (
+                    <Badge variant="secondary" className="text-xs">
+                      Tipos editables: {tiposClasificados.join(', ')}
+                    </Badge>
+                  )}
                 </div>
               </div>
 
@@ -121,23 +133,35 @@ export const EditarPreciosClasificacionModal: React.FC<EditarPreciosClasificacio
                     name="xl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="flex items-center gap-2 text-gray-700 text-sm sm:text-base">
+                        <FormLabel className={`flex items-center gap-2 text-sm sm:text-base ${
+                          puedeEditarTipo('XL') ? 'text-gray-700' : 'text-gray-400'
+                        }`}>
                           <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
                           Precio XL ($/kg)
+                          {!puedeEditarTipo('XL') && (
+                            <span className="text-xs text-gray-500">(No clasificado)</span>
+                          )}
                         </FormLabel>
                         <FormControl>
                           <NumericFormat
                             customInput={Input}
                             value={field.value}
                             onValueChange={(values) => {
-                              field.onChange(values.floatValue ?? 0);
+                              if (puedeEditarTipo('XL')) {
+                                field.onChange(values.floatValue ?? 0);
+                              }
                             }}
                             onBlur={field.onBlur}
                             name={field.name}
                             placeholder="0.00"
                             decimalScale={2}
                             allowNegative={false}
-                            className="bg-white hover:bg-gray-50 transition-colors text-sm sm:text-base"
+                            disabled={!puedeEditarTipo('XL')}
+                            className={`transition-colors text-sm sm:text-base ${
+                              puedeEditarTipo('XL') 
+                                ? 'bg-white hover:bg-gray-50' 
+                                : 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                            }`}
                           />
                         </FormControl>
                         <FormMessage />
@@ -150,23 +174,35 @@ export const EditarPreciosClasificacionModal: React.FC<EditarPreciosClasificacio
                     name="l"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="flex items-center gap-2 text-gray-700 text-sm sm:text-base">
+                        <FormLabel className={`flex items-center gap-2 text-sm sm:text-base ${
+                          puedeEditarTipo('L') ? 'text-gray-700' : 'text-gray-400'
+                        }`}>
                           <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                           Precio L ($/kg)
+                          {!puedeEditarTipo('L') && (
+                            <span className="text-xs text-gray-500">(No clasificado)</span>
+                          )}
                         </FormLabel>
                         <FormControl>
                           <NumericFormat
                             customInput={Input}
                             value={field.value}
                             onValueChange={(values) => {
-                              field.onChange(values.floatValue ?? 0);
+                              if (puedeEditarTipo('L')) {
+                                field.onChange(values.floatValue ?? 0);
+                              }
                             }}
                             onBlur={field.onBlur}
                             name={field.name}
                             placeholder="0.00"
                             decimalScale={2}
                             allowNegative={false}
-                            className="bg-white hover:bg-gray-50 transition-colors text-sm sm:text-base"
+                            disabled={!puedeEditarTipo('L')}
+                            className={`transition-colors text-sm sm:text-base ${
+                              puedeEditarTipo('L') 
+                                ? 'bg-white hover:bg-gray-50' 
+                                : 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                            }`}
                           />
                         </FormControl>
                         <FormMessage />
@@ -179,23 +215,35 @@ export const EditarPreciosClasificacionModal: React.FC<EditarPreciosClasificacio
                     name="m"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="flex items-center gap-2 text-gray-700 text-sm sm:text-base">
+                        <FormLabel className={`flex items-center gap-2 text-sm sm:text-base ${
+                          puedeEditarTipo('M') ? 'text-gray-700' : 'text-gray-400'
+                        }`}>
                           <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                           Precio M ($/kg)
+                          {!puedeEditarTipo('M') && (
+                            <span className="text-xs text-gray-500">(No clasificado)</span>
+                          )}
                         </FormLabel>
                         <FormControl>
                           <NumericFormat
                             customInput={Input}
                             value={field.value}
                             onValueChange={(values) => {
-                              field.onChange(values.floatValue ?? 0);
+                              if (puedeEditarTipo('M')) {
+                                field.onChange(values.floatValue ?? 0);
+                              }
                             }}
                             onBlur={field.onBlur}
                             name={field.name}
                             placeholder="0.00"
                             decimalScale={2}
                             allowNegative={false}
-                            className="bg-white hover:bg-gray-50 transition-colors text-sm sm:text-base"
+                            disabled={!puedeEditarTipo('M')}
+                            className={`transition-colors text-sm sm:text-base ${
+                              puedeEditarTipo('M') 
+                                ? 'bg-white hover:bg-gray-50' 
+                                : 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                            }`}
                           />
                         </FormControl>
                         <FormMessage />
@@ -208,23 +256,35 @@ export const EditarPreciosClasificacionModal: React.FC<EditarPreciosClasificacio
                     name="s"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="flex items-center gap-2 text-gray-700 text-sm sm:text-base">
+                        <FormLabel className={`flex items-center gap-2 text-sm sm:text-base ${
+                          puedeEditarTipo('S') ? 'text-gray-700' : 'text-gray-400'
+                        }`}>
                           <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                           Precio S ($/kg)
+                          {!puedeEditarTipo('S') && (
+                            <span className="text-xs text-gray-500">(No clasificado)</span>
+                          )}
                         </FormLabel>
                         <FormControl>
                           <NumericFormat
                             customInput={Input}
                             value={field.value}
                             onValueChange={(values) => {
-                              field.onChange(values.floatValue ?? 0);
+                              if (puedeEditarTipo('S')) {
+                                field.onChange(values.floatValue ?? 0);
+                              }
                             }}
                             onBlur={field.onBlur}
                             name={field.name}
                             placeholder="0.00"
                             decimalScale={2}
                             allowNegative={false}
-                            className="bg-white hover:bg-gray-50 transition-colors text-sm sm:text-base"
+                            disabled={!puedeEditarTipo('S')}
+                            className={`transition-colors text-sm sm:text-base ${
+                              puedeEditarTipo('S') 
+                                ? 'bg-white hover:bg-gray-50' 
+                                : 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                            }`}
                           />
                         </FormControl>
                         <FormMessage />

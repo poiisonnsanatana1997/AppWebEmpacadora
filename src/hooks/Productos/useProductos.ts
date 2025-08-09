@@ -10,6 +10,7 @@ export const useProductos = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProducto, setSelectedProducto] = useState<ProductoDto | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const form = useForm({
     resolver: zodResolver(productFormSchema),
@@ -28,10 +29,16 @@ export const useProductos = () => {
   const cargarProductos = useCallback(async () => {
     try {
       setIsLoading(true);
+      setError(null);
       const data = await ProductosService.obtenerProductos();
       setProductos(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al cargar productos:', error);
+      // No establecer error si es un error de autenticación (401)
+      // ya que el interceptor de axios se encargará de manejar la sesión
+      if (error?.response?.status !== 401) {
+        setError('Error al cargar los productos. Por favor, intenta nuevamente.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -66,6 +73,7 @@ export const useProductos = () => {
   const onSubmit = useCallback(async (data: BaseProductoDto) => {
     try {
       setIsLoading(true);
+      setError(null);
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
         formData.append(key, value.toString());
@@ -78,8 +86,12 @@ export const useProductos = () => {
       }
       await cargarProductos();
       handleCloseModal();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al guardar producto:', error);
+      // No establecer error si es un error de autenticación (401)
+      if (error?.response?.status !== 401) {
+        setError('Error al guardar el producto. Por favor, intenta nuevamente.');
+      }
       throw error;
     } finally {
       setIsLoading(false);
@@ -88,10 +100,15 @@ export const useProductos = () => {
 
   const handleDelete = useCallback(async (id: number) => {
     try {
+      setError(null);
       await ProductosService.eliminarProducto(id);
       await cargarProductos();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al eliminar producto:', error);
+      // No establecer error si es un error de autenticación (401)
+      if (error?.response?.status !== 401) {
+        setError('Error al eliminar el producto. Por favor, intenta nuevamente.');
+      }
       throw error;
     }
   }, [cargarProductos]);
@@ -101,6 +118,7 @@ export const useProductos = () => {
     isLoading,
     isModalOpen,
     selectedProducto,
+    error,
     form,
     cargarProductos,
     handleOpenModal,

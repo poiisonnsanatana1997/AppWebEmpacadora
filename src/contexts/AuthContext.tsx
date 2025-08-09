@@ -65,9 +65,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       
       if (currentTime < expirationTime) {
-        const parsedUser = JSON.parse(userData);
-        setIsAuthenticated(true);
-        setUser(parsedUser);
+        try {
+          const parsedUser = JSON.parse(userData);
+          setIsAuthenticated(true);
+          setUser(parsedUser);
+          console.log('Sesión restaurada correctamente');
+        } catch (error) {
+          console.error('Error al parsear datos del usuario:', error);
+          // Si hay error al parsear, limpiar datos corruptos
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('tokenExpiration');
+          redirectToLogin(true);
+        }
       } else {
         // Token expirado, limpiar datos y redirigir
         console.log('Token expirado al cargar, redirigiendo al login');
@@ -103,13 +113,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('tokenExpiration', response.expiration);
       setIsAuthenticated(true);
       setUser(response.user);
+      console.log('Login exitoso, sesión establecida');
       return response;
     } catch (error) {
+      console.error('Error en login:', error);
       throw error;
     }
   };
 
   const logout = () => {
+    console.log('Ejecutando logout');
     authService.logout();
     localStorage.removeItem('tokenExpiration');
     setIsAuthenticated(false);

@@ -198,6 +198,112 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onRegistrarClas
       filterFn: fuzzyFilter,
     },
     {
+      accessorKey: 'producto.nombre',
+      header: ({ column }) => {
+        const filterValue = column.getFilterValue() as string | undefined;
+        return (
+          <div className="flex flex-col">
+            <Button
+              variant="ghost"
+              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              className="font-semibold h-8 px-2 cursor-pointer justify-start transition-colors duration-200 hover:bg-gray-100"
+            >
+              Producto
+              {column.getIsSorted() === "asc" ? (
+                <ChevronUp className="ml-1 h-3 w-3" />
+              ) : column.getIsSorted() === "desc" ? (
+                <ChevronDown className="ml-1 h-3 w-3" />
+              ) : (
+                <ChevronsUpDown className="ml-1 h-3 w-3" />
+              )}
+            </Button>
+            <div className="mt-2">
+              <FilterInput
+                value={(filterValue as string) ?? ""}
+                onChange={(value) => column.setFilterValue(value)}
+                placeholder="Filtrar por producto..."
+              />
+            </div>
+          </div>
+        );
+      },
+      cell: ({ row }) => {
+        const producto = row.original.producto;
+        return (
+          <div className="flex flex-col">
+            <span className="font-medium text-gray-900">{producto.nombre}</span>
+            <span className="text-sm text-gray-500">
+              {producto.codigo} - {producto.variedad}
+            </span>
+          </div>
+        );
+      },
+      filterFn: fuzzyFilter,
+    },
+    {
+      accessorKey: 'estado',
+      header: ({ column }) => {
+        const filterValue = column.getFilterValue() as string | undefined;
+        return (
+          <div className="flex flex-col">
+            <Button
+              variant="ghost"
+              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              className="font-semibold h-8 px-2 cursor-pointer justify-start transition-colors duration-200 hover:bg-gray-100"
+            >
+              Estado
+              {column.getIsSorted() === "asc" ? (
+                <ChevronUp className="ml-1 h-3 w-3" />
+              ) : column.getIsSorted() === "desc" ? (
+                <ChevronDown className="ml-1 h-3 w-3" />
+              ) : (
+                <ChevronsUpDown className="ml-1 h-3 w-3" />
+              )}
+            </Button>
+            <div className="mt-2">
+              <FilterSelect
+                value={filterValue ?? "all"}
+                onChange={(value) => column.setFilterValue(value === "all" ? "" : value)}
+                options={[
+                  { value: "all", label: "Todos los estados" },
+                  { value: "Pendiente", label: "Pendiente" },
+                  { value: "Procesando", label: "Procesando" },
+                  { value: "Recibida", label: "Recibida" },
+                  { value: "Clasificando", label: "Clasificando" },
+                  { value: "Clasificado", label: "Clasificado" },
+                  { value: "Cancelada", label: "Cancelada" },
+                ]}
+                placeholder="Seleccionar estado"
+              />
+            </div>
+          </div>
+        );
+      },
+      cell: ({ row }) => {
+        const estado = row.original.estado;
+        return (
+          <Badge
+            variant="secondary"
+            className={
+              estado === ESTADO_ORDEN.PENDIENTE ? 'bg-yellow-200 text-yellow-800 hover:bg-yellow-300 font-semibold' :
+              estado === ESTADO_ORDEN.PROCESANDO ? 'bg-blue-200 text-blue-800 hover:bg-blue-300 font-semibold' :
+              estado === ESTADO_ORDEN.RECIBIDA ? 'bg-green-200 text-green-800 hover:bg-green-300 font-semibold' :
+              estado === ESTADO_ORDEN.CLASIFICANDO ? 'bg-purple-200 text-purple-800 hover:bg-purple-300 font-semibold' :
+              estado === ESTADO_ORDEN.CLASIFICADO ? 'bg-indigo-200 text-indigo-800 hover:bg-indigo-300 font-semibold' :
+              estado === ESTADO_ORDEN.CANCELADA ? 'bg-red-200 text-red-800 hover:bg-red-300 font-semibold' :
+              'bg-gray-200 text-gray-800 hover:bg-gray-300 font-semibold'
+            }
+          >
+            {estado}
+          </Badge>
+        );
+      },
+      filterFn: (row, _id, value) => {
+        if (!value || value === "all") return true;
+        return row.original.estado === value;
+      },
+    },
+    {
       accessorKey: 'fechaEstimada',
       header: ({ column }) => {
         return (
@@ -313,69 +419,6 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onRegistrarClas
           hour: '2-digit',
           minute: '2-digit'
         });
-      },
-    },
-    {
-      accessorKey: 'estado',
-      header: ({ column }) => {
-        const filterValue = column.getFilterValue() as string | undefined;
-        return (
-          <div className="flex flex-col">
-            <Button
-              variant="ghost"
-              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-              className="font-semibold h-8 px-2 cursor-pointer justify-start transition-colors duration-200 hover:bg-gray-100"
-            >
-              Estado
-              {column.getIsSorted() === "asc" ? (
-                <ChevronUp className="ml-1 h-3 w-3" />
-              ) : column.getIsSorted() === "desc" ? (
-                <ChevronDown className="ml-1 h-3 w-3" />
-              ) : (
-                <ChevronsUpDown className="ml-1 h-3 w-3" />
-              )}
-            </Button>
-            <div className="mt-2">
-              <FilterSelect
-                value={filterValue ?? "all"}
-                onChange={(value) => column.setFilterValue(value === "all" ? "" : value)}
-                options={[
-                  { value: "all", label: "Todos los estados" },
-                  { value: "Pendiente", label: "Pendiente" },
-                  { value: "Procesando", label: "Procesando" },
-                  { value: "Recibida", label: "Recibida" },
-                  { value: "Clasificando", label: "Clasificando" },
-                  { value: "Clasificado", label: "Clasificado" },
-                  { value: "Cancelada", label: "Cancelada" },
-                ]}
-                placeholder="Seleccionar estado"
-              />
-            </div>
-          </div>
-        );
-      },
-      cell: ({ row }) => {
-        const estado = row.original.estado;
-        return (
-          <Badge
-            variant="secondary"
-            className={
-              estado === ESTADO_ORDEN.PENDIENTE ? 'bg-yellow-200 text-yellow-800 hover:bg-yellow-300 font-semibold' :
-              estado === ESTADO_ORDEN.PROCESANDO ? 'bg-blue-200 text-blue-800 hover:bg-blue-300 font-semibold' :
-              estado === ESTADO_ORDEN.RECIBIDA ? 'bg-green-200 text-green-800 hover:bg-green-300 font-semibold' :
-              estado === ESTADO_ORDEN.CLASIFICANDO ? 'bg-purple-200 text-purple-800 hover:bg-purple-300 font-semibold' :
-              estado === ESTADO_ORDEN.CLASIFICADO ? 'bg-indigo-200 text-indigo-800 hover:bg-indigo-300 font-semibold' :
-              estado === ESTADO_ORDEN.CANCELADA ? 'bg-red-200 text-red-800 hover:bg-red-300 font-semibold' :
-              'bg-gray-200 text-gray-800 hover:bg-gray-300 font-semibold'
-            }
-          >
-            {estado}
-          </Badge>
-        );
-      },
-      filterFn: (row, _id, value) => {
-        if (!value || value === "all") return true;
-        return row.original.estado === value;
       },
     },
     {

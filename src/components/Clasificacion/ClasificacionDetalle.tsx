@@ -42,6 +42,56 @@ export const ClasificacionDetalle: React.FC<ClasificacionDetalleProps> = ({ clas
   // Formateador de peso en kg
   const formatoKg = (valor: number) => `${valor.toFixed(2)} kg`;
 
+  // Función para obtener colores del progreso según el porcentaje
+  const getProgressColors = (progreso: number) => {
+    if (progreso >= 95) {
+      return {
+        barColor: 'bg-green-500',
+        textColor: 'text-green-600',
+        bgColor: 'bg-green-100'
+      };
+    } else if (progreso >= 80) {
+      return {
+        barColor: 'bg-blue-500',
+        textColor: 'text-blue-600',
+        bgColor: 'bg-blue-100'
+      };
+    } else if (progreso >= 60) {
+      return {
+        barColor: 'bg-yellow-500',
+        textColor: 'text-yellow-600',
+        bgColor: 'bg-yellow-100'
+      };
+    } else if (progreso >= 40) {
+      return {
+        barColor: 'bg-orange-500',
+        textColor: 'text-orange-600',
+        bgColor: 'bg-orange-100'
+      };
+    } else {
+      return {
+        barColor: 'bg-red-500',
+        textColor: 'text-red-600',
+        bgColor: 'bg-red-100'
+      };
+    }
+  };
+
+  // Función para obtener tipos clasificados
+  const obtenerTiposClasificados = (): string[] => {
+    const tiposRequeridos = ['XL', 'L', 'M', 'S'];
+    const tiposClasificados: string[] = [];
+    
+    tiposRequeridos.forEach(tipo => {
+      const existeTipo = clasificacion.tarimasClasificaciones?.some(tarima => tarima.tipo === tipo);
+      if (existeTipo) {
+        tiposClasificados.push(tipo);
+      }
+    });
+    
+    return tiposClasificados;
+  };
+
   const handleOpenModal = () => {
     if (estaFinalizada) {
       toast.error('No se pueden editar precios cuando la clasificación está finalizada');
@@ -177,11 +227,16 @@ export const ClasificacionDetalle: React.FC<ClasificacionDetalleProps> = ({ clas
               <div className="pt-2 border-t mt-2">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-sm text-gray-600">Progreso General:</span>
-                  <span className="font-bold text-green-600">{indicadores.progreso.toFixed(1)}%</span>
+                  <span className={`font-bold ${getProgressColors(indicadores.progreso).textColor}`}>
+                    {indicadores.progreso >= 99.95 && indicadores.progreso < 100 
+                      ? indicadores.progreso.toFixed(2) 
+                      : indicadores.progreso.toFixed(1)
+                    }%
+                  </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
-                    className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                    className={`${getProgressColors(indicadores.progreso).barColor} h-2 rounded-full transition-all duration-500 ease-in-out`}
                     style={{ width: `${Math.min(indicadores.progreso, 100)}%` }}
                   ></div>
                 </div>
@@ -286,6 +341,7 @@ export const ClasificacionDetalle: React.FC<ClasificacionDetalleProps> = ({ clas
             clasificacion={clasificacionEdit}
             onClose={handleCloseModal}
             onSave={handleSave}
+            tiposClasificados={obtenerTiposClasificados()}
           />
         )}
       </CardContent>

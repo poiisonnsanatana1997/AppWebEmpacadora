@@ -29,9 +29,13 @@ export const useOrdenesEntrada = () => {
       setOrdenes(ordenesOrdenadas);
       setPesoTotalRecibidoHoy(pesoTotal);
       setOrdenesPendientesHoy(pendientes);
-    } catch (err) {
-      setError('Error al cargar las órdenes');
-      console.error(err);
+    } catch (err: any) {
+      console.error('Error al cargar las órdenes:', err);
+      // No establecer error si es un error de autenticación (401)
+      // ya que el interceptor de axios se encargará de manejar la sesión
+      if (err?.response?.status !== 401) {
+        setError('Error al cargar las órdenes. Por favor, intenta nuevamente.');
+      }
     } finally {
       setLoading(false);
     }
@@ -52,9 +56,12 @@ export const useOrdenesEntrada = () => {
       // Actualizar indicadores después de crear
       await cargarOrdenes();
       return nuevaOrden;
-    } catch (err) {
-      setError('Error al crear la orden');
-      console.error(err);
+    } catch (err: any) {
+      console.error('Error al crear la orden:', err);
+      // No establecer error si es un error de autenticación (401)
+      if (err?.response?.status !== 401) {
+        setError('Error al crear la orden. Por favor, intenta nuevamente.');
+      }
       throw err;
     } finally {
       setLoading(false);
@@ -78,9 +85,12 @@ export const useOrdenesEntrada = () => {
         await cargarOrdenes();
       }
       return ordenActualizada;
-    } catch (err) {
-      setError('Error al actualizar la orden');
-      console.error(err);
+    } catch (err: any) {
+      console.error('Error al actualizar la orden:', err);
+      // No establecer error si es un error de autenticación (401)
+      if (err?.response?.status !== 401) {
+        setError('Error al actualizar la orden. Por favor, intenta nuevamente.');
+      }
       throw err;
     } finally {
       setLoading(false);
@@ -101,9 +111,12 @@ export const useOrdenesEntrada = () => {
       });
       // Actualizar indicadores después de eliminar
       await cargarOrdenes();
-    } catch (err) {
-      setError('Error al eliminar la orden');
-      console.error(err);
+    } catch (err: any) {
+      console.error('Error al eliminar la orden:', err);
+      // No establecer error si es un error de autenticación (401)
+      if (err?.response?.status !== 401) {
+        setError('Error al eliminar la orden. Por favor, intenta nuevamente.');
+      }
       throw err;
     } finally {
       setLoading(false);
@@ -125,9 +138,12 @@ export const useOrdenesEntrada = () => {
       // Actualizar indicadores después de importar
       await cargarOrdenes();
       return ordenesImportadas;
-    } catch (err) {
-      setError('Error al importar las órdenes');
-      console.error(err);
+    } catch (err: any) {
+      console.error('Error al importar las órdenes:', err);
+      // No establecer error si es un error de autenticación (401)
+      if (err?.response?.status !== 401) {
+        setError('Error al importar las órdenes. Por favor, intenta nuevamente.');
+      }
       throw err;
     } finally {
       setLoading(false);
@@ -147,9 +163,12 @@ export const useOrdenesEntrada = () => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-    } catch (err) {
-      setError('Error al imprimir la orden');
-      console.error(err);
+    } catch (err: any) {
+      console.error('Error al imprimir la orden:', err);
+      // No establecer error si es un error de autenticación (401)
+      if (err?.response?.status !== 401) {
+        setError('Error al imprimir la orden. Por favor, intenta nuevamente.');
+      }
       throw err;
     } finally {
       setLoading(false);

@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
-import { PedidoClienteConDetallesDTO } from '@/types/Tarimas/tarima.types';
-import { TarimasService, TarimaServiceError } from '@/services/tarimas.service';
+import { PedidoClientePorAsignarDTO } from '@/types/PedidoCliente/pedidoCliente.types';
+import { PedidosClienteService } from '@/services/pedidosCliente.service';
 
 export const usePedidosCliente = () => {
-  const [pedidosCliente, setPedidosCliente] = useState<PedidoClienteConDetallesDTO[]>([]);
+  const [pedidosCliente, setPedidosCliente] = useState<PedidoClientePorAsignarDTO[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -11,16 +11,12 @@ export const usePedidosCliente = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await TarimasService.obtenerTarimasConDetalles();
+      // Por defecto cargar todos los pedidos disponibles sin filtros
+      const data = await PedidosClienteService.obtenerPedidosClienteDisponibles('', undefined);
       setPedidosCliente(data);
     } catch (error) {
       console.error('Error al cargar pedidos cliente:', error);
-      
-      if (error instanceof TarimaServiceError) {
-        setError(error.message);
-      } else {
-        setError('Error desconocido al cargar los pedidos cliente');
-      }
+      setError('Error desconocido al cargar los pedidos cliente');
     } finally {
       setIsLoading(false);
     }

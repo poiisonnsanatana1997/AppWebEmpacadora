@@ -45,14 +45,15 @@ export const useIndicadoresPesos = (
       total + c.mermas.reduce((acc, m) => acc + m.peso, 0), 0
     );
 
-    // Peso total clasificado (suma de todos los tipos + retornos + mermas)
-    const pesoTotalClasificado = pesoXL + pesoL + pesoM + pesoS + pesoRetornos + pesoMermas;
+    // Peso total clasificado (SOLO tarimas por tipos, NO incluye retornos ni mermas)
+    const pesoTotalClasificado = pesoXL + pesoL + pesoM + pesoS;
 
     // Peso total esperado
     const pesoTotalEsperado = clasificaciones.reduce((total, c) => total + c.pesoTotal, 0);
 
-    // Cálculo del progreso
-    const progreso = pesoTotalEsperado > 0 ? (pesoTotalClasificado / pesoTotalEsperado) * 100 : 0;
+    // Cálculo del progreso (incluye tarimas + retornos + mermas)
+    const pesoTotalProcesado = pesoTotalClasificado + pesoRetornos + pesoMermas;
+    const progreso = pesoTotalEsperado > 0 ? (pesoTotalProcesado / pesoTotalEsperado) * 100 : 0;
 
     return {
       pesoXL,
@@ -90,18 +91,19 @@ export const useIndicadoresPesosClasificacion = (
     const pesoM = pesosPorTipo['M'] || 0;
     const pesoS = pesosPorTipo['S'] || 0;
 
-    // Cálculo de pesos por tipo de tarima
+    // Cálculo de pesos de retornos y mermas
     const pesoRetornos = clasificacion.retornosDetalle.reduce((acc, r) => acc + r.peso, 0);
     const pesoMermas = clasificacion.mermas.reduce((acc, m) => acc + m.peso, 0);
 
-    // Peso total clasificado (suma de todos los tipos + retornos + mermas)
-    const pesoTotalClasificado = pesoXL + pesoL + pesoM + pesoS + pesoRetornos + pesoMermas;
+    // Peso total clasificado (SOLO tarimas por tipos, NO incluye retornos ni mermas)
+    const pesoTotalClasificado = pesoXL + pesoL + pesoM + pesoS;
 
     // Peso total esperado (usando el pesoTotal de la clasificación como referencia)
     const pesoTotalEsperado = clasificacion.pesoTotal;
 
-    // Cálculo del progreso
-    const progreso = pesoTotalEsperado > 0 ? (pesoTotalClasificado / pesoTotalEsperado) * 100 : 0;
+    // Cálculo del progreso (incluye tarimas + retornos + mermas)
+    const pesoTotalProcesado = pesoTotalClasificado + pesoRetornos + pesoMermas;
+    const progreso = pesoTotalEsperado > 0 ? (pesoTotalProcesado / pesoTotalEsperado) * 100 : 0;
 
     return {
       pesoXL,
