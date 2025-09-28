@@ -338,7 +338,7 @@ export const OrdenesPedidoCliente: React.FC<OrdenesPedidoClienteProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {productos.map((producto) => (
+                        {productos.filter(p => p.activo).map((producto) => (
                           <SelectItem key={producto.id} value={producto.id.toString()}>
                             <div className="flex flex-col">
                               <span className="font-medium">{producto.nombre}</span>
@@ -630,7 +630,7 @@ export const OrdenesPedidoCliente: React.FC<OrdenesPedidoClienteProps> = ({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {productos.map((producto) => (
+                            {productos.filter(p => p.activo).map((producto) => (
                               <SelectItem key={producto.id} value={producto.id.toString()}>
                                 <div className="flex flex-col">
                                   <span className="font-medium">{producto.nombre}</span>

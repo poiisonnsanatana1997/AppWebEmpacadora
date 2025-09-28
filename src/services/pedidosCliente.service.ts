@@ -7,7 +7,8 @@ import type {
   PedidoClientePagedResponse,
   PedidoClienteEstatus,
   PedidoClientePorAsignarDTO,
-  PedidoClienteProgresoDTO
+  PedidoClienteProgresoDTO,
+  DesasignarTarimaDTO
 } from '@/types/PedidoCliente/pedidoCliente.types';
 import api from '@/api/axios';
 import { AxiosError } from 'axios';
@@ -29,15 +30,24 @@ export class PedidoClienteServiceError extends Error {
 export const PedidosClienteService = {
   /**
    * Obtiene todos los pedidos de cliente desde la API
+   * @param {AbortSignal} signal - Señal para cancelar la petición
    * @returns {Promise<PedidoClienteResponseDTO[]>} Lista de pedidos de cliente
    * @throws {PedidoClienteServiceError} Si hay un error al obtener los pedidos
    */
-  async obtenerPedidosCliente(): Promise<PedidoClienteResponseDTO[]> {
+  async obtenerPedidosCliente(signal?: AbortSignal): Promise<PedidoClienteResponseDTO[]> {
     try {
-      const response = await api.get<PedidoClienteResponseDTO[]>('/PedidoCliente');
+      const response = await api.get<PedidoClienteResponseDTO[]>('/PedidoCliente', {
+        signal
+      });
       return response.data;
     } catch (error) {
       if (error instanceof AxiosError) {
+        // Silenciar cancelaciones para no mostrar error en UI
+        if (error.code === 'ERR_CANCELED' || error.message === 'canceled' || (error as any)?.name === 'CanceledError') {
+          const abortErr = new Error('Request canceled');
+          abortErr.name = 'AbortError';
+          throw abortErr;
+        }
         throw new PedidoClienteServiceError(
           `Error al obtener pedidos de cliente: ${error.response?.data?.message || error.message}`,
           error
@@ -382,6 +392,47 @@ export const PedidosClienteService = {
         );
       }
       throw new PedidoClienteServiceError('Error desconocido al obtener disponibilidad de cajas', error);
+    }
+  },
+
+  /**
+   * Asigna multiples tarimas a un pedido de cliente
+   * @param {number} idPedido - ID del pedido de cliente
+   * @param {number[]} idsTarimas - IDs de las tarimas a asignar
+   * @returns {Promise<PedidoClienteResponseDTO>} Pedido de cliente actualizado
+   * @throws {PedidoClienteServiceError} Si hay un error al asignar las tarimas
+   */
+  async asignarTarimasPedidoCliente(idPedido: number, idsTarimas: number[]): Promise<PedidoClienteResponseDTO> {
+    try {
+      const response = await api.post<PedidoClienteResponseDTO>(`/PedidoCliente/${idPedido}/asignar-tarimas`, idsTarimas);
+      return response.data;
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        throw new PedidoClienteServiceError(
+          `Error al asignar tarimas al pedido de cliente: ${error.response?.data?.message || error.message}`,
+          error
+        );
+      }
+      throw new PedidoClienteServiceError('Error desconocido al asignar tarimas al pedido de cliente', error);
+    }
+  },
+
+  /**
+   * Desasigna tarimas de un pedido de cliente
+   * @param {DesasignarTarimaDTO[]} datos - Datos de la desasignación
+   * @throws {PedidoClienteServiceError} Si hay un error al desasignar las tarimas
+   */
+  async desasignarTarimasPedidoCliente(datos: DesasignarTarimaDTO[]): Promise<void> {
+    try {
+      await api.delete(`/PedidoCliente/desasignar-tarimas`, { data: datos });
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        throw new PedidoClienteServiceError(
+          `Error al desasignar tarimas al pedido de cliente: ${error.response?.data?.message || error.message}`,
+          error
+        );
+      }
+      throw new PedidoClienteServiceError('Error desconocido al desasignar tarimas al pedido de cliente', error);
     }
   },
 }; 

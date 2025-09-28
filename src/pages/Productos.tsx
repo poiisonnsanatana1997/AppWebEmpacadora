@@ -5,7 +5,6 @@
 
 // Importaciones de React y librerías externas
 import { useEffect, useCallback } from 'react';
-import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { Toaster } from 'sonner';
 
@@ -17,90 +16,6 @@ import { CrearProductoModal } from '@/components/Productos/CrearProductoModal';
 
 // Importaciones de hooks y servicios
 import { useProductos } from '@/hooks/Productos/useProductos';
-
-// Componentes estilizados para la interfaz
-const PageContainer = styled(motion.div)`
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  background: rgba(255, 255, 255, 0);
-  width: 100%;
-`;
-
-const ProductsTableContainer = styled(motion.div)`
-  background: white;
-  border-radius: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  border: 1px solid #E2E8F0;
-  overflow: hidden;
-  width: 100%;
-  
-  @media (max-width: 768px) {
-    border-radius: 0.75rem;
-  }
-  
-  @media (max-width: 480px) {
-    border-radius: 0.5rem;
-  }
-`;
-
-const TableContentSection = styled(motion.div)`
-  padding: 1.5rem;
-  overflow-x: auto;
-  background: #fff;
-  width: 100%;
-  
-  @media (max-width: 768px) {
-    padding: 1rem;
-  }
-  
-  @media (max-width: 480px) {
-    padding: 0.75rem;
-  }
-`;
-
-const StyledTable = styled(motion.table)`
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 1.08rem;
-  border-radius: 1rem;
-  overflow: hidden;
-
-  th, td {
-    padding: 1.1rem 1rem;
-  }
-
-  th {
-    background: #f1f5f9;
-    font-weight: 600;
-    position: sticky;
-    top: 0;
-    z-index: 2;
-  }
-
-  tr:hover td {
-    background: #f8fafc;
-    transition: background 0.2s;
-  }
-  
-  @media (max-width: 768px) {
-    font-size: 0.95rem;
-    
-    th, td {
-      padding: 0.75rem 0.5rem;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    font-size: 0.875rem;
-    
-    th, td {
-      padding: 0.5rem 0.25rem;
-    }
-  }
-`;
 
 export default function Productos() {
   // Hook personalizado para gestionar los productos
@@ -135,12 +50,14 @@ export default function Productos() {
 
   // Renderizado del componente
   return (
-    <PageContainer
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
+      className="min-h-screen flex flex-col justify-start bg-transparent w-full"
     >
       <Toaster richColors position="top-right" />
+      
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -158,34 +75,30 @@ export default function Productos() {
         )}
 
         {/* Contenedor principal de la tabla de productos */}
-        <ProductsTableContainer
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
+          className="bg-white border-radius-1rem box-shadow-0-4px-6px-1px-rgba-0-0-0-0-1-0-2px-4px-1px-rgba-0-0-0-0-06 border-1px-solid-E2E8F0 overflow-hidden w-full rounded-2xl shadow-lg border border-gray-200"
         >
           <TableHeader 
             onNewProductClick={handleOpenModalNuevoProducto}
           />
 
-          <TableContentSection
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, delay: 0.1 }}
+            className="p-2 overflow-x-auto bg-white w-full"
           >
-            <StyledTable
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3, delay: 0.2 }}
-            >
-              <ProductoTable
-                productos={productos}
-                loading={isLoading}
-                error={error}
-                onEdit={handleOpenModalEditar}
-              />
-            </StyledTable>
-          </TableContentSection>
-        </ProductsTableContainer>
+            <ProductoTable
+              productos={productos}
+              loading={isLoading}
+              error={error}
+              onEdit={handleOpenModalEditar}
+            />
+          </motion.div>
+        </motion.div>
       </motion.div>
 
       {/* Modales de producto */}
@@ -203,6 +116,6 @@ export default function Productos() {
           onSubmit={onSubmit}
         />
       )}
-    </PageContainer>
+    </motion.div>
   );
 }

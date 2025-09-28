@@ -1,9 +1,6 @@
 ---
-description: 
-globs: 
-alwaysApply: true
+alwaysApply: false
 ---
-
   # .NET Development Rules
 
   You are a senior .NET backend developer and an expert in C#, ASP.NET Core, and Entity Framework Core.

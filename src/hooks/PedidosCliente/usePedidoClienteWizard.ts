@@ -1,9 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { clientesService } from '@/services/clientes.service';
-import { ProductosService } from '@/services/productos.service';
 import { PedidosClienteService } from '@/services/pedidosCliente.service';
+import { useGlobalCache } from '@/hooks/useGlobalCache';
 import {
   informacionBasicaSchema,
   ordenesSchema,
@@ -21,6 +20,15 @@ import { CreatePedidoClienteDTO } from '@/types/PedidoCliente/pedidoCliente.type
 import { CrearOrdenSimpleDTO } from '@/types/PedidoCliente/ordenPedidoCliente.types';
 
 export const usePedidoClienteWizard = () => {
+  // Usar cache global
+  const { 
+    clientes, 
+    productos, 
+    isLoading: cacheLoading, 
+    error: cacheError, 
+    fetchAllData 
+  } = useGlobalCache();
+
   // Estado del wizard
   const [wizardState, setWizardState] = useState<WizardState>({
     currentStep: 'informacion',
@@ -32,9 +40,7 @@ export const usePedidoClienteWizard = () => {
     data: {},
   });
 
-  // Estado de datos
-  const [clientes, setClientes] = useState<ClienteDTO[]>([]);
-  const [productos, setProductos] = useState<ProductoDto[]>([]);
+  // Estado local para operaciones del wizard
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,31 +66,23 @@ export const usePedidoClienteWizard = () => {
     mode: 'onChange',
   });
 
-  // Cargar datos iniciales
+  // Cargar datos iniciales usando cache global
   const cargarDatos = useCallback(async () => {
     try {
-      setIsLoading(true);
       setError(null);
-
-      const [clientesData, productosData] = await Promise.all([
-        clientesService.getClientesDetallados(),
-        ProductosService.obtenerProductos(),
-      ]);
-
-      setClientes(clientesData);
-      setProductos(productosData);
+      await fetchAllData();
     } catch (error: any) {
       console.error('Error al cargar datos:', error);
       setError('Error al cargar los datos necesarios. Verifica la conexión con la API.');
-    } finally {
-      setIsLoading(false);
     }
-  }, []);
+  }, [fetchAllData]);
 
-  // Cargar datos al montar el componente
+  // Cargar datos al montar el componente solo si no están en cache
   useEffect(() => {
-    cargarDatos();
-  }, [cargarDatos]);
+    if (clientes.length === 0 || productos.length === 0) {
+      cargarDatos();
+    }
+  }, [cargarDatos, clientes.length, productos.length]);
 
   // Navegación entre pasos
   const nextStep = useCallback(async () => {
@@ -282,8 +280,8 @@ export const usePedidoClienteWizard = () => {
     wizardState,
     clientes,
     productos,
-    isLoading,
-    error,
+    isLoading: isLoading || cacheLoading.clientes || cacheLoading.productos,
+    error: error || cacheError.clientes || cacheError.productos,
     
     // Formularios
     informacionForm,

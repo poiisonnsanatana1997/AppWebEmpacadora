@@ -1,3 +1,5 @@
+import { ProductoSimpleDto } from "../Productos/productos.types";
+
 export interface TarimaDTO {
   id: number;
   codigo: string;
@@ -59,8 +61,9 @@ export interface TarimaClasificacionParcialDTO {
   tipo: string;
   cantidad: number;
   pesoTotal: number;
-  fechaRegistro: string; // ISO string
+  fechaRegistro: string;
   usuarioRegistro: string;
+  productos: ProductoSimpleDto[];
 }
 
 export interface TarimaParcialCompletaDTO {

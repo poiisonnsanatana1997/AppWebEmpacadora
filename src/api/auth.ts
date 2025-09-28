@@ -41,8 +41,8 @@ const authService = {
    */
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
     try {
-      // Log de configuración en desarrollo
-      if (config.logging.enabled && config.app.environment === 'development') {
+      // Log de configuración
+      if (config.logging.enabled) {
         console.log(`Intentando login en: ${config.api.baseUrl}/auth/login`);
       }
       

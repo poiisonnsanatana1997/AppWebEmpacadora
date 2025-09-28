@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -12,22 +11,9 @@ import { Plus } from 'lucide-react';
 import { Combobox } from '../ui/combobox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
 import { Textarea } from '../ui/textarea';
+import { ordenEntradaFormSchema, OrdenEntradaFormSchema } from '../../schemas/ordenEntradaFormSchema';
+import { getTodayDateString, getMexicoLocalISOStringRobust } from '../../utils/dateUtils';
 
-const formSchema = z.object({
-  proveedor: z.object({
-    id: z.string().min(1, 'Debe seleccionar un proveedor'),
-    nombre: z.string()
-  }),
-  fecha: z.string().min(1, 'Debe seleccionar una fecha'),
-  estado: z.enum(['Pendiente', 'Procesando', 'Recibida', 'Cancelada'] as const),
-  observaciones: z.string(),
-  productos: z.object({
-    id: z.string().min(1, 'Debe seleccionar un producto'),
-    nombre: z.string(),
-    codigo: z.string(),
-    variedad: z.string()
-  })
-});
 
 interface NuevaOrdenEntradaModalProps {
   isOpen: boolean;
@@ -43,11 +29,11 @@ export function NuevaOrdenEntradaModal({ isOpen, onClose, onSave }: NuevaOrdenEn
   const [proveedores, setProveedores] = useState<ProveedorDto[]>([]);
   const [productos, setProductos] = useState<ProductoDto[]>([]);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<OrdenEntradaFormSchema>({
+    resolver: zodResolver(ordenEntradaFormSchema),
     defaultValues: {
       proveedor: { id: '', nombre: '' },
-      fecha: new Date().toISOString().split('T')[0],
+      fecha: getTodayDateString(),
       estado: ESTADO_ORDEN.PENDIENTE,
       observaciones: '',
       productos: { id: '', nombre: '', codigo: '', variedad: '' }
@@ -60,7 +46,7 @@ export function NuevaOrdenEntradaModal({ isOpen, onClose, onSave }: NuevaOrdenEn
       cargarDatos();
       form.reset({
         proveedor: { id: '', nombre: '' },
-        fecha: new Date().toISOString().split('T')[0],
+        fecha: getTodayDateString(),
         estado: ESTADO_ORDEN.PENDIENTE,
         observaciones: '',
         productos: { id: '', nombre: '', codigo: '', variedad: '' }
@@ -81,7 +67,7 @@ export function NuevaOrdenEntradaModal({ isOpen, onClose, onSave }: NuevaOrdenEn
     }
   };
 
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
+  const onSubmit = (data: OrdenEntradaFormSchema) => {
     onSave({
       proveedor: {
         id: parseInt(data.proveedor.id),
@@ -96,7 +82,7 @@ export function NuevaOrdenEntradaModal({ isOpen, onClose, onSave }: NuevaOrdenEn
       fechaEstimada: data.fecha,
       estado: data.estado as EstadoOrden,
       observaciones: data.observaciones || '',
-      fechaRegistro: new Date().toISOString(),
+      fechaRegistro: getMexicoLocalISOStringRobust(),
       fechaRecepcion: null,
       usuarioRegistro: '',
       usuarioRecepcion: null
@@ -224,7 +210,7 @@ export function NuevaOrdenEntradaModal({ isOpen, onClose, onSave }: NuevaOrdenEn
                             {...field}
                             required
                             className="w-full"
-                            min={new Date().toISOString().split('T')[0]}
+                            min={getTodayDateString()}
                             onChange={(e) => {
                               field.onChange(e);
                               form.trigger('fecha');

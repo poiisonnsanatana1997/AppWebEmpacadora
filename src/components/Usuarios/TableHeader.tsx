@@ -1,11 +1,16 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { UserPlus } from 'lucide-react';
+import { Users, Plus } from 'lucide-react';
 
 interface TableHeaderProps {
   onNewUserClick: () => void;
 }
 
+/**
+ * Componente TableHeader
+ * Muestra el encabezado de la tabla de usuarios con título y botones de acción
+ * @param onNewUserClick - Función para manejar la creación de nuevos usuarios
+ */
 export function TableHeader({ onNewUserClick }: TableHeaderProps) {
   return (
     <motion.div
@@ -20,7 +25,7 @@ export function TableHeader({ onNewUserClick }: TableHeaderProps) {
           animate={{ opacity: 1, x: 0 }}
           className="text-xl font-semibold text-gray-900 flex items-center gap-2"
         >
-          <UserPlus className="w-6 h-6 text-blue-700" />
+          <Users className="w-6 h-6 text-blue-700" />
           Lista de Usuarios
         </motion.h2>
         
@@ -33,7 +38,7 @@ export function TableHeader({ onNewUserClick }: TableHeaderProps) {
             onClick={onNewUserClick}
             className="w-full sm:w-auto"
           >
-            <UserPlus className="w-4 h-4 mr-2" />
+            <Plus className="w-4 h-4 mr-2" />
             Nuevo Usuario
           </Button>
         </motion.div>

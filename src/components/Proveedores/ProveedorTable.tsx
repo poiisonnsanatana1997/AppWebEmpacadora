@@ -18,12 +18,20 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { FilterSelect } from './FilterSelect';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { FilterInput } from './FilterInput';
-import { Edit2, ChevronDown, ChevronUp, ChevronsUpDown, Loader2, User, Mail, Phone, Building, Calendar, X, RefreshCw, Eye } from 'lucide-react';
+import { Edit2, ChevronDown, ChevronUp, ChevronsUpDown, Loader2, Truck, Eye, MoreHorizontal, X, RefreshCw } from 'lucide-react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'motion/react';
 import type { ProveedorCompletoDto } from '@/types/Proveedores/proveedores.types';
+import { format } from 'date-fns';
 
 const StatusBadge = styled(Badge)`
   font-weight: 600;
@@ -46,30 +54,6 @@ const formatCellValue = (value: any, fallbackText: string = 'No disponible') => 
   return String(value);
 };
 
-// Función para formatear fechas
-const formatDate = (dateString: string | null | undefined) => {
-  if (!dateString) {
-    return formatCellValue(dateString, 'Sin fecha');
-  }
-  
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) {
-      return formatCellValue(dateString, 'Fecha inválida');
-    }
-    
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  } catch (error) {
-    return formatCellValue(dateString, 'Fecha inválida');
-  }
-};
-
 interface ProveedorTableProps {
   proveedores: ProveedorCompletoDto[];
   loading: boolean;
@@ -82,8 +66,6 @@ interface ProveedorTableProps {
 export function ProveedorTable({ proveedores, loading, error, onEdit, onToggleStatus, onViewDetail }: ProveedorTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] = React.useState({});
 
   const columns = useMemo<ColumnDef<ProveedorCompletoDto>[]>(() => [
     {
@@ -178,21 +160,7 @@ export function ProveedorTable({ proveedores, loading, error, onEdit, onToggleSt
     },
     {
       accessorKey: 'telefono',
-      header: ({ column }) => {
-        const filterValue = column.getFilterValue() as string | undefined;
-        return (
-          <div className="flex flex-col">
-            <span className="font-semibold">Teléfono</span>
-            <div className="mt-2">
-              <FilterInput
-                value={(filterValue as string) ?? ""}
-                onChange={(value) => column.setFilterValue(value)}
-                placeholder="Filtrar por teléfono..."
-              />
-            </div>
-          </div>
-        );
-      },
+      header: 'Teléfono',
       cell: ({ row }) => {
         const telefono = row.getValue('telefono') as string;
         return (
@@ -201,30 +169,10 @@ export function ProveedorTable({ proveedores, loading, error, onEdit, onToggleSt
           </div>
         );
       },
-      filterFn: (row, id, value) => {
-        if (!value) return true;
-        const cellValue = row.getValue(id);
-        if (!cellValue) return false;
-        return String(cellValue).toLowerCase().includes(String(value).toLowerCase());
-      },
     },
     {
       accessorKey: 'correo',
-      header: ({ column }) => {
-        const filterValue = column.getFilterValue() as string | undefined;
-        return (
-          <div className="flex flex-col">
-            <span className="font-semibold">Correo</span>
-            <div className="mt-2">
-              <FilterInput
-                value={(filterValue as string) ?? ""}
-                onChange={(value) => column.setFilterValue(value)}
-                placeholder="Filtrar por correo..."
-              />
-            </div>
-          </div>
-        );
-      },
+      header: 'Correo',
       cell: ({ row }) => {
         const correo = row.getValue('correo') as string;
         return (
@@ -232,12 +180,6 @@ export function ProveedorTable({ proveedores, loading, error, onEdit, onToggleSt
             {formatCellValue(correo, 'Sin correo')}
           </div>
         );
-      },
-      filterFn: (row, id, value) => {
-        if (!value) return true;
-        const cellValue = row.getValue(id);
-        if (!cellValue) return false;
-        return String(cellValue).toLowerCase().includes(String(value).toLowerCase());
       },
     },
     {
@@ -260,11 +202,11 @@ export function ProveedorTable({ proveedores, loading, error, onEdit, onToggleSt
       ),
       cell: ({ row }) => {
         const fechaRegistro = row.getValue('fechaRegistro') as string;
-        return (
-          <div>
-            {formatDate(fechaRegistro)}
-          </div>
-        );
+        try {
+          return format(new Date(fechaRegistro), 'dd/MM/yyyy HH:mm');
+        } catch {
+          return formatCellValue(fechaRegistro, 'Fecha inválida');
+        }
       },
     },
     {
@@ -312,7 +254,8 @@ export function ProveedorTable({ proveedores, loading, error, onEdit, onToggleSt
       id: 'acciones',
       header: 'Acciones',
       cell: ({ row }) => {
-        const activo = row.original.activo;
+        const proveedor = row.original;
+        const activo = proveedor.activo;
         const isActive = activo === true;
         
         return (
@@ -323,9 +266,8 @@ export function ProveedorTable({ proveedores, loading, error, onEdit, onToggleSt
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => onViewDetail(row.original.id)}
+                    onClick={() => onViewDetail(proveedor.id)}
                     className="hover:bg-blue-50"
-                    aria-label="Ver detalle del proveedor"
                   >
                     <Eye className="h-4 w-4 text-blue-600" />
                   </Button>
@@ -334,43 +276,37 @@ export function ProveedorTable({ proveedores, loading, error, onEdit, onToggleSt
                   <p>Ver detalle</p>
                 </TooltipContent>
               </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onEdit(row.original.id)}
-                    className="hover:bg-blue-50"
-                    aria-label="Editar proveedor"
-                  >
-                    <Edit2 className="h-4 w-4 text-blue-600" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Editar proveedor</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onToggleStatus(row.original.id, isActive)}
-                    className="hover:bg-gray-50"
-                    aria-label={isActive ? "Desactivar proveedor" : "Activar proveedor"}
-                  >
-                    {isActive ? (
-                      <X className="h-4 w-4 text-gray-600" />
-                    ) : (
-                      <RefreshCw className="h-4 w-4 text-gray-600" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{isActive ? "Desactivar proveedor" : "Activar proveedor"}</p>
-                </TooltipContent>
-              </Tooltip>
             </TooltipProvider>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Abrir menú</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => onEdit(proveedor.id)}>
+                  <Edit2 className="mr-2 h-4 w-4" />
+                  Editar
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onToggleStatus(proveedor.id, isActive)}>
+                  {isActive ? (
+                    <>
+                      <X className="mr-2 h-4 w-4" />
+                      Desactivar
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Activar
+                    </>
+                  )}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         );
       },
@@ -385,24 +321,21 @@ export function ProveedorTable({ proveedores, loading, error, onEdit, onToggleSt
     state: {
       sorting,
       columnFilters,
-      rowSelection,
-      columnVisibility,
     },
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    enableFilters: true,
     enableSorting: true,
     enableColumnFilters: true,
     enableMultiSort: false,
-    enableSortingRemoval: false,
-    enableColumnResizing: false,
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
   });
 
   if (loading) {
@@ -443,7 +376,10 @@ export function ProveedorTable({ proveedores, loading, error, onEdit, onToggleSt
         className="flex items-center justify-center py-8"
       >
         <div className="text-gray-500 text-center">
-          <p className="font-semibold">No hay proveedores registrados</p>
+          <div className="bg-gray-50 rounded-full p-4 w-fit mx-auto mb-4">
+            <Truck className="h-12 w-12 text-gray-400" />
+          </div>
+          <p className="font-semibold text-lg">No hay proveedores registrados</p>
           <p className="text-sm">Comienza agregando un nuevo proveedor</p>
         </div>
       </motion.div>
@@ -452,12 +388,13 @@ export function ProveedorTable({ proveedores, loading, error, onEdit, onToggleSt
 
   return (
     <div className="space-y-4">
-      <table className="w-full">
+      <div className="overflow-x-auto border border-gray-200 rounded-lg">
+        <table className="w-full min-w-[800px]">
         <thead className="bg-[#f1f5f9]">
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id} className="hover:bg-gray-100">
               {headerGroup.headers.map((header) => (
-                <th key={header.id} className="p-2 font-semibold text-gray-700 border-b border-[#e2e8f0]">
+                <th key={header.id} className="p-2 font-semibold text-gray-700 border-b border-[#e2e8f0] min-w-[120px]">
                   {header.isPlaceholder
                     ? null
                     : flexRender(
@@ -479,12 +416,13 @@ export function ProveedorTable({ proveedores, loading, error, onEdit, onToggleSt
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.2 }}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="border-b border-gray-200 last:border-b-0"
+                  className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="p-2">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    <td key={cell.id} className="p-3 max-w-[200px]">
+                      <div className="truncate">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </div>
                     </td>
                   ))}
                 </motion.tr>
@@ -499,7 +437,7 @@ export function ProveedorTable({ proveedores, loading, error, onEdit, onToggleSt
                 <td colSpan={columns.length} className="h-48 text-center">
                   <div className="flex flex-col items-center justify-center space-y-4 py-8">
                     <div className="bg-gray-50 rounded-full p-4">
-                      <User className="h-12 w-12 text-gray-400" />
+                      <Truck className="h-12 w-12 text-gray-400" />
                     </div>
                     <div className="space-y-2">
                       <h3 className="text-lg font-semibold text-gray-700">No se encontraron proveedores</h3>
@@ -515,15 +453,18 @@ export function ProveedorTable({ proveedores, loading, error, onEdit, onToggleSt
           </AnimatePresence>
         </tbody>
       </table>
-      
-      <div className="flex items-center justify-between px-2">
-        <div className="flex-1 text-sm text-muted-foreground">
+      </div>
+
+      {/* Controles de paginación */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
+        <div className="flex-1 text-sm text-muted-foreground text-center sm:text-left">
           {table.getFilteredSelectedRowModel().rows.length} de{" "}
           {table.getFilteredRowModel().rows.length} fila(s) seleccionada(s).
         </div>
-        <div className="flex items-center space-x-6 lg:space-x-8">
+        <div className="flex flex-col sm:flex-row items-center gap-4 sm:space-x-6 lg:space-x-8">
           <div className="flex items-center space-x-2">
-            <p className="text-sm font-medium">Filas por página</p>
+            <p className="text-sm font-medium hidden sm:block">Filas por página</p>
+            <p className="text-sm font-medium sm:hidden">Por página</p>
             <select
               value={table.getState().pagination.pageSize}
               onChange={(e) => {
@@ -539,13 +480,14 @@ export function ProveedorTable({ proveedores, loading, error, onEdit, onToggleSt
             </select>
           </div>
           <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-            Página {table.getState().pagination.pageIndex + 1} de{" "}
+            <span className="hidden sm:inline">Página </span>
+            {table.getState().pagination.pageIndex + 1} de{" "}
             {table.getPageCount()}
           </div>
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
-              className="h-8 w-8 p-0 cursor-pointer hidden lg:flex"
+              className="h-8 w-8 p-0 cursor-pointer hidden md:flex"
               onClick={() => table.setPageIndex(0)}
               disabled={!table.getCanPreviousPage()}
             >
@@ -572,7 +514,7 @@ export function ProveedorTable({ proveedores, loading, error, onEdit, onToggleSt
             </Button>
             <Button
               variant="outline"
-              className="h-8 w-8 p-0 cursor-pointer hidden lg:flex"
+              className="h-8 w-8 p-0 cursor-pointer hidden md:flex"
               onClick={() => table.setPageIndex(table.getPageCount() - 1)}
               disabled={!table.getCanNextPage()}
             >

@@ -1,10 +1,12 @@
 import { Button } from '@/components/ui/button';
-import { ClipboardList, CloudUpload, Plus } from 'lucide-react';
+import { ClipboardList, CloudUpload, Plus, FilterX } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface TableHeaderProps {
   onImportClick: () => void;
   onNewOrderClick: () => void;
+  onClearFilters?: () => void;
+  hasActiveFilters?: boolean;
 }
 
 /**
@@ -12,8 +14,10 @@ interface TableHeaderProps {
  * Muestra el encabezado de la tabla de órdenes de entrada con título y botones de acción
  * @param onImportClick - Función para manejar la importación
  * @param onNewOrderClick - Función para manejar la creación de nuevas órdenes
+ * @param onClearFilters - Función para limpiar los filtros activos
+ * @param hasActiveFilters - Indica si hay filtros activos
  */
-export function TableHeader({ onImportClick, onNewOrderClick }: TableHeaderProps) {
+export function TableHeader({ onImportClick, onNewOrderClick, onClearFilters, hasActiveFilters }: TableHeaderProps) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -36,6 +40,16 @@ export function TableHeader({ onImportClick, onNewOrderClick }: TableHeaderProps
           animate={{ opacity: 1, x: 0 }}
           className="flex flex-col sm:flex-row gap-2"
         >
+          {hasActiveFilters && onClearFilters && (
+            <Button 
+              variant="ghost" 
+              onClick={onClearFilters}
+              className="w-full sm:w-auto text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+            >
+              <FilterX className="w-4 h-4 mr-2" />
+              Limpiar Filtros
+            </Button>
+          )}
           <Button 
             variant="outline" 
             onClick={onImportClick}

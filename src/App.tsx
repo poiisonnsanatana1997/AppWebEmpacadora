@@ -1,10 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { config } from './config/environment'
 import { AuthProvider } from './contexts/AuthContext'
 import Login from './pages/Login'
-import Dashboard from './pages/Dashboard'
+import Home from './pages/Home'
 import Settings from './pages/Settings'
 import Reports from './pages/Reports'
-import Inventory from './pages/Inventory'
 import Productos from './pages/Productos'
 import OrdenesEntrada from './pages/OrdenesEntrada'
 import DetalleOrdenEntrada from './pages/DetalleOrdenEntrada'
@@ -14,20 +14,27 @@ import Layout from './components/Layout'
 import Proveedores from './pages/Proveedores'
 import ClasificacionOrdenEntrada from './pages/ClasificacionOrdenEntrada'
 import PedidosCliente from './pages/PedidosCliente'
-import { CrearPedidoCliente } from './pages/PedidosCliente/CrearPedidoCliente'
+import { CrearPedidoCliente } from './pages/CrearPedidoCliente'
+import Inventario from './pages/Inventario'
+import { Clientes } from './pages/Clientes'
 
 // Componente para proteger rutas
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, loading } = useAuth()
   
+  console.log('PrivateRoute - Estado actual:', { isAuthenticated, loading })
+  
   if (loading) {
+    console.log('PrivateRoute - Mostrando loading...')
     return <div>Cargando...</div>
   }
   
   if (!isAuthenticated) {
+    console.log('PrivateRoute - No autenticado, redirigiendo a login...')
     return <Navigate to="/login" replace />
   }
 
+  console.log('PrivateRoute - Usuario autenticado, mostrando contenido...')
   return <Layout>{children}</Layout>
 }
 
@@ -44,14 +51,14 @@ function App() {
       overflowX: 'hidden'
     }}>
       <AuthProvider>
-        <BrowserRouter basename="/empacadora">
+        <BrowserRouter basename={config.app.basename || '/'}>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route 
-              path="/dashboard" 
+              path="/home" 
               element={
                 <PrivateRoute>
-                  <Dashboard />
+                  <Home />
                 </PrivateRoute>
               } 
             />
@@ -79,14 +86,7 @@ function App() {
                 </PrivateRoute>
               } 
             />
-            <Route 
-              path="/inventory" 
-              element={
-                <PrivateRoute>
-                  <Inventory />
-                </PrivateRoute>
-              } 
-            />
+
             <Route 
               path="/productos" 
               element={
@@ -151,7 +151,23 @@ function App() {
                 </PrivateRoute>
               } 
             />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route 
+              path="/inventario" 
+              element={
+                <PrivateRoute>
+                  <Inventario />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/clientes" 
+              element={
+                <PrivateRoute>
+                  <Clientes />
+                </PrivateRoute>
+              } 
+            />
+            <Route path="/" element={<Navigate to="/home" replace />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

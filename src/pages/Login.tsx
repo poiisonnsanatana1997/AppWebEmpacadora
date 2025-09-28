@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import styled from "styled-components"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -272,10 +272,18 @@ const MotionInput = motion(InputWrapper)
 
 export default function Login() {
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { login, isAuthenticated, user } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  // Redirigir automáticamente si ya está autenticado
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      console.log('Login - Usuario ya autenticado, redirigiendo a home...')
+      navigate('/home', { replace: true })
+    }
+  }, [isAuthenticated, user, navigate])
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -296,8 +304,12 @@ export default function Login() {
       console.log('Login exitoso:', response)
       
       if (response && response.token) {
-        console.log('Token recibido, redirigiendo a welcome...')
-        navigate('/dashboard', { replace: true })
+        console.log('Token recibido, redirigiendo a home...')
+        // Pequeño delay para asegurar que el estado se actualice
+        setTimeout(() => {
+          console.log('Ejecutando navegación a /home...')
+          navigate('/home', { replace: true })
+        }, 100)
       }
     } catch (error: any) {
       console.error('Error en login:', error)

@@ -3,8 +3,6 @@
 // React y enrutamiento
 import React from 'react';
 
-
-
 // Importaciones relacionadas con la tabla
 import {
   useReactTable,
@@ -45,10 +43,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 // Iconos
-import { ChevronDown, ChevronUp, ChevronsUpDown, Eye, MoreHorizontal, Package, Calendar, User, Building, Package2, Ban, BarChart3, Truck, CheckSquare } from 'lucide-react';
+import { ChevronDown, ChevronUp, ChevronsUpDown, Eye, MoreHorizontal, Package, Calendar, User, Building, Package2, Ban, BarChart3, Truck, CheckSquare, Loader2 } from 'lucide-react';
 
 // Utilidades y tipos
 import styled from 'styled-components';
+import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import clsx from 'clsx';
 import type { PedidoClienteResponseDTO } from '@/types/PedidoCliente/pedidoCliente.types';
@@ -59,8 +58,12 @@ import { fuzzyFilter } from '@/utils/tableUtils';
 // Componentes Estilizados
 // ============================================
 const StatusBadge = styled(Badge)`
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
 `;
 
 // Interfaces
@@ -77,75 +80,16 @@ interface PedidosClienteTableProps {
 // ============================================
 const TableSkeleton = () => {
   return (
-    <div className="rounded-md border">
-      <table className="w-full">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-4 py-3 text-left">
-              <Skeleton className="h-6 w-16" />
-            </th>
-            <th className="px-4 py-3 text-left">
-              <Skeleton className="h-6 w-20" />
-            </th>
-            <th className="px-4 py-3 text-left">
-              <Skeleton className="h-6 w-24" />
-            </th>
-            <th className="px-4 py-3 text-left">
-              <Skeleton className="h-6 w-20" />
-            </th>
-            <th className="px-4 py-3 text-left">
-              <Skeleton className="h-6 w-24" />
-            </th>
-            <th className="px-4 py-3 text-left">
-              <Skeleton className="h-6 w-28" />
-            </th>
-            <th className="px-4 py-3 text-left">
-              <Skeleton className="h-6 w-28" />
-            </th>
-            <th className="px-4 py-3 text-left">
-              <Skeleton className="h-6 w-20" />
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {Array.from({ length: 8 }).map((_, index) => (
-            <tr key={index} className="hover:bg-gray-50">
-              <td className="px-4 py-3">
-                <Skeleton className="h-4 w-12" />
-              </td>
-              <td className="px-4 py-3">
-                <Skeleton className="h-4 w-24" />
-              </td>
-              <td className="px-4 py-3">
-                <Skeleton className="h-4 w-20" />
-              </td>
-              <td className="px-4 py-3">
-                <Skeleton className="h-6 w-16 rounded-full" />
-              </td>
-              <td className="px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-2 flex-1" />
-                  <Skeleton className="h-4 w-12" />
-                </div>
-              </td>
-              <td className="px-4 py-3">
-                <Skeleton className="h-4 w-20" />
-              </td>
-              <td className="px-4 py-3">
-                <Skeleton className="h-4 w-16" />
-              </td>
-              <td className="px-4 py-3">
-                <div className="flex items-center gap-1">
-                  <Skeleton className="h-8 w-8 rounded" />
-                  <Skeleton className="h-8 w-8 rounded" />
-                  <Skeleton className="h-8 w-8 rounded" />
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="flex items-center justify-center py-8"
+    >
+      <div className="flex items-center gap-2 text-gray-600">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        <span>Cargando pedidos...</span>
+      </div>
+    </motion.div>
   );
 };
 
@@ -172,23 +116,21 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
   const [pedidoAEmbarcar, setPedidoAEmbarcar] = React.useState<number | null>(null);
   const [pedidoAEntregar, setPedidoAEntregar] = React.useState<number | null>(null);
 
-
-
   // Función para obtener el color del badge según el estatus
   const getStatusBadge = (estatus: string) => {
     switch (estatus) {
       case 'Pendiente':
-        return <StatusBadge variant="secondary" className="bg-yellow-100 text-yellow-800">Pendiente</StatusBadge>;
+        return <StatusBadge variant="secondary" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Pendiente</StatusBadge>;
       case 'Surtiendo':
-        return <StatusBadge variant="secondary" className="bg-blue-100 text-blue-800">Surtiendo</StatusBadge>;
+        return <StatusBadge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200">Surtiendo</StatusBadge>;
       case 'Surtido':
-        return <StatusBadge variant="secondary" className="bg-green-100 text-green-800">Surtido</StatusBadge>;
+        return <StatusBadge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-200">Surtido</StatusBadge>;
       case 'Embarcado':
-        return <StatusBadge variant="secondary" className="bg-purple-100 text-purple-800">Embarcado</StatusBadge>;
+        return <StatusBadge variant="secondary" className="bg-purple-100 text-purple-800 hover:bg-purple-200">Embarcado</StatusBadge>;
       case 'Entregado':
-        return <StatusBadge variant="secondary" className="bg-emerald-100 text-emerald-800">Entregado</StatusBadge>;
+        return <StatusBadge variant="secondary" className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200">Entregado</StatusBadge>;
       case 'Cancelado':
-        return <StatusBadge variant="secondary" className="bg-red-100 text-red-800">Cancelado</StatusBadge>;
+        return <StatusBadge variant="secondary" className="bg-red-100 text-red-800 hover:bg-red-200">Cancelado</StatusBadge>;
       default:
         return <StatusBadge variant="secondary">{estatus}</StatusBadge>;
     }
@@ -261,7 +203,6 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
               className="font-semibold h-8 px-2 cursor-pointer justify-start transition-colors duration-200 hover:bg-gray-100"
             >
-              <Package className="h-4 w-4 mr-2" />
               ID
               {column.getIsSorted() === "asc" ? (
                 <ChevronUp className="ml-1 h-3 w-3" />
@@ -299,7 +240,6 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
               className="font-semibold h-8 px-2 cursor-pointer justify-start transition-colors duration-200 hover:bg-gray-100"
             >
-              <User className="h-4 w-4 mr-2" />
               Cliente
               {column.getIsSorted() === "asc" ? (
                 <ChevronUp className="ml-1 h-3 w-3" />
@@ -339,7 +279,6 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
               className="font-semibold h-8 px-2 cursor-pointer justify-start transition-colors duration-200 hover:bg-gray-100"
             >
-              <Building className="h-4 w-4 mr-2" />
               Sucursal
               {column.getIsSorted() === "asc" ? (
                 <ChevronUp className="ml-1 h-3 w-3" />
@@ -424,7 +363,6 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
               className="font-semibold h-8 px-2 cursor-pointer justify-start transition-colors duration-200 hover:bg-gray-100"
             >
-              <BarChart3 className="h-4 w-4 mr-2" />
               % Surtido
               {column.getIsSorted() === "asc" ? (
                 <ChevronUp className="ml-1 h-3 w-3" />
@@ -487,7 +425,6 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
               className="font-semibold h-8 px-2 cursor-pointer justify-start transition-colors duration-200 hover:bg-gray-100"
             >
-              <Calendar className="h-4 w-4 mr-2" />
               Fecha Registro
               {column.getIsSorted() === "asc" ? (
                 <ChevronUp className="ml-1 h-3 w-3" />
@@ -516,7 +453,6 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
               className="font-semibold h-8 px-2 cursor-pointer justify-start transition-colors duration-200 hover:bg-gray-100"
             >
-              <Calendar className="h-4 w-4 mr-2" />
               Fecha Embarque
               {column.getIsSorted() === "asc" ? (
                 <ChevronUp className="ml-1 h-3 w-3" />
@@ -549,9 +485,9 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
                   variant="ghost"
                   size="sm"
                   onClick={() => onView(row.original)}
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 p-0 hover:bg-blue-50"
                 >
-                  <Eye className="h-4 w-4" />
+                  <Eye className="h-4 w-4 text-blue-600" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -568,9 +504,9 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
                     variant="ghost"
                     size="sm"
                     onClick={() => onProgreso(row.original.id)}
-                    className="h-8 w-8 p-0"
+                    className="h-8 w-8 p-0 hover:bg-green-50"
                   >
-                    <BarChart3 className="h-4 w-4" />
+                    <BarChart3 className="h-4 w-4 text-green-600" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -683,214 +619,238 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
     },
   });
 
+  if (loading) {
+    return <TableSkeleton />;
+  }
+
+  if (!pedidos.length) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex items-center justify-center py-8"
+      >
+        <div className="text-gray-500 text-center">
+          <div className="bg-gray-50 rounded-full p-4 w-fit mx-auto mb-4">
+            <Package2 className="h-12 w-12 text-gray-400" />
+          </div>
+          <p className="font-semibold text-lg">No hay pedidos registrados</p>
+          <p className="text-sm">Comienza agregando un nuevo pedido</p>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
-    <>
-      {loading ? (
-        <TableSkeleton />
-      ) : (
-        <>
-          <div className="rounded-md border">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <th key={header.id} className="px-4 py-3 text-left text-sm font-medium text-gray-900">
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </th>
-                    ))}
-                  </tr>
+    <div className="space-y-4">
+      <div className="overflow-x-auto border border-gray-200 rounded-lg">
+        <table className="w-full min-w-[800px]">
+          <thead className="bg-[#f1f5f9]">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id} className="hover:bg-gray-100">
+                {headerGroup.headers.map((header) => (
+                  <th 
+                    key={header.id} 
+                    className={clsx(
+                      "p-2 font-semibold text-gray-700 border-b border-[#e2e8f0]",
+                      header.column.id === 'porcentajeSurtido' ? 'min-w-[180px]' : 'min-w-[120px]'
+                    )}
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </th>
                 ))}
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <tr key={row.id} className="hover:bg-gray-50">
-                      {row.getVisibleCells().map((cell) => (
-                        <td key={cell.id} className="px-4 py-3 text-sm text-gray-900">
+              </tr>
+            ))}
+          </thead>
+          <tbody>
+            <AnimatePresence mode="wait">
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <motion.tr
+                    key={row.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.2 }}
+                    className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <td key={cell.id} className="p-3 max-w-[200px]">
+                        <div className="truncate">
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={columns.length} className="h-24 text-center">
-                      <div className="flex flex-col items-center justify-center py-8">
-                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                          <img 
-                            src="/images/LogoEmpacadora.jpg" 
-                            alt="Logo Empacadora" 
-                            className="h-10 w-10 object-contain rounded-full"
-                            onError={(e) => {
-                              // Fallback a emoji si la imagen no carga
-                              e.currentTarget.style.display = 'none';
-                              e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                            }}
-                          />
-                          <span className="text-3xl hidden">📦</span>
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                          No se encontraron pedidos
-                        </h3>
-                        <p className="text-sm text-gray-500 text-center max-w-md">
+                      </td>
+                    ))}
+                  </motion.tr>
+                ))
+              ) : (
+                <motion.tr
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <td colSpan={columns.length} className="h-48 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-4 py-8">
+                      <div className="bg-gray-50 rounded-full p-4">
+                        <Package2 className="h-12 w-12 text-gray-400" />
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-lg font-semibold text-gray-700">No se encontraron pedidos</h3>
+                        <p className="text-sm text-gray-500 max-w-md">
                           No hay pedidos que coincidan con los criterios de búsqueda actuales. 
                           Intenta ajustar los filtros o crear un nuevo pedido.
                         </p>
                       </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                    </div>
+                  </td>
+                </motion.tr>
+              )}
+            </AnimatePresence>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Controles de paginación */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
+        <div className="flex-1 text-sm text-muted-foreground text-center sm:text-left">
+          {table.getFilteredSelectedRowModel().rows.length} de{" "}
+          {table.getFilteredRowModel().rows.length} fila(s) seleccionada(s).
+        </div>
+        <div className="flex flex-col sm:flex-row items-center gap-4 sm:space-x-6 lg:space-x-8">
+          <div className="flex items-center space-x-2">
+            <p className="text-sm font-medium hidden sm:block">Filas por página</p>
+            <p className="text-sm font-medium sm:hidden">Por página</p>
+            <select
+              value={table.getState().pagination.pageSize}
+              onChange={(e) => {
+                table.setPageSize(Number(e.target.value));
+              }}
+              className="h-8 w-[70px] rounded-md border border-input bg-transparent px-2 py-1 text-sm"
+            >
+              {[10, 20, 30, 40, 50].map((pageSize) => (
+                <option key={pageSize} value={pageSize}>
+                  {pageSize}
+                </option>
+              ))}
+            </select>
           </div>
-
-          {/* Controles de paginación y conteo de filas */}
-          <div className="flex items-center justify-between px-2">
-            <div className="flex-1 text-sm text-muted-foreground">
-              {table.getFilteredSelectedRowModel().rows.length} de{" "}
-              {table.getFilteredRowModel().rows.length} fila(s) seleccionada(s).
-            </div>
-            <div className="flex items-center space-x-6 lg:space-x-8">
-              <div className="flex items-center space-x-2">
-                <p className="text-sm font-medium">Filas por página</p>
-                <select
-                  value={table.getState().pagination.pageSize}
-                  onChange={(e) => {
-                    table.setPageSize(Number(e.target.value));
-                  }}
-                  className="h-8 w-[70px] rounded-md border border-input bg-transparent px-2 py-1 text-sm"
-                >
-                  {[10, 20, 30, 40, 50].map((pageSize) => (
-                    <option key={pageSize} value={pageSize}>
-                      {pageSize}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-                Página {table.getState().pagination.pageIndex + 1} de{" "}
-                {table.getPageCount()}
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  className={clsx(
-                    "h-8 w-8 p-0 cursor-pointer",
-                    "hidden lg:flex"
-                  )}
-                  onClick={() => table.setPageIndex(0)}
-                  disabled={!table.getCanPreviousPage()}
-                >
-                  <span className="sr-only">Ir a primera página</span>
-                  <ChevronUp className="h-4 w-4 rotate-90" />
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-8 w-8 p-0 cursor-pointer"
-                  onClick={() => table.previousPage()}
-                  disabled={!table.getCanPreviousPage()}
-                >
-                  <span className="sr-only">Ir a página anterior</span>
-                  <ChevronUp className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-8 w-8 p-0 cursor-pointer"
-                  onClick={() => table.nextPage()}
-                  disabled={!table.getCanNextPage()}
-                >
-                  <span className="sr-only">Ir a página siguiente</span>
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  className={clsx(
-                    "h-8 w-8 p-0 cursor-pointer",
-                    "hidden lg:flex"
-                  )}
-                  onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                  disabled={!table.getCanNextPage()}
-                >
-                  <span className="sr-only">Ir a última página</span>
-                  <ChevronDown className="h-4 w-4 rotate-90" />
-                </Button>
-              </div>
-            </div>
+          <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+            <span className="hidden sm:inline">Página </span>
+            {table.getState().pagination.pageIndex + 1} de{" "}
+            {table.getPageCount()}
           </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              className="h-8 w-8 p-0 cursor-pointer hidden md:flex"
+              onClick={() => table.setPageIndex(0)}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <span className="sr-only">Ir a primera página</span>
+              <ChevronUp className="h-4 w-4 rotate-90" />
+            </Button>
+            <Button
+              variant="outline"
+              className="h-8 w-8 p-0 cursor-pointer"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <span className="sr-only">Ir a página anterior</span>
+              <ChevronUp className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              className="h-8 w-8 p-0 cursor-pointer"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              <span className="sr-only">Ir a página siguiente</span>
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              className="h-8 w-8 p-0 cursor-pointer hidden md:flex"
+              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+              disabled={!table.getCanNextPage()}
+            >
+              <span className="sr-only">Ir a última página</span>
+              <ChevronDown className="h-4 w-4 rotate-90" />
+            </Button>
+          </div>
+        </div>
+      </div>
 
-          {/* Diálogo de confirmación para cancelar */}
-          <AlertDialog open={!!pedidoACancelar} onOpenChange={() => setPedidoACancelar(null)}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>¿Estás seguro de cancelar el pedido?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Esta acción cambiará el estatus del pedido a "Cancelado". 
-                  Esta acción no se puede deshacer fácilmente.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>No cancelar</AlertDialogCancel>
-                <AlertDialogAction 
-                  onClick={handleConfirmarCancelacion} 
-                  className="bg-orange-600 hover:bg-orange-700"
-                >
-                  Sí, cancelar pedido
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+      {/* Diálogo de confirmación para cancelar */}
+      <AlertDialog open={!!pedidoACancelar} onOpenChange={() => setPedidoACancelar(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro de cancelar el pedido?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción cambiará el estatus del pedido a "Cancelado". 
+              Esta acción no se puede deshacer fácilmente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmarCancelacion} 
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              Sí, cancelar pedido
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-          {/* Diálogo de confirmación para embarcar */}
-          <AlertDialog open={!!pedidoAEmbarcar} onOpenChange={() => setPedidoAEmbarcar(null)}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>¿Confirmar cambio a Embarcado?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Esta acción cambiará el estatus del pedido de "Surtido" a "Embarcado". 
-                  Confirma que el pedido está listo para ser enviado al cliente.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction 
-                  onClick={handleConfirmarEmbarcado} 
-                  className="bg-purple-600 hover:bg-purple-700"
-                >
-                  Sí, cambiar a Embarcado
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+      {/* Diálogo de confirmación para embarcar */}
+      <AlertDialog open={!!pedidoAEmbarcar} onOpenChange={() => setPedidoAEmbarcar(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Confirmar cambio a Embarcado?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción cambiará el estatus del pedido de "Surtido" a "Embarcado". 
+              Confirma que el pedido está listo para ser enviado al cliente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmarEmbarcado} 
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              Sí, cambiar a Embarcado
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-          {/* Diálogo de confirmación para entregar */}
-          <AlertDialog open={!!pedidoAEntregar} onOpenChange={() => setPedidoAEntregar(null)}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>¿Confirmar cambio a Entregado?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Esta acción cambiará el estatus del pedido de "Embarcado" a "Entregado". 
-                  Confirma que el pedido ha sido recibido por el cliente.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction 
-                  onClick={handleConfirmarEntregado} 
-                  className="bg-emerald-600 hover:bg-emerald-700"
-                >
-                  Sí, cambiar a Entregado
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </>
-      )}
-    </>
+      {/* Diálogo de confirmación para entregar */}
+      <AlertDialog open={!!pedidoAEntregar} onOpenChange={() => setPedidoAEntregar(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Confirmar cambio a Entregado?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción cambiará el estatus del pedido de "Embarcado" a "Entregado". 
+              Confirma que el pedido ha sido recibido por el cliente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmarEntregado} 
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              Sí, cambiar a Entregado
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 } 

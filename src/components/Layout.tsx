@@ -2,7 +2,27 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Menu, X, ChevronLeft, LogOut, Package, ClipboardList, Truck, ShoppingCart } from "lucide-react";
+import { 
+  Users, 
+  Menu, 
+  X, 
+  ChevronLeft, 
+  LogOut, 
+  Package, 
+  ClipboardList, 
+  Truck, 
+  ShoppingCart, 
+  Warehouse, 
+  Building2,
+  UserCheck,
+  FileText,
+  Box,
+  BarChart3,
+  Store,
+  ShoppingBag,
+  Settings,
+  Home as HomeIcon
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "../contexts/AuthContext";
 import logo from '/images/LogoEmpacadora.jpg';
@@ -16,7 +36,7 @@ const LayoutContainer = styled.div`
   display: flex;
   min-height: 100vh;
   width: 100%;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
   position: relative;
   overflow-x: hidden;
   
@@ -28,9 +48,8 @@ const LayoutContainer = styled.div`
     right: 0;
     bottom: 0;
     background: 
-      radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.1) 0%, transparent 50%);
+      radial-gradient(circle at 25% 75%, rgba(71, 85, 105, 0.03) 0%, transparent 50%),
+      radial-gradient(circle at 75% 25%, rgba(100, 116, 139, 0.02) 0%, transparent 50%);
     pointer-events: none;
     z-index: -1;
   }
@@ -46,17 +65,17 @@ const Sidebar = styled(motion.aside)<{ $compact: boolean; $isMobile: boolean }>`
   }px;
   background: ${({ $isMobile }) => 
     $isMobile 
-      ? "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)" 
-      : "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)"
+      ? "linear-gradient(180deg, #ffffff 0%, #fafbfc 100%)" 
+      : "linear-gradient(180deg, #ffffff 0%, #fafbfc 100%)"
   };
-  border-right: 1px solid rgba(226, 232, 240, 0.8);
+  border-right: 1px solid rgba(226, 232, 240, 0.6);
   z-index: 1200;
   display: flex;
   flex-direction: column;
   box-shadow: ${({ $isMobile }) => 
     $isMobile 
-      ? "0 4px 20px rgba(0, 0, 0, 0.15)" 
-      : "0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8)"
+      ? "0 2px 12px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04)" 
+      : "0 2px 12px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02)"
   };
   
   /* Optimizaciones para móvil */
@@ -125,21 +144,16 @@ const SidebarHeader = styled.div<{ $compact: boolean; $isMobile: boolean }>`
   align-items: center;
   justify-content: space-between;
   padding: ${({ $compact, $isMobile }) => 
-    $isMobile ? "1.25rem 1rem" : ($compact ? "1.25rem 0.75rem" : "1.5rem 1.5rem")
+    $isMobile ? "1.5rem 1.25rem" : ($compact ? "1.5rem 1rem" : "1.75rem 1.75rem")
   };
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-  min-height: 72px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.4);
+  min-height: 76px;
   background: ${({ $isMobile }) => 
     $isMobile 
-      ? "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)" 
-      : "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%)"
+      ? "linear-gradient(180deg, #ffffff 0%, #fafbfc 100%)" 
+      : "linear-gradient(180deg, #ffffff 0%, #fafbfc 100%)"
   };
   position: relative;
-  
-  /* Solo aplicar backdrop-filter en desktop */
-  ${({ $isMobile }) => !$isMobile && `
-    backdrop-filter: blur(10px);
-  `}
   
   &::after {
     content: '';
@@ -148,22 +162,22 @@ const SidebarHeader = styled.div<{ $compact: boolean; $isMobile: boolean }>`
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent 0%, rgba(226, 232, 240, 0.8) 50%, transparent 100%);
+    background: linear-gradient(90deg, transparent 0%, rgba(226, 232, 240, 0.4) 50%, transparent 100%);
   }
 `;
 
 const LogoBox = styled.div<{ $compact: boolean }>`
   display: flex;
   align-items: center;
-  gap: ${({ $compact }) => ($compact ? "0.75rem" : "1.25rem")};
+  gap: ${({ $compact }) => ($compact ? "0.75rem" : "1.5rem")};
   
   img {
-    height: 42px;
+    height: 44px;
     width: auto;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    max-width: ${({ $compact }) => ($compact ? "42px" : "90px")};
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    max-width: ${({ $compact }) => ($compact ? "44px" : "95px")};
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   }
 `;
 
@@ -173,46 +187,42 @@ const Brand = styled.div`
   line-height: 1.2;
   
   .brand-title {
-    font-weight: 700;
-    font-size: 1.2rem;
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    letter-spacing: -0.025em;
+    font-weight: 600;
+    font-size: 1.25rem;
+    color: #1e293b;
+    letter-spacing: -0.02em;
   }
   
   .brand-subtitle {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: #64748b;
     font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.75px;
+    letter-spacing: 0.8px;
     margin-top: 2px;
   }
 `;
 
 const CompactBtn = styled(Button)<{ $compact: boolean }>`
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   padding: 0;
-  border-radius: 8px;
+  border-radius: 6px;
   background: ${({ $compact }) => 
     $compact 
-      ? "linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)" 
-      : "linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.8) 100%)"
+      ? "#f1f5f9" 
+      : "#ffffff"
   };
-  color: ${({ $compact }) => ($compact ? "#1e293b" : "#64748b")};
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  margin-left: 0.75rem;
-  backdrop-filter: blur(10px);
+  color: ${({ $compact }) => ($compact ? "#475569" : "#64748b")};
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  margin-left: 1rem;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   
   &:hover {
-    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-    color: #1e293b;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: #f8fafc;
+    color: #475569;
+    border-color: rgba(226, 232, 240, 0.8);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   }
   
   svg {
@@ -227,12 +237,12 @@ const CompactBtn = styled(Button)<{ $compact: boolean }>`
 
 const MenuList = styled.ul<{ $compact: boolean }>`
   list-style: none;
-  padding: 1.75rem 0.75rem 0 0.75rem;
+  padding: 1.5rem 1rem 0 1rem;
   margin: 0;
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.375rem;
 `;
 
 const MenuItem = styled.li<{ $active: boolean; $compact: boolean; $isMobile: boolean }>`
@@ -243,92 +253,64 @@ const MenuItem = styled.li<{ $active: boolean; $compact: boolean; $isMobile: boo
     gap: ${({ $compact, $isMobile }) => ($compact && !$isMobile ? "0" : "0.875rem")};
     justify-content: ${({ $compact, $isMobile }) => ($compact && !$isMobile ? "center" : "flex-start")};
     padding: ${({ $compact, $isMobile }) => 
-      $isMobile ? "0.875rem 1rem" : ($compact ? "0.875rem 0.5rem" : "0.875rem 1rem")
+      $isMobile ? "0.75rem 1rem" : ($compact ? "0.75rem 0.5rem" : "0.75rem 1rem")
     };
     background: ${({ $active, $isMobile }) => 
       $active 
-        ? "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)" 
+        ? "#f1f5f9" 
         : $isMobile 
-          ? "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)" 
-          : "linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(248, 250, 252, 0.6) 100%)"
+          ? "#ffffff" 
+          : "transparent"
     };
-    color: ${({ $active }) => ($active ? "#1e40af" : "#475569")};
+    color: ${({ $active }) => ($active ? "#1e293b" : "#64748b")};
     border: 1px solid ${({ $active }) => 
-      $active ? "rgba(59, 130, 246, 0.2)" : "rgba(226, 232, 240, 0.6)"
+      $active ? "rgba(226, 232, 240, 0.8)" : "transparent"
     };
-    border-radius: 12px;
-    font-size: 0.95rem;
-    font-weight: 600;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     outline: none;
     position: relative;
-    overflow: hidden;
-    
-    /* Solo aplicar backdrop-filter en desktop */
-    ${({ $isMobile }) => !$isMobile && `
-      backdrop-filter: blur(10px);
-    `}
-    
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-      transition: left 0.5s;
-    }
     
     &:hover {
-      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-      color: #1e40af;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-      border-color: rgba(59, 130, 246, 0.3);
-      
-      &::before {
-        left: 100%;
-      }
+      background: #f8fafc;
+      color: #475569;
+      border-color: rgba(226, 232, 240, 0.6);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     }
     
     &:active {
-      transform: translateY(0);
+      background: #f1f5f9;
     }
     
     span {
       display: ${({ $compact, $isMobile }) => ($compact && !$isMobile ? "none" : "inline")};
       transition: opacity 0.2s;
-      font-weight: 600;
+      font-weight: 500;
     }
     
     svg {
       transition: all 0.2s;
       ${({ $active }) => $active && `
-        transform: scale(1.1);
-        filter: drop-shadow(0 2px 4px rgba(59, 130, 246, 0.3));
+        color: #1e293b;
       `}
     }
   }
 `;
 
 const UserSection = styled.div<{ $compact: boolean; $isMobile: boolean }>`
-  border-top: 1px solid rgba(226, 232, 240, 0.8);
+  border-top: 1px solid rgba(226, 232, 240, 0.4);
   padding: ${({ $compact, $isMobile }) => 
-    $isMobile ? "1rem 1rem" : ($compact ? "0.75rem 0.5rem" : "1.25rem 1rem")
+    $isMobile ? "1.25rem 1.25rem" : ($compact ? "1rem 0.75rem" : "1.5rem 1.25rem")
   };
   background: ${({ $isMobile }) => 
     $isMobile 
-      ? "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)" 
-      : "linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.8) 100%)"
+      ? "#ffffff" 
+      : "#ffffff"
   };
   position: relative;
-  
-  /* Solo aplicar backdrop-filter en desktop */
-  ${({ $isMobile }) => !$isMobile && `
-    backdrop-filter: blur(10px);
-  `}
   
   &::before {
     content: '';
@@ -337,26 +319,23 @@ const UserSection = styled.div<{ $compact: boolean; $isMobile: boolean }>`
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent 0%, rgba(226, 232, 240, 0.8) 50%, transparent 100%);
+    background: linear-gradient(90deg, transparent 0%, rgba(226, 232, 240, 0.4) 50%, transparent 100%);
   }
   
   .user-info {
     display: ${({ $compact, $isMobile }) => ($compact && !$isMobile ? "none" : "block")};
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem;
     
     h4 {
       font-size: 1rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      font-weight: 600;
+      color: #1e293b;
       margin: 0;
-      letter-spacing: -0.025em;
+      letter-spacing: -0.01em;
     }
     
     p {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       color: #64748b;
       margin: 0;
       font-weight: 500;
@@ -368,19 +347,19 @@ const UserSection = styled.div<{ $compact: boolean; $isMobile: boolean }>`
 const MobileMenuBtn = styled(Button)`
   display: none;
   position: fixed;
-  top: 1.25rem;
-  left: 1.25rem;
+  top: 1.5rem;
+  left: 1.5rem;
   z-index: 1400;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03);
+  border-radius: 8px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   
   &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+    background: #f8fafc;
+    border-color: rgba(226, 232, 240, 0.8);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
   }
   
   @media (max-width: ${MOBILE_BREAKPOINT}px) {
@@ -391,21 +370,19 @@ const MobileMenuBtn = styled(Button)`
 const LogoutButton = styled(Button)`
   width: 100%;
   justify-content: flex-start;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.8) 100%);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: #ffffff;
+  border: 1px solid rgba(239, 68, 68, 0.15);
   color: #dc2626;
-  font-weight: 600;
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
+  font-weight: 500;
+  border-radius: 8px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  margin-top: 0.5rem;
+  margin-top: 0.75rem;
   
   &:hover {
-    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    background: #fef2f2;
     color: #b91c1c;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
-    border-color: rgba(239, 68, 68, 0.3);
+    border-color: rgba(239, 68, 68, 0.25);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.08);
   }
   
   svg {
@@ -418,11 +395,14 @@ const LogoutButton = styled(Button)`
 `;
 
 const navItems = [
-  { label: "Productos", icon: <Package />, path: "/productos" },
-  { label: "Órdenes de Entrada", icon: <ClipboardList />, path: "/ordenes-entrada" },
-  { label: "Pedidos Cliente", icon: <ShoppingCart />, path: "/pedidos-cliente" },
-  { label: "Usuarios", icon: <Users className="h-5 w-5" />, path: "/usuarios" },
-  { label: "Proveedores", icon: <Truck />, path: "/proveedores" },
+  { label: "Inicio", icon: <HomeIcon className="h-5 w-5" />, path: "/home" },
+  { label: "Proveedores", icon: <Truck className="h-5 w-5" />, path: "/proveedores" },
+  { label: "Órdenes de Entrada", icon: <FileText className="h-5 w-5" />, path: "/ordenes-entrada" },
+  { label: "Productos", icon: <Box className="h-5 w-5" />, path: "/productos" },
+  { label: "Inventario", icon: <BarChart3 className="h-5 w-5" />, path: "/inventario" },
+  { label: "Clientes", icon: <Store className="h-5 w-5" />, path: "/clientes" },
+  { label: "Pedidos Cliente", icon: <ShoppingBag className="h-5 w-5" />, path: "/pedidos-cliente" },
+  { label: "Usuarios", icon: <UserCheck className="h-5 w-5" />, path: "/usuarios" },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -461,7 +441,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // Logout
   const handleLogout = useCallback(() => {
     logout();
-    navigate("/login");
+    navigate("/login", { replace: true });
   }, [logout, navigate]);
 
   // Animaciones sidebar optimizadas para móvil
@@ -543,15 +523,28 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             }}
           >
             <SidebarHeader $compact={isCompact && !isMobile} $isMobile={isMobile}>
-              <LogoBox $compact={isCompact && !isMobile}>
-                <img src={logo} alt="Empacadora del Valle de San Francisco" />
-                {!(isCompact && !isMobile) && (
-                  <Brand>
-                    <span className="brand-title">Empacadora</span>
-                    <span className="brand-subtitle">Valle de San Francisco</span>
-                  </Brand>
-                )}
-              </LogoBox>
+              <button
+                onClick={() => handleNav('/home')}
+                aria-label="Ir al inicio"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                <LogoBox $compact={isCompact && !isMobile}>
+                  <img src={logo} alt="Empacadora del Valle de San Francisco" />
+                  {!(isCompact && !isMobile) && (
+                    <Brand>
+                      <span className="brand-title">Empacadora</span>
+                      <span className="brand-subtitle">Valle de San Francisco</span>
+                    </Brand>
+                  )}
+                </LogoBox>
+              </button>
               {isMobile ? (
                 <Button 
                   variant="ghost" 

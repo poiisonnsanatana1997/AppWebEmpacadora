@@ -220,44 +220,46 @@ export const AgregarCantidadForm: React.FC<AgregarCantidadFormProps> = ({
             <Info className="h-4 w-4" />
             Información Adicional (Opcional)
           </SectionTitle>
-          <FormGrid>
-            <FormField
-              control={form.control}
-              name="upc"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>UPC</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="Código UPC"
-                      maxLength={50}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </FormGrid>
-          
-          <FormField
-            control={form.control}
-            name="observaciones"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Observaciones</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="Observaciones adicionales..."
-                    className="resize-none"
-                    rows={2}
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                     <FormGrid>
+             <FormField
+               control={form.control}
+               name="upc"
+               render={({ field }) => (
+                 <FormItem>
+                   <FormLabel>UPC</FormLabel>
+                   <FormControl>
+                     <Input
+                       {...field}
+                       placeholder="Código UPC"
+                       maxLength={50}
+                     />
+                   </FormControl>
+                   <FormMessage />
+                 </FormItem>
+               )}
+             />
+           </FormGrid>
+           
+           <div className="mt-6">
+             <FormField
+               control={form.control}
+               name="observaciones"
+               render={({ field }) => (
+                 <FormItem>
+                   <FormLabel>Observaciones</FormLabel>
+                   <FormControl>
+                     <Textarea 
+                       placeholder="Observaciones adicionales..."
+                       className="resize-none"
+                       rows={2}
+                       {...field} 
+                     />
+                   </FormControl>
+                   <FormMessage />
+                 </FormItem>
+               )}
+             />
+           </div>
         </FormSection>
 
         {/* Acciones */}
@@ -272,11 +274,11 @@ export const AgregarCantidadForm: React.FC<AgregarCantidadFormProps> = ({
             <X className="h-4 w-4" />
             Cancelar
           </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting || !estadoSeleccionado}
-            className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-medium transition-colors duration-200"
-          >
+                     <Button
+             type="submit"
+             disabled={isSubmitting || !estadoSeleccionado}
+             className="flex items-center gap-2 bg-white border-2 border-blue-500 text-blue-700 hover:bg-blue-50 hover:border-blue-600 font-medium transition-colors duration-200"
+           >
             <Save className="h-4 w-4" />
             {isSubmitting ? 'Guardando...' : 'Guardar Cantidad'}
           </Button>

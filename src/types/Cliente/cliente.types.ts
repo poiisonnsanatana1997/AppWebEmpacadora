@@ -13,11 +13,13 @@ export interface ClienteDTO {
   constanciaFiscal?: string;
   representanteComercial?: string;
   tipoCliente?: string;
+  telefono: string;
+  correo?: string;
   activo: boolean;
   fechaRegistro: string; // DateTime en C# se convierte a string en TypeScript
   usuarioRegistro: string;
-  sucursales?: SucursalDTO[];
-  cajasCliente?: CajaClienteDTO[];
+  sucursales: SucursalDTO[];
+  cajasCliente: CajaClienteDTO[];
 }
 
 // DTO resumido para Cliente (vista de lista)
@@ -26,6 +28,8 @@ export interface ClienteSummaryDTO {
   nombre: string;
   razonSocial: string;
   rfc: string;
+  telefono: string;
+  correo?: string;
   activo: boolean;
   fechaRegistro: string;
 }
@@ -38,6 +42,8 @@ export interface CreateClienteDTO {
   constanciaFiscal?: File; // IFormFile en C# se convierte a File en TypeScript
   representanteComercial?: string;
   tipoCliente?: string;
+  telefono: string;
+  correo?: string;
   activo: boolean;
   fechaRegistro: string;
 }
@@ -50,5 +56,7 @@ export interface UpdateClienteDTO {
   constanciaFiscal?: File;
   representanteComercial?: string;
   tipoCliente?: string;
+  telefono?: string;
+  correo?: string;
   activo?: boolean;
 } 

@@ -1,14 +1,14 @@
 import { useState, useCallback } from 'react';
-import { ProductoDto } from '@/types/Productos/productos.types';
 import { ProductosService } from '@/services/productos.service';
 import { toast } from 'sonner';
+import { useGlobalCache } from '@/hooks/useGlobalCache';
 
 interface UseProductoTableProps {
   onEdit: (id: number) => void;
 }
 
 export function useProductoTable({ onEdit }: UseProductoTableProps) {
-  const [productos, setProductos] = useState<ProductoDto[]>([]);
+  const { productos, isLoading: cacheLoading, error: cacheError, fetchProductos } = useGlobalCache();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,15 +18,14 @@ export function useProductoTable({ onEdit }: UseProductoTableProps) {
     try {
       setLoading(true);
       setError(null);
-      const data = await ProductosService.obtenerProductos();
-      setProductos(data);
+      await fetchProductos();
     } catch (error) {
       setError('Error al cargar los productos');
       toast.error('Error al cargar los productos');
     } finally {
       setLoading(false);
     }
-  }, [loading]);
+  }, [loading, fetchProductos]);
 
   const handleToggleStatus = useCallback(async (id: number, activo: boolean) => {
     if (loading) return; // Evitar múltiples llamadas simultáneas
@@ -43,26 +42,20 @@ export function useProductoTable({ onEdit }: UseProductoTableProps) {
         toast.success('Producto desactivado exitosamente');
       }
       
-      // Actualizar el estado local en lugar de recargar todos los productos
-      setProductos(prevProductos => 
-        prevProductos.map(producto => 
-          producto.id === id 
-            ? { ...producto, activo } 
-            : producto
-        )
-      );
+      // Refrescar productos desde el servicio para mantener el cache sincronizado
+      await fetchProductos(true);
     } catch (error) {
       setError('Error al cambiar el estado del producto');
       toast.error('Error al cambiar el estado del producto');
     } finally {
       setLoading(false);
     }
-  }, [loading]);
+  }, [loading, fetchProductos]);
 
   return {
     productos,
-    loading,
-    error,
+    loading: loading || cacheLoading.productos,
+    error: error || cacheError.productos,
     cargarProductos,
     handleToggleStatus,
     onEdit

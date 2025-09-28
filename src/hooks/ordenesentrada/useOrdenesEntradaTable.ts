@@ -6,6 +6,7 @@ import {
   RowSelectionState, 
   VisibilityState 
 } from '@tanstack/react-table';
+import { usePersistedTableState } from './usePersistedTableState';
 
 interface UseOrdenesEntradaTableProps {
   onDelete: (id: string) => void;
@@ -17,11 +18,28 @@ interface UseOrdenesEntradaTableProps {
 export const useOrdenesEntradaTable = ({ onDelete }: UseOrdenesEntradaTableProps) => {
   const navigate = useNavigate();
   
-  // Estado de la tabla
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  // Estado persistente de la tabla
+  const {
+    sorting,
+    setSorting,
+    columnFilters,
+    setColumnFilters,
+    rowSelection,
+    setRowSelection,
+    columnVisibility,
+    setColumnVisibility,
+    fechaFilterValue,
+    setFechaFilterValue,
+    clearFilters,
+    clearPersistedState
+  } = usePersistedTableState({
+    key: 'ordenes-entrada-table',
+    defaultState: {
+      pagination: { pageIndex: 0, pageSize: 10 }
+    }
+  });
+
+  // Estado local para modales y acciones
   const [ordenACancelar, setOrdenACancelar] = useState<string | null>(null);
 
   // Handlers
@@ -37,7 +55,7 @@ export const useOrdenesEntradaTable = ({ onDelete }: UseOrdenesEntradaTableProps
   };
 
   return {
-    // Estado
+    // Estado persistente
     sorting,
     setSorting,
     columnFilters,
@@ -46,13 +64,21 @@ export const useOrdenesEntradaTable = ({ onDelete }: UseOrdenesEntradaTableProps
     setRowSelection,
     columnVisibility,
     setColumnVisibility,
+    fechaFilterValue,
+    setFechaFilterValue,
+    
+    // Estado local
     ordenACancelar,
     
     // Handlers
     handleCancelarOrden,
     handleConfirmarCancelacion,
     
-    // Utilidades
+    // Utilidades de filtros
+    clearFilters,
+    clearPersistedState,
+    
+    // Navegación
     navigate
   };
 }; 

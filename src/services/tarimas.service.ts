@@ -1,5 +1,7 @@
 import type { TarimaDTO, CreateTarimaDTO, UpdateTarimaDTO, TarimaParcialCompletaDTO } from '@/types/Tarimas/tarima.types';
 import type { PedidoClienteConDetallesDTO } from '@/types/Tarimas/tarima.types';
+import type { TarimaAsignacionRequestDTO } from '@/types/Inventario/inventario.types';
+import type { PedidoClienteResponseDTO } from '@/types/PedidoCliente/pedidoCliente.types';
 import { TarimaUpdateParcialDTO } from '../types/Tarimas/tarimaParcial.types';
 import api from '@/api/axios';
 import { AxiosError } from 'axios';
@@ -192,6 +194,78 @@ export const TarimasService = {
         );
       }
       throw new TarimaServiceError('Error desconocido al actualizar la tarima parcial', error);
+    }
+  },
+
+  /**
+   * Obtiene todas las tarimas parciales completas desde la API externa
+   * @returns {Promise<TarimaParcialCompletaDTO[]>} Lista de tarimas parciales completas
+   * @throws {TarimaServiceError} Si hay un error al obtener las tarimas parciales completas
+   */
+  async obtenerTarimasParcialesCompletas(): Promise<TarimaParcialCompletaDTO[]> {
+    try {
+      const response = await api.get<TarimaParcialCompletaDTO[]>('/Tarimas/parciales-completas');
+      return response.data;
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        throw new TarimaServiceError(
+          `Error al obtener tarimas parciales completas: ${error.response?.data?.message || error.message}`,
+          error
+        );
+      }
+      throw new TarimaServiceError('Error desconocido al obtener tarimas parciales completas', error);
+    }
+  },
+
+  /**
+   * Obtiene la lista de clientes disponibles para asignación de tarimas
+   * @param {TarimaAsignacionRequestDTO} request - Datos de la solicitud de asignación
+   * @returns {Promise<PedidoClienteResponseDTO[]>} Lista de clientes disponibles
+   * @throws {TarimaServiceError} Si hay un error al obtener los clientes disponibles
+   */
+  async obtenerClientesDisponiblesParaAsignacion(
+    request: TarimaAsignacionRequestDTO[]
+  ): Promise<PedidoClienteResponseDTO[]> {
+    try {
+      const response = await api.post<PedidoClienteResponseDTO[]>(
+        '/Tarimas/buscarPedidosCompatibles', 
+        request
+      );
+      return response.data;
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        throw new TarimaServiceError(
+          `Error al obtener clientes disponibles: ${error.response?.data?.message || error.message}`,
+          error
+        );
+      }
+      throw new TarimaServiceError('Error desconocido al obtener clientes disponibles', error);
+    }
+  },
+
+  /**
+   * Elimina una clasificación de una tarima específica
+   * @param {number} idTarima - ID de la tarima
+   * @param {number} idClasificacion - ID de la clasificación
+   * @throws {TarimaServiceError} Si hay un error al eliminar la clasificación
+   */
+  async eliminarClasificacionTarima(idTarima: number, idClasificacion: number): Promise<void> {
+    try {
+      await api.delete(`/Tarimas/${idTarima}/clasificacion/${idClasificacion}`);
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        if (error.response?.status === 404) {
+          throw new TarimaServiceError(
+            `Clasificación con ID ${idClasificacion} de la tarima ${idTarima} no encontrada`, 
+            error
+          );
+        }
+        throw new TarimaServiceError(
+          `Error al eliminar la clasificación: ${error.response?.data?.message || error.message}`,
+          error
+        );
+      }
+      throw new TarimaServiceError('Error desconocido al eliminar la clasificación', error);
     }
   }
 }; 

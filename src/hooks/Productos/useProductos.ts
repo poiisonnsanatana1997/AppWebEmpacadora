@@ -4,9 +4,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ProductoDto, BaseProductoDto } from '@/types/Productos/productos.types';
 import { ProductosService } from '@/services/productos.service';
 import { productFormSchema } from '@/schemas/productFormSchema';
+import { useGlobalCache } from '@/hooks/useGlobalCache';
 
 export const useProductos = () => {
-  const [productos, setProductos] = useState<ProductoDto[]>([]);
+  const { productos, isLoading: cacheLoading, error: cacheError, fetchProductos } = useGlobalCache();
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProducto, setSelectedProducto] = useState<ProductoDto | null>(null);
@@ -28,10 +29,8 @@ export const useProductos = () => {
 
   const cargarProductos = useCallback(async () => {
     try {
-      setIsLoading(true);
       setError(null);
-      const data = await ProductosService.obtenerProductos();
-      setProductos(data);
+      await fetchProductos();
     } catch (error: any) {
       console.error('Error al cargar productos:', error);
       // No establecer error si es un error de autenticación (401)
@@ -39,10 +38,8 @@ export const useProductos = () => {
       if (error?.response?.status !== 401) {
         setError('Error al cargar los productos. Por favor, intenta nuevamente.');
       }
-    } finally {
-      setIsLoading(false);
     }
-  }, []);
+  }, [fetchProductos]);
 
   const handleOpenModal = useCallback((producto?: ProductoDto) => {
     if (producto) {
@@ -115,10 +112,10 @@ export const useProductos = () => {
 
   return {
     productos,
-    isLoading,
+    isLoading: isLoading || cacheLoading.productos,
     isModalOpen,
     selectedProducto,
-    error,
+    error: error || cacheError.productos,
     form,
     cargarProductos,
     handleOpenModal,

@@ -9,14 +9,19 @@ import {
 } from '@tanstack/react-table';
 import { TarimaClasificacionDTO } from '@/types/OrdenesEntrada/ordenesEntradaCompleto.types';
 import { Button } from '../ui/button';
-import { Eye } from 'lucide-react';
+import { Eye, Trash2 } from 'lucide-react';
 import { FilterInput } from '../OrdenesEntrada/FilterInput';
 import { FilterSelect } from '../OrdenesEntrada/FilterSelect';
-import { OrdenesEntradaPagination } from '../OrdenesEntrada/OrdenesEntradaPagination';
+import { TarimasService } from '@/services/tarimas.service';
+import { ConsistentAlertDialog } from '../ui/consistent-dialogs';
+import { toast } from 'sonner';
 
 interface TarimasTableProps {
   tarimas: TarimaClasificacionDTO[];
   onShowDetail: (tarima: TarimaClasificacionDTO) => void;
+  onDeleteClasificacion?: (idTarima: number, idClasificacion: number) => Promise<void>;
+  onTarimasChange?: (updatedTarimas: TarimaClasificacionDTO[]) => void;
+  clasificacionFinalizada?: boolean;
 }
 
 // Función para formatear la fecha
@@ -55,17 +60,75 @@ const TIPO_OPTIONS = [
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50];
 
-export const TarimasTable: React.FC<TarimasTableProps> = ({ tarimas, onShowDetail }) => {
+export const TarimasTable: React.FC<TarimasTableProps> = ({ tarimas, onShowDetail, onDeleteClasificacion, onTarimasChange, clasificacionFinalizada = false }) => {
   const [sorting, setSorting] = React.useState([]);
   const [columnFilters, setColumnFilters] = React.useState<any[]>([]);
   const [currentPage, setCurrentPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(10);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  
+  // Estado local para las tarimas
+  const [localTarimas, setLocalTarimas] = React.useState<TarimaClasificacionDTO[]>(tarimas);
+  
+  // Sincronizar estado local con props cuando cambien
+  React.useEffect(() => {
+    setLocalTarimas(tarimas);
+  }, [tarimas]);
+
+  const handleDeleteClasificacion = async (idTarima: number, idClasificacion: number) => {
+    // Verificar si la clasificación está finalizada
+    if (clasificacionFinalizada) {
+      toast.error('No se puede eliminar', {
+        description: 'No se pueden eliminar clasificaciones cuando la clasificación está finalizada.',
+        duration: 5000,
+      });
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      
+      // 1. Eliminar de la API
+      await TarimasService.eliminarClasificacionTarima(idTarima, idClasificacion);
+      
+      // 2. Actualizar estado local inmediatamente (feedback visual)
+      const updatedTarimas = localTarimas.filter(
+        tarima => !(tarima.idTarima === idTarima && tarima.idClasificacion === idClasificacion)
+      );
+      setLocalTarimas(updatedTarimas);
+      
+      // 3. Notificar al componente padre sobre el cambio
+      if (onTarimasChange) {
+        onTarimasChange(updatedTarimas);
+      }
+      
+      // 4. Callback personalizado si se proporciona
+      if (onDeleteClasificacion) {
+        await onDeleteClasificacion(idTarima, idClasificacion);
+      }
+      
+      // 5. Toast de confirmación
+      toast.success('Clasificación eliminada exitosamente', {
+        description: 'La clasificación ha sido removida de la tarima',
+        duration: 4000,
+      });
+      
+    } catch (error) {
+      console.error('Error al eliminar la clasificación:', error);
+      toast.error('Error al eliminar la clasificación', {
+        description: 'No se pudo eliminar la clasificación. Intenta nuevamente.',
+        duration: 5000,
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Paginación manual
   const paginatedTarimas = React.useMemo(() => {
     const start = (currentPage - 1) * pageSize;
-    return tarimas.slice(start, start + pageSize);
-  }, [tarimas, currentPage, pageSize]);
+    return localTarimas.slice(start, start + pageSize);
+  }, [localTarimas, currentPage, pageSize]);
 
   const columns = React.useMemo<ColumnDef<TarimaClasificacionDTO>[]>(() => [
     {
@@ -122,41 +185,6 @@ export const TarimasTable: React.FC<TarimasTableProps> = ({ tarimas, onShowDetai
         value === 'all' ? true : row.original.tarima.estatus === value,
     },
     {
-      accessorKey: 'cantidad',
-      header: () => <span className="font-semibold">Cantidad de Cajas</span>,
-      cell: ({ row }) => <span className="text-slate-700">{row.original.cantidad}</span>,
-    },
-    {
-      accessorKey: 'peso',
-      header: () => <span className="font-semibold">Peso Total</span>,
-      cell: ({ row }) => <span className="font-medium text-slate-800">{formatCurrency(row.original.peso)}</span>,
-    },
-    {
-      accessorKey: 'tarima.fechaRegistro',
-      header: ({ column }) => {
-        const filterValue = column.getFilterValue() as string | undefined;
-        return (
-          <div className="flex flex-col">
-            <span className="font-semibold">Fecha de Registro</span>
-            <div className="mt-2">
-              <input
-                type="date"
-                value={filterValue ?? ''}
-                onChange={e => column.setFilterValue(e.target.value || undefined)}
-                className="h-8 w-full border rounded px-2 text-sm focus:ring-2 focus:ring-primary"
-                placeholder="Filtrar por fecha"
-              />
-            </div>
-          </div>
-        );
-      },
-      cell: ({ row }) => (
-        <span className="text-gray-600">{formatDate(row.original.tarima.fechaRegistro)}</span>
-      ),
-      filterFn: (row, columnId, value) =>
-        value ? row.original.tarima.fechaRegistro.slice(0, 10) === value : true,
-    },
-    {
       accessorKey: 'tipo',
       header: ({ column }) => {
         const filterValue = column.getFilterValue() as string | undefined;
@@ -189,23 +217,73 @@ export const TarimasTable: React.FC<TarimasTableProps> = ({ tarimas, onShowDetai
         value === 'all' ? true : row.original.tipo === value,
     },
     {
+      accessorKey: 'tarima.fechaRegistro',
+      header: () => <span className="font-semibold">Fecha de Registro</span>,
+      cell: ({ row }) => (
+        <span className="text-gray-600">{formatDate(row.original.tarima.fechaRegistro)}</span>
+      ),
+    },
+    {
+      accessorKey: 'cantidad',
+      header: () => <span className="font-semibold">Cantidad de Cajas</span>,
+      cell: ({ row }) => <span className="text-slate-700">{row.original.cantidad}</span>,
+    },
+    {
+      accessorKey: 'peso',
+      header: () => <span className="font-semibold">Peso Total</span>,
+      cell: ({ row }) => <span className="font-medium text-slate-800">{formatCurrency(row.original.peso)}</span>,
+    },
+    {
       id: 'acciones',
       header: () => <span className="font-semibold">Acciones</span>,
       cell: ({ row }) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onShowDetail(row.original)}
-          className="h-8 px-3 text-gray-600 hover:text-gray-800 hover:bg-gray-100 border border-gray-200 rounded-md transition-colors duration-200"
-        >
-          <Eye className="h-3 w-3 mr-1" />
-          Ver Detalle
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onShowDetail(row.original)}
+            className="h-8 w-8 p-0 text-gray-600 hover:text-gray-800 hover:bg-gray-100 border border-gray-200 rounded-md transition-colors duration-200"
+            title="Ver detalle"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          
+          {clasificacionFinalizada ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled
+              className="h-8 w-8 p-0 text-gray-400 border border-gray-200 rounded-md cursor-not-allowed"
+              title="No se puede eliminar - Clasificación finalizada"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          ) : (
+            <ConsistentAlertDialog
+              title="¿Estás seguro?"
+              description={`Esta acción no se puede deshacer. Se eliminará permanentemente la clasificación ${row.original.tipo} de la tarima ${row.original.tarima.codigo}.\n\n• Cantidad: ${row.original.cantidad} cajas\n• Peso: ${formatCurrency(row.original.peso)}`}
+              onConfirm={() => handleDeleteClasificacion(row.original.idTarima, row.original.idClasificacion)}
+              confirmText="Eliminar"
+              isLoading={isDeleting}
+              variant="destructive"
+            >
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={isDeleting}
+                className="h-8 w-8 p-0 text-red-600 hover:text-red-800 hover:bg-red-50 border border-red-200 rounded-md transition-colors duration-200 disabled:opacity-50"
+                title="Eliminar clasificación"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </ConsistentAlertDialog>
+          )}
+        </div>
       ),
       enableSorting: false,
       enableColumnFilter: false,
     },
-  ], [onShowDetail]);
+  ], [onShowDetail, handleDeleteClasificacion, isDeleting]);
 
   const table = useReactTable({
     data: paginatedTarimas,
@@ -222,7 +300,7 @@ export const TarimasTable: React.FC<TarimasTableProps> = ({ tarimas, onShowDetai
     debugTable: false,
   });
 
-  const totalPages = Math.ceil(tarimas.length / pageSize) || 1;
+  const totalPages = Math.ceil(localTarimas.length / pageSize) || 1;
 
   return (
     <div className="space-y-4">

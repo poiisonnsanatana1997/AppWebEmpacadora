@@ -22,11 +22,30 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { FilterSelect } from './FilterSelect';
 import { FilterInput } from './FilterInput';
 
 // Iconos
-import { Edit2, ChevronDown, ChevronUp, ChevronsUpDown, Loader2, ZoomIn, PackageX } from 'lucide-react';
+import { 
+  Edit2, 
+  ChevronDown, 
+  ChevronUp, 
+  ChevronsUpDown, 
+  Loader2, 
+  ZoomIn, 
+  PackageX, 
+  MoreHorizontal,
+  Eye,
+  Package
+} from 'lucide-react';
 
 // Utilidades y tipos
 import styled from 'styled-components';
@@ -49,6 +68,27 @@ const ImagePreview = styled.img`
     transform: scale(1.05);
   }
 `;
+
+const StatusBadge = styled(Badge)`
+  font-weight: 600;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
+`;
+
+// Función auxiliar para formatear valores
+const formatCellValue = (value: any, fallbackText: string = 'No disponible') => {
+  if (value === null || value === undefined || value === '') {
+    return (
+      <span className="text-gray-400 italic">
+        {fallbackText}
+      </span>
+    );
+  }
+  return String(value);
+};
 
 // Interfaces
 // ============================================
@@ -134,9 +174,19 @@ export function ProductoTable({ productos, loading, error, onEdit }: ProductoTab
           </div>
         );
       },
+      cell: ({ row }) => {
+        const codigo = row.getValue('codigo') as string;
+        return (
+          <div className="font-medium">
+            {formatCellValue(codigo, 'Sin código')}
+          </div>
+        );
+      },
       filterFn: (row, id, value) => {
         if (!value) return true;
-        return String(row.getValue(id)).toLowerCase().includes(String(value).toLowerCase());
+        const cellValue = row.getValue(id);
+        if (!cellValue) return false;
+        return String(cellValue).toLowerCase().includes(String(value).toLowerCase());
       },
     },
     {
@@ -169,9 +219,19 @@ export function ProductoTable({ productos, loading, error, onEdit }: ProductoTab
           </div>
         );
       },
+      cell: ({ row }) => {
+        const nombre = row.getValue('nombre') as string;
+        return (
+          <div className="font-medium">
+            {formatCellValue(nombre, 'Sin nombre')}
+          </div>
+        );
+      },
       filterFn: (row, id, value) => {
         if (!value) return true;
-        return String(row.getValue(id)).toLowerCase().includes(String(value).toLowerCase());
+        const cellValue = row.getValue(id);
+        if (!cellValue) return false;
+        return String(cellValue).toLowerCase().includes(String(value).toLowerCase());
       },
     },
     {
@@ -204,9 +264,19 @@ export function ProductoTable({ productos, loading, error, onEdit }: ProductoTab
           </div>
         );
       },
+      cell: ({ row }) => {
+        const variedad = row.getValue('variedad') as string;
+        return (
+          <div>
+            {formatCellValue(variedad, 'Sin variedad')}
+          </div>
+        );
+      },
       filterFn: (row, id, value) => {
         if (!value) return true;
-        return String(row.getValue(id)).toLowerCase().includes(String(value).toLowerCase());
+        const cellValue = row.getValue(id);
+        if (!cellValue) return false;
+        return String(cellValue).toLowerCase().includes(String(value).toLowerCase());
       },
     },
     {
@@ -247,6 +317,14 @@ export function ProductoTable({ productos, loading, error, onEdit }: ProductoTab
           </div>
         );
       },
+      cell: ({ row }) => {
+        const unidadMedida = row.getValue('unidadMedida') as string;
+        return (
+          <div>
+            {formatCellValue(unidadMedida, 'Sin unidad')}
+          </div>
+        );
+      },
       filterFn: (row, id, value) => {
         if (!value) return true;
         return row.getValue(id) === value;
@@ -256,31 +334,30 @@ export function ProductoTable({ productos, loading, error, onEdit }: ProductoTab
       accessorKey: 'precio',
       header: ({ column }) => {
         return (
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-              className="font-semibold h-8 px-2 cursor-pointer transition-colors duration-200 hover:bg-gray-100"
-            >
-              Precio
-              {column.getIsSorted() === "asc" ? (
-                <ChevronUp className="ml-1 h-3 w-3" />
-              ) : column.getIsSorted() === "desc" ? (
-                <ChevronDown className="ml-1 h-3 w-3" />
-              ) : (
-                <ChevronsUpDown className="ml-1 h-3 w-3" />
-              )}
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="font-semibold h-8 px-2 cursor-pointer transition-colors duration-200 hover:bg-gray-100"
+          >
+            Precio
+            {column.getIsSorted() === "asc" ? (
+              <ChevronUp className="ml-1 h-3 w-3" />
+            ) : column.getIsSorted() === "desc" ? (
+              <ChevronDown className="ml-1 h-3 w-3" />
+            ) : (
+              <ChevronsUpDown className="ml-1 h-3 w-3" />
+            )}
+          </Button>
         );
       },
       cell: ({ row }) => {
+        const precio = row.original.precio;
         return (
-          <span className="font-bold">
+          <span className="font-bold text-green-700">
             {new Intl.NumberFormat('es-MX', {
               style: 'currency',
               currency: 'MXN'
-            }).format(row.original.precio)}
+            }).format(precio)}
           </span>
         );
       },
@@ -289,22 +366,20 @@ export function ProductoTable({ productos, loading, error, onEdit }: ProductoTab
       accessorKey: 'fechaRegistro',
       header: ({ column }) => {
         return (
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-              className="font-semibold h-8 px-2 cursor-pointer transition-colors duration-200 hover:bg-gray-100"
-            >
-              Fecha Registro
-              {column.getIsSorted() === "asc" ? (
-                <ChevronUp className="ml-1 h-3 w-3" />
-              ) : column.getIsSorted() === "desc" ? (
-                <ChevronDown className="ml-1 h-3 w-3" />
-              ) : (
-                <ChevronsUpDown className="ml-1 h-3 w-3" />
-              )}
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="font-semibold h-8 px-2 cursor-pointer transition-colors duration-200 hover:bg-gray-100"
+          >
+            Fecha Registro
+            {column.getIsSorted() === "asc" ? (
+              <ChevronUp className="ml-1 h-3 w-3" />
+            ) : column.getIsSorted() === "desc" ? (
+              <ChevronDown className="ml-1 h-3 w-3" />
+            ) : (
+              <ChevronsUpDown className="ml-1 h-3 w-3" />
+            )}
+          </Button>
         );
       },
       cell: ({ row }) => {
@@ -322,33 +397,31 @@ export function ProductoTable({ productos, loading, error, onEdit }: ProductoTab
       accessorKey: 'activo',
       header: ({ column }) => {
         return (
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-              className="font-semibold h-8 px-2 cursor-pointer transition-colors duration-200 hover:bg-gray-100"
-            >
-              Estado
-              {column.getIsSorted() === "asc" ? (
-                <ChevronUp className="ml-1 h-3 w-3" />
-              ) : column.getIsSorted() === "desc" ? (
-                <ChevronDown className="ml-1 h-3 w-3" />
-              ) : (
-                <ChevronsUpDown className="ml-1 h-3 w-3" />
-              )}
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="font-semibold h-8 px-2 cursor-pointer transition-colors duration-200 hover:bg-gray-100"
+          >
+            Estado
+            {column.getIsSorted() === "asc" ? (
+              <ChevronUp className="ml-1 h-3 w-3" />
+            ) : column.getIsSorted() === "desc" ? (
+              <ChevronDown className="ml-1 h-3 w-3" />
+            ) : (
+              <ChevronsUpDown className="ml-1 h-3 w-3" />
+            )}
+          </Button>
         );
       },
       cell: ({ row }) => {
         const activo = row.original.activo;
         return (
-          <Badge 
+          <StatusBadge
             variant="secondary"
-            className={activo ? 'bg-green-200 text-green-800 hover:bg-green-300 font-semibold' : 'bg-red-200 text-red-800 hover:bg-red-300 font-semibold'}
+            className={`font-semibold ${activo ? 'bg-green-200 text-green-800 hover:bg-green-300' : 'bg-red-200 text-red-800 hover:bg-red-300'}`}
           >
             {activo ? 'Activo' : 'Inactivo'}
-          </Badge>
+          </StatusBadge>
         );
       },
     },
@@ -356,6 +429,8 @@ export function ProductoTable({ productos, loading, error, onEdit }: ProductoTab
       id: 'acciones',
       header: 'Acciones',
       cell: ({ row }) => {
+        const producto = row.original;
+        
         return (
           <div className="flex items-center gap-2">
             <TooltipProvider>
@@ -364,16 +439,33 @@ export function ProductoTable({ productos, loading, error, onEdit }: ProductoTab
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => onEdit(row.original.id)}
+                    onClick={() => onEdit(producto.id)}
+                    className="hover:bg-blue-50"
                   >
-                    <Edit2 className="h-4 w-4" />
+                    <Eye className="h-4 w-4 text-blue-600" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Editar producto</p>
+                  <p>Ver detalle</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Abrir menú</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => onEdit(producto.id)}>
+                  <Edit2 className="mr-2 h-4 w-4" />
+                  Editar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         );
       },
@@ -409,90 +501,134 @@ export function ProductoTable({ productos, loading, error, onEdit }: ProductoTab
     enableMultiSort: false,
     enableSortingRemoval: false,
     enableColumnResizing: false,
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
   });
 
   // Renderizado condicional
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex items-center justify-center py-8"
+      >
+        <div className="flex items-center gap-2 text-gray-600">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span>Cargando productos...</span>
+        </div>
+      </motion.div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-red-500">{error}</div>
-      </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex items-center justify-center py-8"
+      >
+        <div className="text-red-500 text-center">
+          <div className="bg-red-50 rounded-full p-4 w-fit mx-auto mb-4">
+            <PackageX className="h-12 w-12 text-red-400" />
+          </div>
+          <p className="font-semibold text-lg">Error al cargar productos</p>
+          <p className="text-sm">{error}</p>
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (!productos.length) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex items-center justify-center py-8"
+      >
+        <div className="text-gray-500 text-center">
+          <div className="bg-gray-50 rounded-full p-4 w-fit mx-auto mb-4">
+            <Package className="h-12 w-12 text-gray-400" />
+          </div>
+          <p className="font-semibold text-lg">No hay productos registrados</p>
+          <p className="text-sm">Comienza agregando un nuevo producto</p>
+        </div>
+      </motion.div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <table className="w-full">
-        <thead className="bg-[#f1f5f9]">
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id} className="hover:bg-gray-100">
-              {headerGroup.headers.map((header) => (
-                <th key={header.id} className="p-2 font-semibold text-gray-700 border-b border-[#e2e8f0]">
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          <AnimatePresence mode="wait">
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
+      <div className="overflow-x-auto border border-gray-200 rounded-lg">
+        <table className="w-full min-w-[800px]">
+          <thead className="bg-[#f1f5f9]">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id} className="hover:bg-gray-100">
+                {headerGroup.headers.map((header) => (
+                  <th key={header.id} className="p-2 font-semibold text-gray-700 border-b border-[#e2e8f0] min-w-[120px]">
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody>
+            <AnimatePresence mode="wait">
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <motion.tr
+                    key={row.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.2 }}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <td key={cell.id} className="p-3 max-w-[200px]">
+                        <div className="truncate">
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </div>
+                      </td>
+                    ))}
+                  </motion.tr>
+                ))
+              ) : (
                 <motion.tr
-                  key={row.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                   transition={{ duration: 0.2 }}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="border-b border-gray-200 last:border-b-0"
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="p-2">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
+                  <td colSpan={columns.length} className="h-48 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-4 py-8">
+                      <div className="bg-gray-50 rounded-full p-4">
+                        <PackageX className="h-12 w-12 text-gray-400" />
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-lg font-semibold text-gray-700">No se encontraron productos</h3>
+                        <p className="text-sm text-gray-500 max-w-md">
+                          No hay productos que coincidan con los criterios de búsqueda actuales.
+                          Intenta ajustar los filtros o crear un nuevo producto.
+                        </p>
+                      </div>
+                    </div>
+                  </td>
                 </motion.tr>
-              ))
-            ) : (
-              <motion.tr
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <td colSpan={columns.length} className="h-48 text-center">
-                  <div className="flex flex-col items-center justify-center space-y-4 py-8">
-                    <div className="bg-gray-50 rounded-full p-4">
-                      <PackageX className="h-12 w-12 text-gray-400" />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-lg font-semibold text-gray-700">No se encontraron productos</h3>
-                      <p className="text-sm text-gray-500 max-w-md">
-                        No hay productos que coincidan con los criterios de búsqueda actuales.
-                        Intenta ajustar los filtros o crear un nuevo producto.
-                      </p>
-                    </div>
-                  </div>
-                </td>
-              </motion.tr>
-            )}
-          </AnimatePresence>
-        </tbody>
-      </table>
+              )}
+            </AnimatePresence>
+          </tbody>
+        </table>
+      </div>
       
       {/* Lightbox */}
       <Lightbox
@@ -502,14 +638,15 @@ export function ProductoTable({ productos, loading, error, onEdit }: ProductoTab
       />
       
       {/* Controles de paginación */}
-      <div className="flex items-center justify-between px-2">
-        <div className="flex-1 text-sm text-muted-foreground">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
+        <div className="flex-1 text-sm text-muted-foreground text-center sm:text-left">
           {table.getFilteredSelectedRowModel().rows.length} de{" "}
           {table.getFilteredRowModel().rows.length} fila(s) seleccionada(s).
         </div>
-        <div className="flex items-center space-x-6 lg:space-x-8">
+        <div className="flex flex-col sm:flex-row items-center gap-4 sm:space-x-6 lg:space-x-8">
           <div className="flex items-center space-x-2">
-            <p className="text-sm font-medium">Filas por página</p>
+            <p className="text-sm font-medium hidden sm:block">Filas por página</p>
+            <p className="text-sm font-medium sm:hidden">Por página</p>
             <select
               value={table.getState().pagination.pageSize}
               onChange={(e) => {
@@ -525,13 +662,14 @@ export function ProductoTable({ productos, loading, error, onEdit }: ProductoTab
             </select>
           </div>
           <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-            Página {table.getState().pagination.pageIndex + 1} de{" "}
+            <span className="hidden sm:inline">Página </span>
+            {table.getState().pagination.pageIndex + 1} de{" "}
             {table.getPageCount()}
           </div>
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
-              className="h-8 w-8 p-0 cursor-pointer hidden lg:flex"
+              className="h-8 w-8 p-0 cursor-pointer hidden md:flex"
               onClick={() => table.setPageIndex(0)}
               disabled={!table.getCanPreviousPage()}
             >
@@ -558,7 +696,7 @@ export function ProductoTable({ productos, loading, error, onEdit }: ProductoTab
             </Button>
             <Button
               variant="outline"
-              className="h-8 w-8 p-0 cursor-pointer hidden lg:flex"
+              className="h-8 w-8 p-0 cursor-pointer hidden md:flex"
               onClick={() => table.setPageIndex(table.getPageCount() - 1)}
               disabled={!table.getCanNextPage()}
             >

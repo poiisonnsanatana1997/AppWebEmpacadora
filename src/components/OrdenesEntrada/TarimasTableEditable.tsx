@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
 import { NumericFormat } from 'react-number-format';
-import { Search, ChevronLeft, ChevronRight, Plus, Trash2, Loader2, CheckCircle, XCircle, Box } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Plus, Trash2, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { ESTADO_ORDEN, EstadoOrden, PesajeTarimaDto, estadoOrdenUtils } from '../../types/OrdenesEntrada/ordenesEntrada.types';
 import { OrdenesEntradaService } from '@/services/ordenesEntrada.service';
 import { toast } from 'sonner';

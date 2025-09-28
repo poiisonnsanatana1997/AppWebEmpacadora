@@ -1,11 +1,17 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from "path"
 import tailwindcss from "@tailwindcss/vite"
 
 // https://vite.dev/config/
-export default defineConfig({
-  base: '/empacadora/',
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  const basename = env.VITE_APP_BASENAME || '/';
+  // Para despliegue en subcarpetas o raíz, usar './' cuando no se conoce base fija
+  const base = basename === '/' ? './' : (basename.endsWith('/') ? basename : `${basename}/`);
+
+  return {
+  base,
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
@@ -28,4 +34,5 @@ export default defineConfig({
   server: {
     port: 3000,
   },
+}
 })

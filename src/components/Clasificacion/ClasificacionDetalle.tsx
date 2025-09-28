@@ -16,9 +16,20 @@ interface ClasificacionDetalleProps {
   onUpdateClasificacion?: (clasificacion: ClasificacionCompletaDTO) => Promise<void>;
   onAjustarPesos?: (clasificacionId: number) => void;
   estaFinalizada?: boolean;
+  onDeleteMerma?: (mermaId: number) => void;
+  onDeleteRetorno?: (retornoId: number) => void;
+  ordenEnClasificacion?: boolean;
 }
 
-export const ClasificacionDetalle: React.FC<ClasificacionDetalleProps> = ({ clasificacion, onUpdateClasificacion, onAjustarPesos, estaFinalizada = false }) => {
+export const ClasificacionDetalle: React.FC<ClasificacionDetalleProps> = ({ 
+  clasificacion, 
+  onUpdateClasificacion, 
+  onAjustarPesos, 
+  estaFinalizada = false,
+  onDeleteMerma,
+  onDeleteRetorno,
+  ordenEnClasificacion = false
+}) => {
   const [mostrarDetalle, setMostrarDetalle] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [clasificacionEdit, setClasificacionEdit] = useState<ClasificacionCompletaDTO | null>(null);
@@ -330,8 +341,18 @@ export const ClasificacionDetalle: React.FC<ClasificacionDetalleProps> = ({ clas
         {/* Detalle expandible */}
         {mostrarDetalle && (
           <div className="mt-6 space-y-4 border-t pt-4">
-            <MermasDetalle mermas={clasificacion.mermas} lote={clasificacion.lote} />
-            <RetornosDetalle retornos={clasificacion.retornosDetalle} lote={clasificacion.lote} />
+            <MermasDetalle 
+              mermas={clasificacion.mermas} 
+              lote={clasificacion.lote}
+              onDeleteMerma={onDeleteMerma}
+              disabled={!ordenEnClasificacion || estaFinalizada}
+            />
+            <RetornosDetalle 
+              retornos={clasificacion.retornosDetalle} 
+              lote={clasificacion.lote}
+              onDeleteRetorno={onDeleteRetorno}
+              disabled={!ordenEnClasificacion || estaFinalizada}
+            />
           </div>
         )}
         {/* Modal de edición de precios */}

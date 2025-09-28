@@ -5,6 +5,7 @@ export interface OrdenesEntradaTableProps {
   onEdit: (codigo: string) => void;
   onDelete: (codigo: string) => void;
   onRegistrarClasificacion: (orden: OrdenEntradaDto) => void;
+  onFiltersChange?: (hasFilters: boolean, clearFiltersFunc?: () => void) => void;
 }
 
 export interface FilterOption {

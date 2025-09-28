@@ -6,7 +6,7 @@
 // Importaciones de React y librerías externas
 import React, { useEffect, useCallback } from 'react';
 import styled from 'styled-components';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Toaster, toast } from 'sonner';
 
 // Importaciones de componentes personalizados
@@ -29,7 +29,16 @@ import {
 import type { ProveedorCompletoDto } from '@/types/Proveedores/proveedores.types';
 
 // Componentes estilizados para la interfaz
-const ProvidersTableContainer = styled(motion.div)`
+const PageContainer = styled(motion.div)`
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  background: rgba(255, 255, 255, 0);
+  width: 100%;
+`;
+
+const ProductsTableContainer = styled(motion.div)`
   background: white;
   border-radius: 1rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -47,69 +56,18 @@ const ProvidersTableContainer = styled(motion.div)`
 `;
 
 const TableContentSection = styled(motion.div)`
-  padding: 1.5rem;
+  padding: 0.5rem;
   overflow-x: auto;
   background: #fff;
   width: 100%;
   
   @media (max-width: 768px) {
-    padding: 1rem;
+    padding: 0;
   }
   
   @media (max-width: 480px) {
-    padding: 0.75rem;
+    padding: 0;
   }
-`;
-
-const StyledTable = styled(motion.table)`
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 1.08rem;
-  border-radius: 1rem;
-  overflow: hidden;
-
-  th, td {
-    padding: 1.1rem 1rem;
-  }
-
-  th {
-    background: #f1f5f9;
-    font-weight: 600;
-    position: sticky;
-    top: 0;
-    z-index: 2;
-  }
-
-  tr:hover td {
-    background: #f8fafc;
-    transition: background 0.2s;
-  }
-  
-  @media (max-width: 768px) {
-    font-size: 0.95rem;
-    
-    th, td {
-      padding: 0.75rem 0.5rem;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    font-size: 0.875rem;
-    
-    th, td {
-      padding: 0.5rem 0.25rem;
-    }
-  }
-`;
-
-const PageContainer = styled(motion.div)`
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  background: rgba(255, 255, 255, 0);
-  width: 100%;
 `;
 
 export default function Proveedores() {
@@ -256,13 +214,25 @@ export default function Proveedores() {
       transition={{ duration: 0.5 }}
     >
       <Toaster richColors position="top-right" />
+      
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
+        {/* Mensaje de error si existe */}
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-red-500 mb-4 p-4 bg-red-50 border border-red-200 rounded-lg"
+          >
+            Error: {error}
+          </motion.div>
+        )}
+
         {/* Contenedor principal de la tabla de proveedores */}
-        <ProvidersTableContainer
+        <ProductsTableContainer
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
@@ -276,22 +246,16 @@ export default function Proveedores() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, delay: 0.1 }}
           >
-            <StyledTable
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3, delay: 0.2 }}
-            >
-              <ProveedorTable
-                proveedores={proveedores}
-                loading={loading}
-                error={error}
-                onEdit={handleOpenModalEditar}
-                onToggleStatus={handleToggleStatus}
-                onViewDetail={handleViewDetail}
-              />
-            </StyledTable>
+            <ProveedorTable
+              proveedores={proveedores}
+              loading={loading}
+              error={error}
+              onEdit={handleOpenModalEditar}
+              onToggleStatus={handleToggleStatus}
+              onViewDetail={handleViewDetail}
+            />
           </TableContentSection>
-        </ProvidersTableContainer>
+        </ProductsTableContainer>
       </motion.div>
 
       {/* Modales de proveedor */}

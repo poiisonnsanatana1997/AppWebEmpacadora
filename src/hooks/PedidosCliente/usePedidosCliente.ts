@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { PedidosClienteService, PedidoClienteServiceError } from '@/services/pedidosCliente.service';
 import type { 
@@ -30,6 +30,9 @@ export const usePedidosCliente = () => {
     pedidosCancelados: 0,
   });
 
+  // Ref para evitar llamadas duplicadas en StrictMode
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   // Función para calcular estadísticas
   const calcularEstadisticas = (pedidos: PedidoClienteResponseDTO[]) => {
     return {
@@ -43,10 +46,24 @@ export const usePedidosCliente = () => {
 
   // Cargar todos los pedidos cliente
   const cargarPedidosCliente = useCallback(async () => {
+    // Cancelar llamada anterior si existe
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Crear nuevo AbortController
+    abortControllerRef.current = new AbortController();
+    
     try {
       setLoading(true);
       setError(null);
-      const data = await PedidosClienteService.obtenerPedidosCliente();
+      
+      const data = await PedidosClienteService.obtenerPedidosCliente(abortControllerRef.current.signal);
+      
+      // Verificar si la llamada fue cancelada
+      if (abortControllerRef.current?.signal.aborted) {
+        return;
+      }
       
       // Ordenar por fecha de registro (más recientes primero)
       const dataOrdenada = data.sort((a, b) => {
@@ -58,6 +75,11 @@ export const usePedidosCliente = () => {
       setPedidosCliente(dataOrdenada);
       setStats(calcularEstadisticas(dataOrdenada));
     } catch (err) {
+      // No mostrar error si la llamada fue cancelada
+      if (err instanceof Error && err.name === 'AbortError') {
+        return;
+      }
+      
       const errorMessage = err instanceof PedidoClienteServiceError 
         ? err.message 
         : 'Error al cargar los pedidos cliente';

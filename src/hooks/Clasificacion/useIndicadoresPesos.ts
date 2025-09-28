@@ -49,11 +49,22 @@ export const useIndicadoresPesos = (
     const pesoTotalClasificado = pesoXL + pesoL + pesoM + pesoS;
 
     // Peso total esperado
-    const pesoTotalEsperado = clasificaciones.reduce((total, c) => total + c.pesoTotal, 0);
+    const pesoTotalEsperado = clasificaciones.reduce((total, c) => total + (c.pesoTotal || 0), 0);
 
     // Cálculo del progreso (incluye tarimas + retornos + mermas)
     const pesoTotalProcesado = pesoTotalClasificado + pesoRetornos + pesoMermas;
-    const progreso = pesoTotalEsperado > 0 ? (pesoTotalProcesado / pesoTotalEsperado) * 100 : 0;
+    
+    // Cálculo robusto del progreso con validaciones
+    let progreso = 0;
+    if (pesoTotalEsperado > 0) {
+      progreso = (pesoTotalProcesado / pesoTotalEsperado) * 100;
+      
+      // Redondear a 3 decimales para evitar errores de punto flotante
+      progreso = Math.round(progreso * 1000) / 1000;
+      
+      // Asegurar que no sea negativo
+      progreso = Math.max(0, progreso);
+    }
 
     return {
       pesoXL,
@@ -99,11 +110,22 @@ export const useIndicadoresPesosClasificacion = (
     const pesoTotalClasificado = pesoXL + pesoL + pesoM + pesoS;
 
     // Peso total esperado (usando el pesoTotal de la clasificación como referencia)
-    const pesoTotalEsperado = clasificacion.pesoTotal;
+    const pesoTotalEsperado = clasificacion.pesoTotal || 0;
 
     // Cálculo del progreso (incluye tarimas + retornos + mermas)
     const pesoTotalProcesado = pesoTotalClasificado + pesoRetornos + pesoMermas;
-    const progreso = pesoTotalEsperado > 0 ? (pesoTotalProcesado / pesoTotalEsperado) * 100 : 0;
+    
+    // Cálculo robusto del progreso con validaciones
+    let progreso = 0;
+    if (pesoTotalEsperado > 0) {
+      progreso = (pesoTotalProcesado / pesoTotalEsperado) * 100;
+      
+      // Redondear a 3 decimales para evitar errores de punto flotante
+      progreso = Math.round(progreso * 1000) / 1000;
+      
+      // Asegurar que no sea negativo
+      progreso = Math.max(0, progreso);
+    }
 
     return {
       pesoXL,

@@ -9,7 +9,6 @@ import styled from 'styled-components';
 import { motion } from 'motion/react';
 import { toast, Toaster } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 
 // Importaciones de componentes personalizados
 import { NuevaOrdenEntradaModal } from '../components/OrdenesEntrada/NuevaOrdenEntradaModal';
@@ -53,17 +52,17 @@ const ProductsTableContainer = styled(motion.div)`
 `;
 
 const TableContentSection = styled(motion.div)`
-  padding: 1.5rem;
+  padding: 0.5rem;
   overflow-x: auto;
   background: #fff;
   width: 100%;
   
   @media (max-width: 768px) {
-    padding: 1rem;
+    padding: 0;
   }
   
   @media (max-width: 480px) {
-    padding: 0.75rem;
+    padding: 0;
   }
 `;
 
@@ -130,6 +129,10 @@ export default function OrdenesEntrada() {
   const [ordenSeleccionada, setOrdenSeleccionada] = useState<OrdenEntradaDto | undefined>();
   const [modalClasificacionOpen, setModalClasificacionOpen] = useState(false);
   const [ordenParaClasificar, setOrdenParaClasificar] = useState<OrdenEntradaDto | null>(null);
+  
+  // Estados para manejo de filtros
+  const [hasActiveFilters, setHasActiveFilters] = useState(false);
+  const [clearFiltersFunc, setClearFiltersFunc] = useState<(() => void) | null>(null);
 
   const navigate = useNavigate();
 
@@ -241,8 +244,6 @@ export default function OrdenesEntrada() {
     }
   };
 
-
-
   // Función para manejar la importación de órdenes
   const handleImportar = async (file: File) => {
     try {
@@ -278,6 +279,19 @@ export default function OrdenesEntrada() {
     }
   };
 
+  // Manejador para cambios en los filtros
+  const handleFiltersChange = (hasFilters: boolean, clearFunc?: () => void) => {
+    setHasActiveFilters(hasFilters);
+    setClearFiltersFunc(() => clearFunc || null);
+  };
+
+  // Manejador para limpiar filtros
+  const handleClearFilters = () => {
+    if (clearFiltersFunc) {
+      clearFiltersFunc();
+    }
+  };
+
   // Renderizado del componente
   return (
     <PageContainer
@@ -303,7 +317,7 @@ export default function OrdenesEntrada() {
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-red-500 mb-4"
+            className="text-red-500 mb-4 p-4 bg-red-50 border border-red-200 rounded-lg"
           >
             Error: {error}
           </motion.div>
@@ -318,6 +332,8 @@ export default function OrdenesEntrada() {
           <TableHeader 
             onImportClick={() => setImportModalOpen(true)}
             onNewOrderClick={handleOpenModalNuevaOrden}
+            onClearFilters={handleClearFilters}
+            hasActiveFilters={hasActiveFilters}
           />
 
           <TableContentSection
@@ -325,18 +341,13 @@ export default function OrdenesEntrada() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, delay: 0.1 }}
           >
-            <StyledTable
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3, delay: 0.2 }}
-            >
-              <OrdenesEntradaTable
-                ordenes={ordenes}
-                onEdit={handleOpenModalActualizar}
-                onDelete={handleEliminar}
-                onRegistrarClasificacion={handleRegistrarClasificacion}
-              />
-            </StyledTable>
+            <OrdenesEntradaTable
+              ordenes={ordenes}
+              onEdit={handleOpenModalActualizar}
+              onDelete={handleEliminar}
+              onRegistrarClasificacion={handleRegistrarClasificacion}
+              onFiltersChange={handleFiltersChange}
+            />
           </TableContentSection>
         </ProductsTableContainer>
       </motion.div>

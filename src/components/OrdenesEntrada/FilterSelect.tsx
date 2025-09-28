@@ -43,6 +43,7 @@ export const FilterSelect: React.FC<FilterSelectProps> = ({
     <Select
       value={value}
       onValueChange={onChange}
+      key={`filter-select-${value}`}
     >
       <SelectTrigger className="h-8 w-full transition-all duration-200 focus:ring-2 focus:ring-primary">
         <SelectValue placeholder={placeholder} />

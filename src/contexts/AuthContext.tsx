@@ -92,7 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(false);
   }, []);
 
-  // Verificar expiración del token cada minuto
+  // Verificar expiración del token cada 5 minutos (reducido de 1 minuto)
   useEffect(() => {
     const interval = setInterval(() => {
       if (isAuthenticated && !checkTokenExpiration()) {
@@ -100,7 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.log('Redirigiendo al login por expiración de sesión');
         redirectToLogin(true);
       }
-    }, 60000); // 60000 ms = 1 minuto
+    }, 300000); // 300000 ms = 5 minutos
 
     return () => clearInterval(interval);
   }, [isAuthenticated]);

@@ -122,3 +122,9 @@ export interface PedidoClienteProgresoDTO {
   ordenes: OrdenPedidoClienteResponseDTO[];
   tarimas: TarimaProgresoDTO[];
 }
+
+// DTO para la desasignación de tarimas
+export interface DesasignarTarimaDTO {
+  idPedido: number;
+  idTarima: number;
+}

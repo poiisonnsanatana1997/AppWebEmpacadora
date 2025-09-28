@@ -47,59 +47,17 @@ const UsersTableContainer = styled(motion.div)`
 `;
 
 const TableContentSection = styled(motion.div)`
-  padding: 1.5rem;
+  padding: 0.5rem;
   overflow-x: auto;
   background: #fff;
   width: 100%;
   
   @media (max-width: 768px) {
-    padding: 1rem;
+    padding: 0;
   }
   
   @media (max-width: 480px) {
-    padding: 0.75rem;
-  }
-`;
-
-const StyledTable = styled(motion.table)`
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 1.08rem;
-  border-radius: 1rem;
-  overflow: hidden;
-
-  th, td {
-    padding: 1.1rem 1rem;
-  }
-
-  th {
-    background: #f1f5f9;
-    font-weight: 600;
-    position: sticky;
-    top: 0;
-    z-index: 2;
-  }
-
-  tr:hover td {
-    background: #f8fafc;
-    transition: background 0.2s;
-  }
-  
-  @media (max-width: 768px) {
-    font-size: 0.95rem;
-    
-    th, td {
-      padding: 0.75rem 0.5rem;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    font-size: 0.875rem;
-    
-    th, td {
-      padding: 0.5rem 0.25rem;
-    }
+    padding: 0;
   }
 `;
 
@@ -162,6 +120,7 @@ export default function Usuarios() {
       transition={{ duration: 0.5 }}
     >
       <Toaster richColors position="top-right" />
+      
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -182,19 +141,13 @@ export default function Usuarios() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, delay: 0.1 }}
           >
-            <StyledTable
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3, delay: 0.2 }}
-            >
-              <UsuarioTable
-                usuarios={usuarios}
-                loading={isLoading}
-                error={null}
-                onEdit={handleOpenModalEditar}
-                onToggleStatus={handleToggleStatus}
-              />
-            </StyledTable>
+            <UsuarioTable
+              usuarios={usuarios}
+              loading={isLoading}
+              error={null}
+              onEdit={handleOpenModalEditar}
+              onToggleStatus={handleToggleStatus}
+            />
           </TableContentSection>
         </UsersTableContainer>
       </motion.div>

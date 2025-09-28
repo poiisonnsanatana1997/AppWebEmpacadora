@@ -18,6 +18,7 @@ import styled from 'styled-components';
 import { SelectorPedidos } from './SelectorClientes';
 import { TarimasService } from '@/services/tarimas.service';
 import { toast } from 'sonner';
+import { getMexicoLocalISOString } from '@/utils/dateUtils';
 import { PedidoClientePorAsignarDTO } from '@/types/PedidoCliente/pedidoCliente.types';
 
 // Schema de validación simplificado
@@ -214,7 +215,7 @@ export const TarimaForm: React.FC<TarimaFormProps> = ({
       setIsSubmitting(true);
       const tarimasData: CreateTarimaDTO = {
         estatus: 'COMPLETA',
-        fechaRegistro: new Date().toISOString(),
+        fechaRegistro: getMexicoLocalISOString(),
         tipo: data.tipo,
         cantidad: data.cantidad,
         peso: data.peso,
@@ -224,7 +225,6 @@ export const TarimaForm: React.FC<TarimaFormProps> = ({
         idPedidoCliente: data.idPedidoCliente || undefined,
         cantidadTarimas: data.cantidadTarimas,
       };
-      console.log('tarimasData', tarimasData);
       await TarimasService.crearTarima(tarimasData);
       toast.success('Tarima(s) guardada(s) correctamente');
       onClose();
@@ -263,7 +263,7 @@ export const TarimaForm: React.FC<TarimaFormProps> = ({
       setIsSubmitting(true);
       const tarimasData: CreateTarimaDTO = {
         estatus: 'PARCIAL',
-        fechaRegistro: new Date().toISOString(),
+        fechaRegistro: getMexicoLocalISOString(),
         tipo: data.tipo,
         cantidad: data.cantidad,
         peso: data.peso,

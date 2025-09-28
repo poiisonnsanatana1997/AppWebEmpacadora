@@ -344,14 +344,13 @@ export default function DetalleOrdenEntrada() {
                 {guardando ? 'Guardando...' : 'Finalizar Pesaje'}
               </Button>
             )}
-            {orden.estado === ESTADO_ORDEN.RECIBIDA && (
+            {orden.estado !== ESTADO_ORDEN.PENDIENTE && orden.estado !== ESTADO_ORDEN.PROCESANDO && (
               <Button 
                 onClick={handleGenerarPDF}
-                variant="outline"
-                className="w-full sm:w-auto flex items-center justify-center gap-2"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-md hover:shadow-lg transition-all duration-200"
               >
                 <FileDown className="h-4 w-4" />
-                Generar PDF
+                Descargar Reporte
               </Button>
             )}
           </div>

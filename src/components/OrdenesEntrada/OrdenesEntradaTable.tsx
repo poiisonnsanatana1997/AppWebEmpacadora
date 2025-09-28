@@ -37,18 +37,18 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-
 // Iconos
-import { Edit2, ChevronDown, ChevronUp, ChevronsUpDown, X, Clock, ClipboardX, Eye, ListChecks, CheckCircle, MoreHorizontal } from 'lucide-react';
+import { Edit2, ChevronDown, ChevronUp, ChevronsUpDown, X, Clock, ClipboardX, Eye, ListChecks, CheckCircle, MoreHorizontal, Loader2, ClipboardList } from 'lucide-react';
 
 // Utilidades y tipos
 import clsx from 'clsx';
 import styled from 'styled-components';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ESTADO_ORDEN, OrdenEntradaDto, estadoOrdenUtils } from '@/types/OrdenesEntrada/ordenesEntrada.types';
 import { OrdenesEntradaTableProps } from '@/types/OrdenesEntrada/ordenesEntradaTable.types';
 import { useOrdenesEntradaTable } from '@/hooks/OrdenesEntrada/useOrdenesEntradaTable';
@@ -61,12 +61,34 @@ import { fuzzyFilter } from '@/utils/tableUtils';
 /**
  * Icono de reloj estilizado para indicar órdenes del día actual
  */
-const TodayIcon = styled(Clock)`
-  width: 1rem;
-  height: 1rem;
-  color: #f59e0b;
-  margin-right: 0.25rem;
-`;
+const TodayIcon = ({ className, ...props }: React.ComponentProps<typeof Clock>) => (
+  <Clock
+    {...props}
+    className={`w-4 h-4 text-amber-500 mr-1 ${className || ''}`}
+  />
+);
+
+/**
+ * Badge de estado estilizado con mejor presentación
+ */
+const StatusBadge = ({ className, ...props }: React.ComponentProps<typeof Badge>) => (
+  <Badge
+    {...props}
+    className={`font-semibold transition-all duration-200 hover:scale-105 ${className || ''}`}
+  />
+);
+
+// Función auxiliar para formatear valores
+const formatCellValue = (value: any, fallbackText: string = 'No disponible') => {
+  if (value === null || value === undefined || value === '') {
+    return (
+      <span className="text-gray-400 italic">
+        {fallbackText}
+      </span>
+    );
+  }
+  return String(value);
+};
 
 // Componente Principal: OrdenesEntradaTable
 // ============================================
@@ -83,7 +105,7 @@ const TodayIcon = styled(Clock)`
  * - Filtrado por fecha: Filtrar por hoy, próximos 7 días, etc.
  * - Diálogos de confirmación: Para acciones destructivas
  */
-export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onRegistrarClasificacion }: OrdenesEntradaTableProps) {
+export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onRegistrarClasificacion, onFiltersChange }: OrdenesEntradaTableProps) {
   const {
     sorting,
     setSorting,
@@ -93,14 +115,21 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onRegistrarClas
     setRowSelection,
     columnVisibility,
     setColumnVisibility,
+    fechaFilterValue,
+    setFechaFilterValue,
     ordenACancelar,
     handleCancelarOrden,
     handleConfirmarCancelacion,
+    clearFilters,
     navigate
   } = useOrdenesEntradaTable({ onDelete });
 
-  // Estado local para controlar el valor del select de fecha
-  const [fechaFilterValue, setFechaFilterValue] = React.useState("all");
+  // Detectar si hay filtros activos
+  React.useEffect(() => {
+    const hasActiveFilters = columnFilters.length > 0 || fechaFilterValue !== "all";
+    onFiltersChange?.(hasActiveFilters, clearFilters);
+  }, [columnFilters, fechaFilterValue, onFiltersChange, clearFilters]);
+
 
   // Definición de columnas con ordenamiento, filtrado y renderizado personalizado
   const columns = React.useMemo<ColumnDef<OrdenEntradaDto>[]>(() => [
@@ -142,17 +171,17 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onRegistrarClas
 
         return (
           <div className="flex items-center gap-2">
-            <span>{row.original.codigo}</span>
+            <span className="font-medium">{row.original.codigo}</span>
             {esHoy && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge variant="destructive" className="h-5 px-1.5 text-xs bg-orange-200 text-orange-800 hover:bg-orange-300 font-semibold">
+                    <StatusBadge variant="destructive" className="h-5 px-1.5 text-xs bg-orange-200 text-orange-800 hover:bg-orange-300">
                       <div style={{ display: 'flex', alignItems: 'center' }}>
                         <TodayIcon />
                         Hoy
                       </div>
-                    </Badge>
+                    </StatusBadge>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Orden pendiente para hoy</p>
@@ -192,6 +221,14 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onRegistrarClas
                 placeholder="Filtrar por proveedor..."
               />
             </div>
+          </div>
+        );
+      },
+      cell: ({ row }) => {
+        const proveedor = row.original.proveedor;
+        return (
+          <div className="font-medium">
+            {formatCellValue(proveedor?.nombre, 'Sin proveedor')}
           </div>
         );
       },
@@ -262,8 +299,10 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onRegistrarClas
             </Button>
             <div className="mt-2">
               <FilterSelect
-                value={filterValue ?? "all"}
-                onChange={(value) => column.setFilterValue(value === "all" ? "" : value)}
+                value={!filterValue || filterValue === "" ? "all" : filterValue}
+                onChange={(value) => {
+                  column.setFilterValue(value === "all" ? "" : value);
+                }}
                 options={[
                   { value: "all", label: "Todos los estados" },
                   { value: "Pendiente", label: "Pendiente" },
@@ -282,20 +321,20 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onRegistrarClas
       cell: ({ row }) => {
         const estado = row.original.estado;
         return (
-          <Badge
+          <StatusBadge
             variant="secondary"
             className={
-              estado === ESTADO_ORDEN.PENDIENTE ? 'bg-yellow-200 text-yellow-800 hover:bg-yellow-300 font-semibold' :
-              estado === ESTADO_ORDEN.PROCESANDO ? 'bg-blue-200 text-blue-800 hover:bg-blue-300 font-semibold' :
-              estado === ESTADO_ORDEN.RECIBIDA ? 'bg-green-200 text-green-800 hover:bg-green-300 font-semibold' :
-              estado === ESTADO_ORDEN.CLASIFICANDO ? 'bg-purple-200 text-purple-800 hover:bg-purple-300 font-semibold' :
-              estado === ESTADO_ORDEN.CLASIFICADO ? 'bg-indigo-200 text-indigo-800 hover:bg-indigo-300 font-semibold' :
-              estado === ESTADO_ORDEN.CANCELADA ? 'bg-red-200 text-red-800 hover:bg-red-300 font-semibold' :
-              'bg-gray-200 text-gray-800 hover:bg-gray-300 font-semibold'
+              estado === ESTADO_ORDEN.PENDIENTE ? 'bg-yellow-200 text-yellow-800 hover:bg-yellow-300' :
+              estado === ESTADO_ORDEN.PROCESANDO ? 'bg-blue-200 text-blue-800 hover:bg-blue-300' :
+              estado === ESTADO_ORDEN.RECIBIDA ? 'bg-green-200 text-green-800 hover:bg-green-300' :
+              estado === ESTADO_ORDEN.CLASIFICANDO ? 'bg-purple-200 text-purple-800 hover:bg-purple-300' :
+              estado === ESTADO_ORDEN.CLASIFICADO ? 'bg-indigo-200 text-indigo-800 hover:bg-indigo-300' :
+              estado === ESTADO_ORDEN.CANCELADA ? 'bg-red-200 text-red-800 hover:bg-red-300' :
+              'bg-gray-200 text-gray-800 hover:bg-gray-300'
             }
           >
             {estado}
-          </Badge>
+          </StatusBadge>
         );
       },
       filterFn: (row, _id, value) => {
@@ -324,26 +363,21 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onRegistrarClas
             </Button>
             <div className="mt-2">
               <FilterSelect
-                value={fechaFilterValue}
+                value={fechaFilterValue || "all"}
                 onChange={(value) => {
                   setFechaFilterValue(value);
                   
                   if (value === "all") {
                     column.setFilterValue("");
-                    // Limpiar ordenamiento
                     setSorting([]);
                   } else if (value === "asc") {
                     column.setFilterValue("");
-                    // Ordenar ascendente (más antiguas primero)
                     setSorting([{ id: 'fechaEstimada', desc: false }]);
                   } else if (value === "desc") {
                     column.setFilterValue("");
-                    // Ordenar descendente (más recientes primero)
                     setSorting([{ id: 'fechaEstimada', desc: true }]);
                   } else {
-                    // Para filtros de fecha (hoy, próximos)
                     column.setFilterValue(value);
-                    // Limpiar ordenamiento
                     setSorting([]);
                   }
                 }}
@@ -428,78 +462,96 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onRegistrarClas
         const orden = row.original;
         
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                className="h-8 w-8 p-0 hover:bg-gray-100"
-                aria-label="Acciones de la orden"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              {/* Ver Detalles/Pesaje - Siempre disponible excepto cancelado */}
-              {estadoOrdenUtils.puedeVerPesaje(orden.estado) && (
-                <DropdownMenuItem 
-                  onClick={() => navigate(`/ordenes-entrada/${orden.codigo}`)}
-                  className="cursor-pointer"
-                >
-                  <Eye className="mr-2 h-4 w-4 text-blue-600" />
-                  <span>Ver detalles y pesaje</span>
-                </DropdownMenuItem>
-              )}
+          <div className="flex items-center gap-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => navigate(`/ordenes-entrada/${orden.codigo}`)}
+                    className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-blue-50 h-10 w-10"
+                    disabled={!estadoOrdenUtils.puedeVerPesaje(orden.estado)}
+                  >
+                    <Eye className="h-4 w-4 text-blue-600" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Ver detalles y pesaje</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
 
-              {/* Editar - Solo para órdenes pendientes */}
-              {estadoOrdenUtils.puedeEditar(orden.estado) && (
-                <DropdownMenuItem 
-                  onClick={() => onEdit(orden.codigo)}
-                  className="cursor-pointer"
-                >
-                  <Edit2 className="mr-2 h-4 w-4 text-yellow-600" />
-                  <span>Editar orden</span>
-                </DropdownMenuItem>
-              )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0">
+                  <span className="sr-only">Abrir menú</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                
+                {/* Ver Detalles/Pesaje - Siempre disponible excepto cancelado */}
+                {estadoOrdenUtils.puedeVerPesaje(orden.estado) && (
+                  <DropdownMenuItem 
+                    onClick={() => navigate(`/ordenes-entrada/${orden.codigo}`)}
+                    className="cursor-pointer"
+                  >
+                    <Eye className="mr-2 h-4 w-4 text-blue-600" />
+                    <span>Ver detalles y pesaje</span>
+                  </DropdownMenuItem>
+                )}
 
-              {/* Clasificar - Solo para órdenes recibidas */}
-              {estadoOrdenUtils.puedeClasificar(orden.estado) && (
-                <DropdownMenuItem 
-                  onClick={() => onRegistrarClasificacion(orden)}
-                  className="cursor-pointer"
-                >
-                  <ListChecks className="mr-2 h-4 w-4 text-green-600" />
-                  <span>Iniciar clasificación</span>
-                </DropdownMenuItem>
-              )}
+                {/* Editar - Solo para órdenes pendientes */}
+                {estadoOrdenUtils.puedeEditar(orden.estado) && (
+                  <DropdownMenuItem 
+                    onClick={() => onEdit(orden.codigo)}
+                    className="cursor-pointer"
+                  >
+                    <Edit2 className="mr-2 h-4 w-4 text-yellow-600" />
+                    <span>Editar orden</span>
+                  </DropdownMenuItem>
+                )}
 
-              {/* Ver Clasificación - Solo para órdenes clasificadas */}
-              {estadoOrdenUtils.puedeVerClasificacion(orden.estado) && (
-                <DropdownMenuItem 
-                  onClick={() => navigate(`/clasificacion-orden/${orden.id}`)}
-                  className="cursor-pointer"
-                >
-                  <CheckCircle className="mr-2 h-4 w-4 text-purple-600" />
-                  <span>Ver clasificación</span>
-                </DropdownMenuItem>
-              )}
+                {/* Clasificar - Solo para órdenes recibidas */}
+                {estadoOrdenUtils.puedeClasificar(orden.estado) && (
+                  <DropdownMenuItem 
+                    onClick={() => onRegistrarClasificacion(orden)}
+                    className="cursor-pointer"
+                  >
+                    <ListChecks className="mr-2 h-4 w-4 text-green-600" />
+                    <span>Iniciar clasificación</span>
+                  </DropdownMenuItem>
+                )}
 
-              {/* Separador antes de acciones destructivas */}
-              {estadoOrdenUtils.esCancelable(orden.estado) && (
-                <DropdownMenuSeparator />
-              )}
+                {/* Ver Clasificación - Solo para órdenes clasificadas */}
+                {estadoOrdenUtils.puedeVerClasificacion(orden.estado) && (
+                  <DropdownMenuItem 
+                    onClick={() => navigate(`/clasificacion-orden/${orden.id}`)}
+                    className="cursor-pointer"
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4 text-purple-600" />
+                    <span>Ver clasificación</span>
+                  </DropdownMenuItem>
+                )}
 
-              {/* Cancelar - Solo para órdenes cancelables */}
-              {estadoOrdenUtils.esCancelable(orden.estado) && (
-                <DropdownMenuItem 
-                  onClick={() => handleCancelarOrden(orden.codigo)}
-                  className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
-                >
-                  <ClipboardX className="mr-2 h-4 w-4" />
-                  <span>Cancelar orden</span>
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                {/* Separador antes de acciones destructivas */}
+                {estadoOrdenUtils.esCancelable(orden.estado) && (
+                  <DropdownMenuSeparator />
+                )}
+
+                {/* Cancelar - Solo para órdenes cancelables */}
+                {estadoOrdenUtils.esCancelable(orden.estado) && (
+                  <DropdownMenuItem 
+                    onClick={() => handleCancelarOrden(orden.codigo)}
+                    className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                  >
+                    <ClipboardX className="mr-2 h-4 w-4" />
+                    <span>Cancelar orden</span>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         );
       },
       enableSorting: false,
@@ -528,57 +580,72 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onRegistrarClas
     getSortedRowModel: getSortedRowModel(),
   });
 
+
+  if (!ordenes.length) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex items-center justify-center py-8"
+      >
+        <div className="text-gray-500 text-center">
+          <div className="bg-gray-50 rounded-full p-4 w-fit mx-auto mb-4">
+            <ClipboardList className="h-12 w-12 text-gray-400" />
+          </div>
+          <p className="font-semibold text-lg">No hay órdenes registradas</p>
+          <p className="text-sm">Comienza agregando una nueva orden</p>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Tabla con encabezado y cuerpo */}
-      <table className="w-full">
-        <thead className="bg-[#f1f5f9]">
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id} className="hover:bg-gray-100">
-              {headerGroup.headers.map((header) => (
-                <th key={header.id} className="p-2 font-semibold text-gray-700 border-b border-[#e2e8f0]">
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          <AnimatePresence mode="wait">
+      <div className="overflow-x-auto border border-gray-200 rounded-lg">
+        <table className="w-full min-w-[800px]">
+          <thead className="bg-[#f1f5f9]">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id} className="hover:bg-gray-100">
+                {headerGroup.headers.map((header) => (
+                  <th key={header.id} className="p-2 font-semibold text-gray-700 border-b border-[#e2e8f0] min-w-[120px]">
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <motion.tr
                   key={row.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.2 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.15 }}
                   data-state={row.getIsSelected() && "selected"}
-                  className="border-b border-gray-200 last:border-b-0"
+                  className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="p-2">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    <td key={cell.id} className="p-3 max-w-[200px]">
+                      <div className="truncate">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </div>
                     </td>
                   ))}
                 </motion.tr>
               ))
             ) : (
-              <motion.tr
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
+              <tr>
                 <td colSpan={columns.length} className="h-48 text-center">
                   <div className="flex flex-col items-center justify-center space-y-4 py-8">
                     <div className="bg-gray-50 rounded-full p-4">
-                      <ClipboardX className="h-12 w-12 text-gray-400" />
+                      <ClipboardList className="h-12 w-12 text-gray-400" />
                     </div>
                     <div className="space-y-2">
                       <h3 className="text-lg font-semibold text-gray-700">No se encontraron órdenes</h3>
@@ -589,21 +656,22 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onRegistrarClas
                     </div>
                   </div>
                 </td>
-              </motion.tr>
+              </tr>
             )}
-          </AnimatePresence>
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
 
       {/* Controles de paginación y conteo de filas */}
-      <div className="flex items-center justify-between px-2">
-        <div className="flex-1 text-sm text-muted-foreground">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
+        <div className="flex-1 text-sm text-muted-foreground text-center sm:text-left">
           {table.getFilteredSelectedRowModel().rows.length} de{" "}
           {table.getFilteredRowModel().rows.length} fila(s) seleccionada(s).
         </div>
-        <div className="flex items-center space-x-6 lg:space-x-8">
+        <div className="flex flex-col sm:flex-row items-center gap-4 sm:space-x-6 lg:space-x-8">
           <div className="flex items-center space-x-2">
-            <p className="text-sm font-medium">Filas por página</p>
+            <p className="text-sm font-medium hidden sm:block">Filas por página</p>
+            <p className="text-sm font-medium sm:hidden">Por página</p>
             <select
               value={table.getState().pagination.pageSize}
               onChange={(e) => {
@@ -619,16 +687,14 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onRegistrarClas
             </select>
           </div>
           <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-            Página {table.getState().pagination.pageIndex + 1} de{" "}
+            <span className="hidden sm:inline">Página </span>
+            {table.getState().pagination.pageIndex + 1} de{" "}
             {table.getPageCount()}
           </div>
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
-              className={clsx(
-                "h-8 w-8 p-0 cursor-pointer",
-                "hidden lg:flex"
-              )}
+              className="h-8 w-8 p-0 cursor-pointer hidden md:flex"
               onClick={() => table.setPageIndex(0)}
               disabled={!table.getCanPreviousPage()}
             >
@@ -655,10 +721,7 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onRegistrarClas
             </Button>
             <Button
               variant="outline"
-              className={clsx(
-                "h-8 w-8 p-0 cursor-pointer",
-                "hidden lg:flex"
-              )}
+              className="h-8 w-8 p-0 cursor-pointer hidden md:flex"
               onClick={() => table.setPageIndex(table.getPageCount() - 1)}
               disabled={!table.getCanNextPage()}
             >
@@ -726,8 +789,6 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onRegistrarClas
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-
     </div>
   );
 } 

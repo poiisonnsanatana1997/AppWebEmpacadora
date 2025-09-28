@@ -29,9 +29,17 @@ const PageContainer = styled(motion.div)`
   justify-content: flex-start;
   background: rgba(255, 255, 255, 0);
   width: 100%;
+  
+  @media (max-width: 768px) {
+    padding: 0.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.25rem;
+  }
 `;
 
-const ProductsTableContainer = styled(motion.div)`
+const MainContentContainer = styled(motion.div)`
   background: white;
   border-radius: 1rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -49,59 +57,32 @@ const ProductsTableContainer = styled(motion.div)`
 `;
 
 const TableContentSection = styled(motion.div)`
-  padding: 1.5rem;
+  padding: 0.5rem;
   overflow-x: auto;
   background: #fff;
   width: 100%;
   
   @media (max-width: 768px) {
-    padding: 1rem;
+    padding: 0;
   }
   
   @media (max-width: 480px) {
-    padding: 0.75rem;
+    padding: 0;
   }
 `;
 
-const StyledTable = styled(motion.table)`
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 1.08rem;
-  border-radius: 1rem;
-  overflow: hidden;
-
-  th, td {
-    padding: 1.1rem 1rem;
-  }
-
-  th {
-    background: #f1f5f9;
-    font-weight: 600;
-    position: sticky;
-    top: 0;
-    z-index: 2;
-  }
-
-  tr:hover td {
-    background: #f8fafc;
-    transition: background 0.2s;
-  }
+const ErrorMessage = styled(motion.div)`
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  font-weight: 500;
   
   @media (max-width: 768px) {
-    font-size: 0.95rem;
-    
-    th, td {
-      padding: 0.75rem 0.5rem;
-    }
-  }
-  
-  @media (max-width: 480px) {
+    padding: 0.75rem;
     font-size: 0.875rem;
-    
-    th, td {
-      padding: 0.5rem 0.25rem;
-    }
   }
 `;
 
@@ -133,8 +114,6 @@ export default function PedidosCliente() {
     setModalCrearOpen(true);
   };
 
-
-
   const handleOpenModalDetalle = (pedido: PedidoClienteResponseDTO) => {
     setPedidoIdSeleccionado(pedido.id);
     setModalDetalleOpen(true);
@@ -143,8 +122,6 @@ export default function PedidosCliente() {
   const handleCloseModalCrear = () => {
     setModalCrearOpen(false);
   };
-
-
 
   const handleCloseModalDetalle = () => {
     setModalDetalleOpen(false);
@@ -161,8 +138,6 @@ export default function PedidosCliente() {
     setPedidoIdSeleccionado(null);
   };
 
-
-
   // Funciones para gestionar las operaciones CRUD
   const handleSubmitCrear = async (data: CreatePedidoClienteDTO) => {
     try {
@@ -175,12 +150,6 @@ export default function PedidosCliente() {
     }
   };
 
-
-
-          
-
-
-
   // Renderizado del componente
   return (
     <PageContainer
@@ -189,20 +158,21 @@ export default function PedidosCliente() {
       transition={{ duration: 0.5 }}
     >
       <Toaster richColors position="top-right" />
+      
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
+        className="space-y-6"
       >
         {/* Mensaje de error si existe */}
         {error && (
-          <motion.div 
+          <ErrorMessage 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-red-500 mb-4"
           >
             Error: {error}
-          </motion.div>
+          </ErrorMessage>
         )}
 
         {/* Sección de indicadores de estado */}
@@ -212,7 +182,7 @@ export default function PedidosCliente() {
         />
 
         {/* Contenedor principal de la tabla de pedidos */}
-        <ProductsTableContainer
+        <MainContentContainer
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
@@ -227,21 +197,15 @@ export default function PedidosCliente() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, delay: 0.1 }}
           >
-            <StyledTable
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3, delay: 0.2 }}
-            >
-                          <PedidosClienteTable
+            <PedidosClienteTable
               pedidos={pedidosCliente}
               onView={handleOpenModalDetalle}
               onProgreso={handleOpenModalProgreso}
               onEstatusUpdate={actualizarEstatusPedidoCliente}
               loading={loading}
             />
-            </StyledTable>
           </TableContentSection>
-        </ProductsTableContainer>
+        </MainContentContainer>
       </motion.div>
 
       {/* Modales de la aplicación */}
@@ -251,8 +215,6 @@ export default function PedidosCliente() {
         onSubmit={handleSubmitCrear}
         loading={loading}
       />
-
-      
 
       <DetallePedidoClienteModal
         isOpen={modalDetalleOpen}
