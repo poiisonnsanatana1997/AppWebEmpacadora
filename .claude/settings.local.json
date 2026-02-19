@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(npm run build:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run build:prod:*)",
+      "Bash(nul)",
+      "Bash(node -e:*)",
+      "Bash(powershell \"npm run build:prod\")",
+      "Bash(powershell \"npm run build:prod 2>&1 | Select-Object -Last 15\")",
+      "Bash(cmd /c \"npm run build:prod 2>&1 | findstr /C:\"\"built in\"\" /C:\"\"dist\"\"\")",
+      "Bash(cmd /c \"cd /d %CD% && npm run build:prod\")",
+      "Bash(powershell \"Get-Content dist\\assets\\*.js | Select-String ''18\\.217'' | Select-Object -First 1\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

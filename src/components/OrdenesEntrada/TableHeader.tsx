@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { ClipboardList, CloudUpload, Plus, FilterX } from 'lucide-react';
+import { ClipboardList, CloudUpload, Plus, FilterX, FileText } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface TableHeaderProps {
@@ -7,6 +7,8 @@ interface TableHeaderProps {
   onNewOrderClick: () => void;
   onClearFilters?: () => void;
   hasActiveFilters?: boolean;
+  modoReporte?: boolean;
+  onToggleModoReporte?: () => void;
 }
 
 /**
@@ -16,8 +18,17 @@ interface TableHeaderProps {
  * @param onNewOrderClick - Función para manejar la creación de nuevas órdenes
  * @param onClearFilters - Función para limpiar los filtros activos
  * @param hasActiveFilters - Indica si hay filtros activos
+ * @param modoReporte - Indica si el modo reporte está activo
+ * @param onToggleModoReporte - Función para activar/desactivar el modo reporte
  */
-export function TableHeader({ onImportClick, onNewOrderClick, onClearFilters, hasActiveFilters }: TableHeaderProps) {
+export function TableHeader({ 
+  onImportClick, 
+  onNewOrderClick, 
+  onClearFilters, 
+  hasActiveFilters,
+  modoReporte = false,
+  onToggleModoReporte
+}: TableHeaderProps) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -50,6 +61,18 @@ export function TableHeader({ onImportClick, onNewOrderClick, onClearFilters, ha
               Limpiar Filtros
             </Button>
           )}
+          
+          {onToggleModoReporte && (
+            <Button 
+              variant={modoReporte ? "default" : "outline"}
+              onClick={onToggleModoReporte}
+              className="w-full sm:w-auto"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              {modoReporte ? 'Salir' : 'Reporte'}
+            </Button>
+          )}
+          
           <Button 
             variant="outline" 
             onClick={onImportClick}

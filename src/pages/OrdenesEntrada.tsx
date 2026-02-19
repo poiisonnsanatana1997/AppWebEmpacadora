@@ -18,9 +18,11 @@ import { ImportarOrdenesModal } from '@/components/OrdenesEntrada/ImportarOrdene
 import { TableHeader } from '@/components/OrdenesEntrada/TableHeader';
 import { Indicators } from '@/components/OrdenesEntrada/Indicators';
 import { ConfirmarClasificacionModal } from '@/components/Clasificacion/ConfirmarClasificacionModal';
+import { PanelReporte } from '@/components/OrdenesEntrada/PanelReporte';
 
 // Importaciones de hooks y tipos
 import { useOrdenesEntrada } from '@/hooks/OrdenesEntrada/useOrdenesEntrada';
+import { useModoReporte } from '@/hooks/OrdenesEntrada/useModoReporte';
 import { ESTADO_ORDEN, OrdenEntradaDto, OrdenEntradaFormData, CrearOrdenEntradaDto, ActualizarOrdenEntradaDto, estadoOrdenUtils } from '@/types/OrdenesEntrada/ordenesEntrada.types';
 import { ClasificacionService } from '@/services/clasificacion.service';
 
@@ -58,11 +60,11 @@ const TableContentSection = styled(motion.div)`
   width: 100%;
   
   @media (max-width: 768px) {
-    padding: 0;
+    padding: 0.25rem;
   }
   
   @media (max-width: 480px) {
-    padding: 0;
+    padding: 0.125rem;
   }
 `;
 
@@ -92,18 +94,26 @@ const StyledTable = styled(motion.table)`
   }
   
   @media (max-width: 768px) {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     
     th, td {
-      padding: 0.75rem 0.5rem;
+      padding: 0.5rem 0.375rem;
+    }
+  }
+  
+  @media (max-width: 640px) {
+    font-size: 0.8rem;
+    
+    th, td {
+      padding: 0.375rem 0.25rem;
     }
   }
   
   @media (max-width: 480px) {
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     
     th, td {
-      padding: 0.5rem 0.25rem;
+      padding: 0.25rem 0.125rem;
     }
   }
 `;
@@ -133,6 +143,23 @@ export default function OrdenesEntrada() {
   // Estados para manejo de filtros
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
   const [clearFiltersFunc, setClearFiltersFunc] = useState<(() => void) | null>(null);
+  
+  // Hook para el modo reporte
+  const {
+    modoReporte,
+    ordenesSeleccionadasReporte,
+    cargandoReporte,
+    LIMITE_MAXIMO_ORDENES,
+    toggleModoReporte,
+    toggleSeleccionReporte,
+    limpiarSeleccionReporte,
+    generarReporte,
+    seleccionarTodas,
+    seleccionarVisibles,
+    seleccionarPorProveedor,
+    seleccionarPorFecha
+  } = useModoReporte();
+
 
   const navigate = useNavigate();
 
@@ -247,11 +274,21 @@ export default function OrdenesEntrada() {
   // Función para manejar la importación de órdenes
   const handleImportar = async (file: File) => {
     try {
-      await importarOrdenes(file);
-      toast.success('Órdenes importadas correctamente');
-      setImportModalOpen(false);
-    } catch (error) {
-      toast.error('Error al importar las órdenes');
+      const resultado = await importarOrdenes(file);
+
+      // Mostrar notificación basada en el resultado
+      if (resultado.errores.length === 0) {
+        toast.success(`${resultado.ordenesCreadas} ${resultado.ordenesCreadas === 1 ? 'orden importada' : 'órdenes importadas'} exitosamente`);
+      } else {
+        toast.warning(
+          `${resultado.ordenesCreadas} ${resultado.ordenesCreadas === 1 ? 'orden importada' : 'órdenes importadas'}. ${resultado.errores.length} ${resultado.errores.length === 1 ? 'error encontrado' : 'errores encontrados'}`
+        );
+      }
+
+      return resultado;
+    } catch (error: any) {
+      toast.error(error.message || 'Error al importar las órdenes');
+      throw error;
     }
   };
 
@@ -291,6 +328,12 @@ export default function OrdenesEntrada() {
       clearFiltersFunc();
     }
   };
+
+  // Funciones wrapper para el modo reporte
+  const handleToggleModoReporte = toggleModoReporte;
+  const handleToggleSeleccionReporte = toggleSeleccionReporte;
+  const handleLimpiarSeleccionReporte = limpiarSeleccionReporte;
+  const handleGenerarReporte = (formato: 'pdf' | 'excel') => generarReporte(formato, ordenes);
 
   // Renderizado del componente
   return (
@@ -334,7 +377,26 @@ export default function OrdenesEntrada() {
             onNewOrderClick={handleOpenModalNuevaOrden}
             onClearFilters={handleClearFilters}
             hasActiveFilters={hasActiveFilters}
+            modoReporte={modoReporte}
+            onToggleModoReporte={handleToggleModoReporte}
           />
+
+          {/* Panel de reporte (visible cuando el modo reporte está activo) */}
+          {modoReporte && (
+            <PanelReporte
+              ordenesSeleccionadas={ordenesSeleccionadasReporte}
+              limiteMaximo={LIMITE_MAXIMO_ORDENES}
+              onGenerarReporte={handleGenerarReporte}
+              onLimpiarSeleccion={handleLimpiarSeleccionReporte}
+              cargando={cargandoReporte}
+              onSeleccionarTodas={seleccionarTodas}
+              onSeleccionarVisibles={seleccionarVisibles}
+              onSeleccionarPorProveedor={seleccionarPorProveedor}
+              onSeleccionarPorFecha={seleccionarPorFecha}
+              ordenesDisponibles={ordenes}
+              proveedoresDisponibles={Array.from(new Set(ordenes.map(o => o.proveedor?.nombre).filter(Boolean)))}
+            />
+          )}
 
           <TableContentSection
             initial={{ opacity: 0 }}
@@ -347,6 +409,10 @@ export default function OrdenesEntrada() {
               onDelete={handleEliminar}
               onRegistrarClasificacion={handleRegistrarClasificacion}
               onFiltersChange={handleFiltersChange}
+              modoReporte={modoReporte}
+              ordenesSeleccionadasReporte={ordenesSeleccionadasReporte}
+              onToggleSeleccionReporte={handleToggleSeleccionReporte}
+              onLimpiarSeleccionReporte={handleLimpiarSeleccionReporte}
             />
           </TableContentSection>
         </ProductsTableContainer>

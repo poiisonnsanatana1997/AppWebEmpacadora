@@ -5,86 +5,20 @@
 
 // Importaciones de React y librerías externas
 import { useState, useEffect } from 'react';
-import styled from 'styled-components';
 import { motion } from 'motion/react';
 import { toast, Toaster } from 'sonner';
 
 // Importaciones de componentes personalizados
 import { PedidosClienteTable } from '@/components/PedidosCliente/PedidosClienteTable';
 import { CrearPedidoClienteModal } from '@/components/PedidosCliente/CrearPedidoClienteModal';
-import { DetallePedidoClienteModal } from '@/components/PedidosCliente/DetallePedidoClienteModal';
-import { ProgresoPedidoClienteModal } from '@/components/PedidosCliente/ProgresoPedidoClienteModal';
+import { PedidoClienteDetalleModal } from '@/components/PedidosCliente/PedidoClienteDetalleModal';
 import { TableHeader } from '@/components/PedidosCliente/TableHeader';
 import { Indicators } from '@/components/PedidosCliente/Indicators';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Importaciones de hooks y servicios
 import { usePedidosCliente } from '@/hooks/PedidosCliente/usePedidosCliente';
 import type { PedidoClienteResponseDTO, CreatePedidoClienteDTO } from '@/types/PedidoCliente/pedidoCliente.types';
-
-// Componentes estilizados para la interfaz
-const PageContainer = styled(motion.div)`
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  background: rgba(255, 255, 255, 0);
-  width: 100%;
-  
-  @media (max-width: 768px) {
-    padding: 0.5rem;
-  }
-  
-  @media (max-width: 480px) {
-    padding: 0.25rem;
-  }
-`;
-
-const MainContentContainer = styled(motion.div)`
-  background: white;
-  border-radius: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  border: 1px solid #E2E8F0;
-  overflow: hidden;
-  width: 100%;
-  
-  @media (max-width: 768px) {
-    border-radius: 0.75rem;
-  }
-  
-  @media (max-width: 480px) {
-    border-radius: 0.5rem;
-  }
-`;
-
-const TableContentSection = styled(motion.div)`
-  padding: 0.5rem;
-  overflow-x: auto;
-  background: #fff;
-  width: 100%;
-  
-  @media (max-width: 768px) {
-    padding: 0;
-  }
-  
-  @media (max-width: 480px) {
-    padding: 0;
-  }
-`;
-
-const ErrorMessage = styled(motion.div)`
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  margin-bottom: 1rem;
-  font-weight: 500;
-  
-  @media (max-width: 768px) {
-    padding: 0.75rem;
-    font-size: 0.875rem;
-  }
-`;
 
 export default function PedidosCliente() {
   // Hook personalizado para gestionar los pedidos clientes
@@ -101,7 +35,6 @@ export default function PedidosCliente() {
   // Estados para controlar los modales
   const [modalCrearOpen, setModalCrearOpen] = useState(false);
   const [modalDetalleOpen, setModalDetalleOpen] = useState(false);
-  const [modalProgresoOpen, setModalProgresoOpen] = useState(false);
   const [pedidoIdSeleccionado, setPedidoIdSeleccionado] = useState<number | null>(null);
 
   // Efecto para cargar los pedidos cuando se ingresa al módulo
@@ -128,21 +61,10 @@ export default function PedidosCliente() {
     setPedidoIdSeleccionado(null);
   };
 
-  const handleOpenModalProgreso = (pedidoId: number) => {
-    setPedidoIdSeleccionado(pedidoId);
-    setModalProgresoOpen(true);
-  };
-
-  const handleCloseModalProgreso = () => {
-    setModalProgresoOpen(false);
-    setPedidoIdSeleccionado(null);
-  };
-
   // Funciones para gestionar las operaciones CRUD
   const handleSubmitCrear = async (data: CreatePedidoClienteDTO) => {
     try {
       await crearPedidoCliente(data);
-      // No es necesario recargar la lista, el estado se actualiza automáticamente
       handleCloseModalCrear();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
@@ -152,13 +74,14 @@ export default function PedidosCliente() {
 
   // Renderizado del componente
   return (
-    <PageContainer
+    <motion.div
+      className="min-h-screen flex flex-col bg-transparent w-full md:px-2 sm:px-1"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
       <Toaster richColors position="top-right" />
-      
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -167,32 +90,33 @@ export default function PedidosCliente() {
       >
         {/* Mensaje de error si existe */}
         {error && (
-          <ErrorMessage 
+          <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            Error: {error}
-          </ErrorMessage>
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>Error: {error}</AlertDescription>
+            </Alert>
+          </motion.div>
         )}
 
         {/* Sección de indicadores de estado */}
-        <Indicators 
+        <Indicators
           stats={stats}
           loading={loading}
         />
 
         {/* Contenedor principal de la tabla de pedidos */}
-        <MainContentContainer
+        <motion.div
+          className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden w-full md:rounded-xl sm:rounded-lg"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <TableHeader 
-            onNewPedido={handleOpenModalCrear}
-            loading={loading}
-          />
+          <TableHeader loading={loading} />
 
-          <TableContentSection
+          <motion.div
+            className="p-2 overflow-x-auto bg-white w-full md:p-0 sm:p-0"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, delay: 0.1 }}
@@ -200,12 +124,11 @@ export default function PedidosCliente() {
             <PedidosClienteTable
               pedidos={pedidosCliente}
               onView={handleOpenModalDetalle}
-              onProgreso={handleOpenModalProgreso}
               onEstatusUpdate={actualizarEstatusPedidoCliente}
               loading={loading}
             />
-          </TableContentSection>
-        </MainContentContainer>
+          </motion.div>
+        </motion.div>
       </motion.div>
 
       {/* Modales de la aplicación */}
@@ -216,18 +139,11 @@ export default function PedidosCliente() {
         loading={loading}
       />
 
-      <DetallePedidoClienteModal
+      <PedidoClienteDetalleModal
         isOpen={modalDetalleOpen}
         onClose={handleCloseModalDetalle}
         pedidoId={pedidoIdSeleccionado}
-        onProgreso={handleOpenModalProgreso}
       />
-
-      <ProgresoPedidoClienteModal
-        isOpen={modalProgresoOpen}
-        onClose={handleCloseModalProgreso}
-        pedidoId={pedidoIdSeleccionado}
-      />
-    </PageContainer>
+    </motion.div>
   );
-} 
+}

@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/tooltip";
 
 // Iconos
-import { ChevronDown, ChevronUp, ChevronsUpDown, Eye, Hash, Package, Scale, User, Building, Calendar, Link, Users, Unlink } from 'lucide-react';
+import { ChevronDown, ChevronUp, ChevronsUpDown, Eye, Hash, Package, Scale, User, Building, Calendar, Link, Users, Unlink, Loader2 } from 'lucide-react';
 
 // Utilidades y tipos
 import styled from 'styled-components';
@@ -241,12 +241,15 @@ export function InventarioTable({ datos, onVerDetalle, loading, onAsignacionExit
 
   // Estado para el modal de clientes disponibles
   const [isModalClientesOpen, setIsModalClientesOpen] = React.useState(false);
-  
+
   // Estado para el modal de desasignación
   const [isModalDesasignacionOpen, setIsModalDesasignacionOpen] = React.useState(false);
-  
+
   // Estado para el modo de operación
   const [modoOperacion, setModoOperacion] = React.useState<'asignar' | 'desasignar' | null>(null);
+
+  // Estado para indicar que se está procesando una acción
+  const [isProcessing, setIsProcessing] = React.useState(false);
 
   // Limpiar selección cuando cambia el modo de operación
   React.useEffect(() => {
@@ -261,6 +264,7 @@ export function InventarioTable({ datos, onVerDetalle, loading, onAsignacionExit
       onAsignacionExitosa(pedidoAsignado, tarimasAsignadas);
     }
     removerTarimasDeSeleccion(tarimasAsignadas);
+    setIsProcessing(false);
   }, [onAsignacionExitosa, removerTarimasDeSeleccion]);
 
   /**
@@ -271,6 +275,7 @@ export function InventarioTable({ datos, onVerDetalle, loading, onAsignacionExit
       onAsignacionExitosa({ id: 0, cliente: '', sucursal: '' }, tarimasDesasignadas);
     }
     removerTarimasDeSeleccion(tarimasDesasignadas);
+    setIsProcessing(false);
   }, [onAsignacionExitosa, removerTarimasDeSeleccion]);
 
   /**
@@ -840,16 +845,24 @@ export function InventarioTable({ datos, onVerDetalle, loading, onAsignacionExit
               {modoOperacion && hayTarimasSeleccionadas ? (
                 <Button
                   onClick={() => {
+                    setIsProcessing(true);
                     if (modoOperacion === 'asignar') {
                       setIsModalClientesOpen(true);
                     } else {
                       setIsModalDesasignacionOpen(true);
                     }
                   }}
-                  className="h-8 px-3 text-sm bg-blue-600 hover:bg-blue-700 text-white"
+                  disabled={isProcessing}
+                  className="h-8 px-3 text-sm bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
                   size="sm"
+                  aria-busy={isProcessing}
                 >
-                  {modoOperacion === 'asignar' ? (
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Procesando...
+                    </>
+                  ) : modoOperacion === 'asignar' ? (
                     <>
                       <Users className="mr-2 h-4 w-4" />
                       Asignar ({cantidadTarimasSeleccionadas})
@@ -1025,7 +1038,10 @@ export function InventarioTable({ datos, onVerDetalle, loading, onAsignacionExit
       <ClientesDisponiblesModal
         tarimasSeleccionadas={tarimasSeleccionadas}
         isOpen={isModalClientesOpen}
-        onClose={() => setIsModalClientesOpen(false)}
+        onClose={() => {
+          setIsModalClientesOpen(false);
+          setIsProcessing(false);
+        }}
         onAsignacionExitosa={handleAsignacionExitosa}
       />
 
@@ -1033,7 +1049,10 @@ export function InventarioTable({ datos, onVerDetalle, loading, onAsignacionExit
       <ModalDesasignacion
         tarimasSeleccionadas={tarimasSeleccionadas}
         isOpen={isModalDesasignacionOpen}
-        onClose={() => setIsModalDesasignacionOpen(false)}
+        onClose={() => {
+          setIsModalDesasignacionOpen(false);
+          setIsProcessing(false);
+        }}
         onDesasignacionExitosa={handleDesasignacionExitosa}
       />
     </>

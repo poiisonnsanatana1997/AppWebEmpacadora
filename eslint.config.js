@@ -23,6 +23,27 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
+
+      // ===== Reglas de Console =====
+      'no-console': ['warn', { allow: ['error', 'warn'] }],
+
+      // ===== Reglas de TypeScript =====
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': ['warn', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_'
+      }],
+      '@typescript-eslint/explicit-function-return-type': 'off', // Por ahora
+      '@typescript-eslint/no-non-null-assertion': 'warn',
+
+      // ===== Reglas de React =====
+      'react-hooks/exhaustive-deps': 'warn',
+
+      // ===== Reglas generales =====
+      'no-debugger': 'error',
+      'no-alert': 'warn',
+      'prefer-const': 'warn',
+      'no-var': 'error',
     },
   },
 )

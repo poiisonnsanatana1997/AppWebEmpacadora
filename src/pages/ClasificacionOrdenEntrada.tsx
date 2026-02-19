@@ -15,7 +15,6 @@ import { ClasificacionService } from '../services/clasificacion.service';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../components/ui/dropdown-menu';
 import { Package, RotateCcw, AlertTriangle, Download, ChevronDown } from 'lucide-react';
 import { useClasificacionValidation } from '../hooks/Clasificacion/useClasificacionValidation';
@@ -33,7 +32,6 @@ export default function ClasificacionOrdenEntrada() {
   const [orden, setOrden] = useState<PedidoCompletoDTO | null>(null);
   const [clasificaciones, setClasificaciones] = useState<ClasificacionCompletaDTO[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [finalizando, setFinalizando] = useState(false);
 
   // Estado para modales y selección
@@ -65,10 +63,6 @@ export default function ClasificacionOrdenEntrada() {
     fetchData();
   }, [idOrdenEntrada]);
 
-  // Función para obtener la clasificación correspondiente a una tarima
-  const obtenerClasificacionPorTarima = (tarima: TarimaClasificacionDTO): ClasificacionCompletaDTO | null => {
-    return clasificaciones?.find(c => c.id === tarima.idClasificacion) || null;
-  };
 
   // Handlers para acciones de la tabla
   const handleShowTarimaDetail = (tarima: TarimaClasificacionDTO) => {
@@ -203,7 +197,6 @@ export default function ClasificacionOrdenEntrada() {
       return;
     }
     
-    setSaving(true);
     try {
       await ClasificacionService.update(clasificacionActualizada.id, clasificacionActualizada);
       
@@ -220,8 +213,6 @@ export default function ClasificacionOrdenEntrada() {
       toast.success('Clasificación actualizada correctamente');
     } catch (error) {
       toast.error('Error al actualizar la clasificación');
-    } finally {
-      setSaving(false);
     }
   };
 

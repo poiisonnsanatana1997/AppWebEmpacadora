@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -84,6 +85,9 @@ export function DetalleTarimaModal({ tarima, isOpen, onClose }: DetalleTarimaMod
             <Package className="h-5 w-5" />
             Detalle de Tarima: {tarima.codigo}
           </DialogTitle>
+          <DialogDescription>
+            Información completa de la tarima incluyendo clasificaciones, orden de entrada y pedidos asignados
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">

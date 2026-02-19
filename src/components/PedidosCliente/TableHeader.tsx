@@ -1,41 +1,61 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, ShoppingCart } from 'lucide-react';
+import { Plus, ShoppingCart, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { motion } from 'motion/react';
 
 interface TableHeaderProps {
-  onNewPedido?: () => void;
   loading?: boolean;
 }
 
 export const TableHeader: React.FC<TableHeaderProps> = ({
-  onNewPedido,
   loading = false,
 }) => {
   return (
-    <div className="flex items-center justify-between p-6 border-b border-gray-200">
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <ShoppingCart className="h-5 w-5 text-blue-600" />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Pedidos Cliente</h2>
-            <p className="text-sm text-gray-500">
-              Gestiona los pedidos de tus clientes
-            </p>
-          </div>
-        </div>
-      </div>
-      
-      <Link to="/pedidos-cliente/crear">
-        <Button
-          disabled={loading}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="p-4 sm:p-6 border-b border-gray-200 bg-gray-50"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <motion.h2
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="text-lg sm:text-xl font-semibold text-gray-900 flex items-center gap-2"
         >
-          <Plus className="h-4 w-4 mr-2" />
-          Nuevo Pedido
-        </Button>
-      </Link>
-    </div>
+          <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-blue-700 flex-shrink-0" strokeWidth={2} />
+          <span className="truncate">Pedidos Cliente</span>
+        </motion.h2>
+
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="flex-shrink-0"
+        >
+          <Link to="/pedidos-cliente/crear">
+            <Button
+              disabled={loading}
+              aria-label="Crear nuevo pedido"
+              size="sm"
+              className="h-9 sm:h-10"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin sm:mr-2" />
+                  <span className="hidden sm:inline">Cargando...</span>
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Nuevo Pedido</span>
+                  <span className="sm:hidden">Nuevo</span>
+                </>
+              )}
+            </Button>
+          </Link>
+        </motion.div>
+      </div>
+    </motion.div>
   );
-}; 
+};

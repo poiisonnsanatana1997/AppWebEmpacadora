@@ -21,7 +21,7 @@ import { useInventarioUnificado } from '@/hooks/Inventario/useInventarioUnificad
 import type { InventarioTipoDTO } from '@/types/Inventario/inventario.types';
 
 // Componentes estilizados para la interfaz
-const PageContainer = styled(motion.div)`
+const PageContainer = styled(motion.main)`
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -173,6 +173,7 @@ export default function Inventario() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
+      aria-label="Página de inventario"
     >
       <Toaster richColors position="top-right" />
       <motion.div
@@ -180,17 +181,6 @@ export default function Inventario() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        {/* Mensaje de error si existe */}
-        {error && (
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-red-500 mb-4"
-          >
-            Error: {error}
-          </motion.div>
-        )}
-
         {/* Dashboard de Analytics con Indicadores Integrados */}
         <AnalyticsDashboard 
           indicadores={indicadores}
@@ -220,8 +210,9 @@ export default function Inventario() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <TableHeader 
+          <TableHeader
             loading={isLoading}
+            isRefreshing={isRefreshing}
           />
 
           <TableContentSection

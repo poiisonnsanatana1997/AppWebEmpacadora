@@ -8,7 +8,7 @@ import { EstadoOrden, ProductoDto, ProveedorDto, ESTADO_ORDEN, OrdenEntradaFormD
 import { OrdenesEntradaService } from '../../services/ordenesEntrada.service';
 import { ScrollArea } from '../ui/scroll-area';
 import { Plus } from 'lucide-react';
-import { Combobox } from '../ui/combobox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
 import { Textarea } from '../ui/textarea';
 import { ordenEntradaFormSchema, OrdenEntradaFormSchema } from '../../schemas/ordenEntradaFormSchema';
@@ -140,22 +140,26 @@ export function NuevaOrdenEntradaModal({ isOpen, onClose, onSave }: NuevaOrdenEn
                         <FormLabel>
                           Proveedor <span className="text-red-500">*</span>
                         </FormLabel>
-                        <FormControl>
-                          <Combobox
-                            options={proveedores.map(p => ({
-                              value: p.id.toString(),
-                              label: p.nombre
-                            }))}
-                            value={field.value}
-                            onValueChange={(value) => {
-                              handleSelectProveedor(value);
-                              form.trigger('proveedor.id');
-                            }}
-                            placeholder="Seleccione un proveedor"
-                            emptyText="No se encontraron proveedores"
-                            className="w-full"
-                          />
-                        </FormControl>
+                        <Select
+                          value={field.value}
+                          onValueChange={(value) => {
+                            handleSelectProveedor(value);
+                            form.trigger('proveedor.id');
+                          }}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Seleccione un proveedor" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {proveedores.map((proveedor) => (
+                              <SelectItem key={proveedor.id} value={proveedor.id.toString()}>
+                                {proveedor.nombre}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage className="text-xs text-red-500 font-medium" />
                       </FormItem>
                     )}
@@ -172,22 +176,26 @@ export function NuevaOrdenEntradaModal({ isOpen, onClose, onSave }: NuevaOrdenEn
                         <FormLabel>
                           Producto <span className="text-red-500">*</span>
                         </FormLabel>
-                        <FormControl>
-                          <Combobox
-                            options={productos.map(p => ({
-                              value: p.id.toString(),
-                              label: `${p.codigo} - ${p.nombre} - ${p.variedad}`
-                            }))}
-                            value={field.value}
-                            onValueChange={(value) => {
-                              handleSelectProducto(value);
-                              form.trigger('productos.id');
-                            }}
-                            placeholder="Seleccione un producto"
-                            emptyText="No se encontraron productos"
-                            className="w-full"
-                          />
-                        </FormControl>
+                        <Select
+                          value={field.value}
+                          onValueChange={(value) => {
+                            handleSelectProducto(value);
+                            form.trigger('productos.id');
+                          }}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Seleccione un producto" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {productos.map((producto) => (
+                              <SelectItem key={producto.id} value={producto.id.toString()}>
+                                {`${producto.codigo} - ${producto.nombre} - ${producto.variedad}`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage className="text-xs text-red-500 font-medium" />
                       </FormItem>
                     )}

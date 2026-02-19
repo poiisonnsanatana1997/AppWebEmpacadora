@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import authService, { User, LoginResponse } from '../api/auth';
 import { redirectToLogin } from '../lib/utils';
+import { logger, logAuthEvent } from '../utils/logger';
 
 interface AuthContextType {
   isAuthenticated: boolean;

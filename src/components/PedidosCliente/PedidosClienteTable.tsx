@@ -17,7 +17,6 @@ import {
 // Componentes de UI
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
   Tooltip,
   TooltipContent,
@@ -43,11 +42,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 // Iconos
-import { ChevronDown, ChevronUp, ChevronsUpDown, Eye, MoreHorizontal, Package, Calendar, User, Building, Package2, Ban, BarChart3, Truck, CheckSquare, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, ChevronsUpDown, Eye, MoreHorizontal, Package, Calendar, User, Building, Package2, Ban, BarChart3, Truck, CheckSquare, Loader2, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from 'lucide-react';
 
 // Utilidades y tipos
-import styled from 'styled-components';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 import clsx from 'clsx';
 import type { PedidoClienteResponseDTO } from '@/types/PedidoCliente/pedidoCliente.types';
@@ -55,23 +53,11 @@ import { FilterInput } from '../OrdenesEntrada/FilterInput';
 import { FilterSelect } from '../OrdenesEntrada/FilterSelect';
 import { fuzzyFilter } from '@/utils/tableUtils';
 
-// Componentes Estilizados
-// ============================================
-const StatusBadge = styled(Badge)`
-  font-weight: 600;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    transform: scale(1.05);
-  }
-`;
-
 // Interfaces
 // ============================================
 interface PedidosClienteTableProps {
   pedidos: PedidoClienteResponseDTO[];
   onView: (pedido: PedidoClienteResponseDTO) => void;
-  onProgreso?: (pedidoId: number) => void;
   onEstatusUpdate?: (id: number, newEstatus: string) => void;
   loading?: boolean;
 }
@@ -106,33 +92,63 @@ const TableSkeleton = () => {
  * - Indicadores de estado: Badges visuales para el estatus del pedido
  * - Diálogos de confirmación: Para acciones destructivas
  */
-export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpdate, loading }: PedidosClienteTableProps) {
+export function PedidosClienteTable({ pedidos, onView, onEstatusUpdate, loading }: PedidosClienteTableProps) {
   // Estados de la tabla
   const [sorting, setSorting] = React.useState([]);
   const [columnFilters, setColumnFilters] = React.useState([]);
-  const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] = React.useState({});
   const [pedidoACancelar, setPedidoACancelar] = React.useState<number | null>(null);
   const [pedidoAEmbarcar, setPedidoAEmbarcar] = React.useState<number | null>(null);
   const [pedidoAEntregar, setPedidoAEntregar] = React.useState<number | null>(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = React.useState(false);
 
   // Función para obtener el color del badge según el estatus
   const getStatusBadge = (estatus: string) => {
+    const baseClasses = "font-semibold transition-all duration-200 hover:scale-105 cursor-default";
+
     switch (estatus) {
       case 'Pendiente':
-        return <StatusBadge variant="secondary" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Pendiente</StatusBadge>;
+        return (
+          <Badge variant="secondary" className={`${baseClasses} bg-yellow-100 text-yellow-800 hover:bg-yellow-200`}>
+            Pendiente
+          </Badge>
+        );
       case 'Surtiendo':
-        return <StatusBadge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200">Surtiendo</StatusBadge>;
+        return (
+          <Badge variant="secondary" className={`${baseClasses} bg-blue-100 text-blue-800 hover:bg-blue-200`}>
+            Surtiendo
+          </Badge>
+        );
       case 'Surtido':
-        return <StatusBadge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-200">Surtido</StatusBadge>;
+        return (
+          <Badge variant="secondary" className={`${baseClasses} bg-green-100 text-green-800 hover:bg-green-200`}>
+            Surtido
+          </Badge>
+        );
       case 'Embarcado':
-        return <StatusBadge variant="secondary" className="bg-purple-100 text-purple-800 hover:bg-purple-200">Embarcado</StatusBadge>;
+        return (
+          <Badge variant="secondary" className={`${baseClasses} bg-purple-100 text-purple-800 hover:bg-purple-200`}>
+            Embarcado
+          </Badge>
+        );
       case 'Entregado':
-        return <StatusBadge variant="secondary" className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200">Entregado</StatusBadge>;
+        return (
+          <Badge variant="secondary" className={`${baseClasses} bg-emerald-100 text-emerald-800 hover:bg-emerald-200`}>
+            Entregado
+          </Badge>
+        );
       case 'Cancelado':
-        return <StatusBadge variant="secondary" className="bg-red-100 text-red-800 hover:bg-red-200">Cancelado</StatusBadge>;
+        return (
+          <Badge variant="secondary" className={`${baseClasses} bg-red-100 text-red-800 hover:bg-red-200`}>
+            Cancelado
+          </Badge>
+        );
       default:
-        return <StatusBadge variant="secondary">{estatus}</StatusBadge>;
+        return (
+          <Badge variant="secondary" className={baseClasses}>
+            {estatus}
+          </Badge>
+        );
     }
   };
 
@@ -163,8 +179,15 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
 
   const handleConfirmarCancelacion = async () => {
     if (pedidoACancelar) {
-      await onEstatusUpdate?.(pedidoACancelar, 'Cancelado');
-      setPedidoACancelar(null);
+      setIsUpdatingStatus(true);
+      try {
+        await onEstatusUpdate?.(pedidoACancelar, 'Cancelado');
+        setPedidoACancelar(null);
+      } catch (error) {
+        console.error('Error al cancelar pedido:', error);
+      } finally {
+        setIsUpdatingStatus(false);
+      }
     }
   };
 
@@ -178,15 +201,29 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
 
   const handleConfirmarEmbarcado = async () => {
     if (pedidoAEmbarcar && onEstatusUpdate) {
-      await onEstatusUpdate(pedidoAEmbarcar, 'Embarcado');
-      setPedidoAEmbarcar(null);
+      setIsUpdatingStatus(true);
+      try {
+        await onEstatusUpdate(pedidoAEmbarcar, 'Embarcado');
+        setPedidoAEmbarcar(null);
+      } catch (error) {
+        console.error('Error al cambiar a embarcado:', error);
+      } finally {
+        setIsUpdatingStatus(false);
+      }
     }
   };
 
   const handleConfirmarEntregado = async () => {
     if (pedidoAEntregar && onEstatusUpdate) {
-      await onEstatusUpdate(pedidoAEntregar, 'Entregado');
-      setPedidoAEntregar(null);
+      setIsUpdatingStatus(true);
+      try {
+        await onEstatusUpdate(pedidoAEntregar, 'Entregado');
+        setPedidoAEntregar(null);
+      } catch (error) {
+        console.error('Error al cambiar a entregado:', error);
+      } finally {
+        setIsUpdatingStatus(false);
+      }
     }
   };
 
@@ -262,7 +299,7 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <span>{row.original.cliente ? row.original.cliente : (
-            <span className="text-gray-400 italic">Cliente no asignado</span>
+            <span className="text-gray-500 italic">Cliente no asignado</span>
           )}</span>
         </div>
       ),
@@ -301,7 +338,7 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <span>{row.original.sucursal ? row.original.sucursal : (
-            <span className="text-gray-400 italic">Sucursal no asignada</span>
+            <span className="text-gray-500 italic">Sucursal no asignada</span>
           )}</span>
         </div>
       ),
@@ -377,41 +414,54 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
       },
       cell: ({ row }) => {
         const porcentaje = row.original.porcentajeSurtido;
-        
-        // Si el porcentaje es null, undefined o no existe, mostrar 0%
-        if (porcentaje === null || porcentaje === undefined) {
-          return (
-            <div className="flex items-center gap-2">
-              <div className="flex-1 bg-gray-200 rounded-full h-2">
-                <div className="h-2 rounded-full bg-red-500" style={{ width: '0%' }} />
-              </div>
-              <span className="text-sm font-medium min-w-[3rem] text-right">0%</span>
-            </div>
-          );
-        }
-        
-        // Convertir a número si viene como string
-        const porcentajeNumerico = typeof porcentaje === 'number' ? porcentaje : parseFloat(porcentaje);
-        
-        const getProgressColor = (value: number) => {
-          if (value >= 80) return 'bg-green-500';
-          if (value >= 60) return 'bg-yellow-500';
-          if (value >= 40) return 'bg-orange-500';
-          return 'bg-red-500';
+        const porcentajeNumerico = porcentaje === null || porcentaje === undefined
+          ? 0
+          : typeof porcentaje === 'number' ? porcentaje : parseFloat(porcentaje);
+
+        const getProgressInfo = (value: number) => {
+          if (value >= 100) return { color: 'bg-green-500', label: 'Completado', textColor: 'text-green-700' };
+          if (value >= 80) return { color: 'bg-green-500', label: 'Casi listo', textColor: 'text-green-700' };
+          if (value >= 60) return { color: 'bg-yellow-500', label: 'En progreso', textColor: 'text-yellow-700' };
+          if (value >= 40) return { color: 'bg-orange-500', label: 'Iniciado', textColor: 'text-orange-700' };
+          return { color: 'bg-red-500', label: 'Pendiente', textColor: 'text-red-700' };
         };
-        
+
+        const info = getProgressInfo(porcentajeNumerico);
+
         return (
-          <div className="flex items-center gap-2">
-            <div className="flex-1 bg-gray-200 rounded-full h-2">
-              <div 
-                className={`h-2 rounded-full transition-all duration-300 ${getProgressColor(porcentajeNumerico)}`}
-                style={{ width: `${Math.min(porcentajeNumerico, 100)}%` }}
-              />
-            </div>
-            <span className="text-sm font-medium min-w-[3rem] text-right">
-              {porcentaje}%
-            </span>
-          </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-2 w-full cursor-help">
+                  <div className="flex-1 bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                    <div
+                      className={`h-2.5 rounded-full transition-all duration-500 ${info.color}`}
+                      style={{ width: `${Math.min(porcentajeNumerico, 100)}%` }}
+                      role="progressbar"
+                      aria-valuenow={porcentajeNumerico}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label={`${porcentajeNumerico}% surtido`}
+                    />
+                  </div>
+                  <span className={`text-sm font-semibold min-w-[3.5rem] text-right ${info.textColor}`}>
+                    {porcentajeNumerico}%
+                  </span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="left" className="max-w-xs">
+                <div className="space-y-1">
+                  <p className="font-semibold">{info.label}</p>
+                  <p className="text-xs">
+                    {porcentajeNumerico === 100
+                      ? 'Pedido completamente surtido'
+                      : `Falta ${100 - porcentajeNumerico}% por surtir`
+                    }
+                  </p>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         );
       },
     },
@@ -438,8 +488,9 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
         );
       },
       cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <span>{formatDate(row.original.fechaRegistro)}</span>
+        <div className="flex flex-col">
+          <span className="font-medium">{formatDateOnly(row.original.fechaRegistro)}</span>
+          <span className="text-xs text-gray-500">{format(new Date(row.original.fechaRegistro), 'HH:mm')}</span>
         </div>
       ),
     },
@@ -465,130 +516,91 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
           </div>
         );
       },
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <span>{row.original.fechaEmbarque ? formatDateOnly(row.original.fechaEmbarque) : (
-            <span className="text-gray-400 italic">Fecha no asignada</span>
-          )}</span>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const fecha = row.original.fechaEmbarque;
+        return fecha ? (
+          <div className="flex flex-col">
+            <span className="font-medium">{formatDateOnly(fecha)}</span>
+            <span className="text-xs text-gray-500">{format(new Date(fecha), 'HH:mm')}</span>
+          </div>
+        ) : (
+          <span className="text-gray-500 italic text-sm">Sin asignar</span>
+        );
+      },
     },
     {
       id: 'acciones',
       header: 'Acciones',
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onView(row.original)}
-                  className="h-8 w-8 p-0 hover:bg-blue-50"
-                >
-                  <Eye className="h-4 w-4 text-blue-600" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Ver detalles</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          {/* Botón principal: Ver detalles */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onView(row.original)}
+            className="h-9 px-3 hover:bg-blue-50 flex items-center gap-2"
+          >
+            <Eye className="h-4 w-4 text-blue-600" />
+            <span className="hidden lg:inline">Ver</span>
+          </Button>
 
-          {onProgreso && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onProgreso(row.original.id)}
-                    className="h-8 w-8 p-0 hover:bg-green-50"
-                  >
-                    <BarChart3 className="h-4 w-4 text-green-600" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Ver progreso</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-
-          {/* Botones de cambio de estatus */}
-          {row.original.estatus === 'Surtido' && onEstatusUpdate && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleCambiarAEmbarcado(row.original.id)}
-                    className="h-8 w-8 p-0 hover:bg-purple-100 hover:text-purple-700"
-                  >
-                    <Truck className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Cambiar a Embarcado</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-
-          {row.original.estatus === 'Embarcado' && onEstatusUpdate && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleCambiarAEntregado(row.original.id)}
-                    className="h-8 w-8 p-0 hover:bg-emerald-100 hover:text-emerald-700"
-                  >
-                    <CheckSquare className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Cambiar a Entregado</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-
+          {/* Menú con todas las demás acciones */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
+              <Button
+                variant="ghost"
+                className="h-9 w-9 p-0"
+                aria-label="Más opciones"
+              >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={() => onView(row.original)}>
                 <Eye className="mr-2 h-4 w-4" />
-                Ver detalles
+                Ver detalles y progreso
               </DropdownMenuItem>
-              
-              {onProgreso && (
-                <DropdownMenuItem onClick={() => onProgreso(row.original.id)}>
-                  <BarChart3 className="mr-2 h-4 w-4" />
-                  Ver progreso
-                </DropdownMenuItem>
-              )}
-              
-              {row.original.estatus !== 'Cancelado' && (
+
+              {/* Separador y acciones de cambio de estado */}
+              {row.original.estatus === 'Surtido' && onEstatusUpdate && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={() => handleCancelar(row.original.id)}
-                    className="text-orange-600"
+                  <DropdownMenuItem
+                    onClick={() => handleCambiarAEmbarcado(row.original.id)}
+                    className="text-purple-600 focus:bg-purple-50 focus:text-purple-700"
                   >
-                    <Ban className="mr-2 h-4 w-4" />
-                    Cancelar
+                    <Truck className="mr-2 h-4 w-4" />
+                    Marcar como Embarcado
                   </DropdownMenuItem>
                 </>
               )}
-              
+
+              {row.original.estatus === 'Embarcado' && onEstatusUpdate && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => handleCambiarAEntregado(row.original.id)}
+                    className="text-emerald-600 focus:bg-emerald-50 focus:text-emerald-700"
+                  >
+                    <CheckSquare className="mr-2 h-4 w-4" />
+                    Marcar como Entregado
+                  </DropdownMenuItem>
+                </>
+              )}
+
+              {row.original.estatus !== 'Cancelado' && row.original.estatus !== 'Entregado' && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => handleCancelar(row.original.id)}
+                    className="text-orange-600 focus:bg-orange-50 focus:text-orange-700"
+                  >
+                    <Ban className="mr-2 h-4 w-4" />
+                    Cancelar pedido
+                  </DropdownMenuItem>
+                </>
+              )}
+
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -606,12 +618,10 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
     getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
-    onRowSelectionChange: setRowSelection,
     onColumnVisibilityChange: setColumnVisibility,
     state: {
       sorting,
       columnFilters,
-      rowSelection,
       columnVisibility,
     },
     filterFns: {
@@ -649,10 +659,10 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="hover:bg-gray-100">
                 {headerGroup.headers.map((header) => (
-                  <th 
-                    key={header.id} 
+                  <th
+                    key={header.id}
                     className={clsx(
-                      "p-2 font-semibold text-gray-700 border-b border-[#e2e8f0]",
+                      "p-3 font-semibold text-gray-700 border-b border-[#e2e8f0]",
                       header.column.id === 'porcentajeSurtido' ? 'min-w-[180px]' : 'min-w-[120px]'
                     )}
                   >
@@ -673,11 +683,11 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
                 table.getRowModel().rows.map((row) => (
                   <motion.tr
                     key={row.id}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.2 }}
-                    className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50"
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.15 }}
+                    className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors"
                   >
                     {row.getVisibleCells().map((cell) => (
                       <td key={cell.id} className="p-3 max-w-[200px]">
@@ -719,8 +729,8 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
       {/* Controles de paginación */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
         <div className="flex-1 text-sm text-muted-foreground text-center sm:text-left">
-          {table.getFilteredSelectedRowModel().rows.length} de{" "}
-          {table.getFilteredRowModel().rows.length} fila(s) seleccionada(s).
+          Mostrando {table.getRowModel().rows.length} de{" "}
+          {table.getFilteredRowModel().rows.length} pedido(s).
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:space-x-6 lg:space-x-8">
           <div className="flex items-center space-x-2">
@@ -753,7 +763,7 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
               disabled={!table.getCanPreviousPage()}
             >
               <span className="sr-only">Ir a primera página</span>
-              <ChevronUp className="h-4 w-4 rotate-90" />
+              <ChevronsLeft className="h-4 w-4" aria-hidden="true" />
             </Button>
             <Button
               variant="outline"
@@ -762,7 +772,7 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
               disabled={!table.getCanPreviousPage()}
             >
               <span className="sr-only">Ir a página anterior</span>
-              <ChevronUp className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
             </Button>
             <Button
               variant="outline"
@@ -771,7 +781,7 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
               disabled={!table.getCanNextPage()}
             >
               <span className="sr-only">Ir a página siguiente</span>
-              <ChevronDown className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </Button>
             <Button
               variant="outline"
@@ -780,7 +790,7 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
               disabled={!table.getCanNextPage()}
             >
               <span className="sr-only">Ir a última página</span>
-              <ChevronDown className="h-4 w-4 rotate-90" />
+              <ChevronsRight className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
         </div>
@@ -797,12 +807,20 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>No cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleConfirmarCancelacion} 
+            <AlertDialogCancel disabled={isUpdatingStatus}>No cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmarCancelacion}
               className="bg-orange-600 hover:bg-orange-700"
+              disabled={isUpdatingStatus}
             >
-              Sí, cancelar pedido
+              {isUpdatingStatus ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Cancelando...
+                </>
+              ) : (
+                'Sí, cancelar pedido'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -819,12 +837,20 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleConfirmarEmbarcado} 
+            <AlertDialogCancel disabled={isUpdatingStatus}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmarEmbarcado}
               className="bg-purple-600 hover:bg-purple-700"
+              disabled={isUpdatingStatus}
             >
-              Sí, cambiar a Embarcado
+              {isUpdatingStatus ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Embarcando...
+                </>
+              ) : (
+                'Sí, cambiar a Embarcado'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -841,12 +867,20 @@ export function PedidosClienteTable({ pedidos, onView, onProgreso, onEstatusUpda
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleConfirmarEntregado} 
+            <AlertDialogCancel disabled={isUpdatingStatus}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmarEntregado}
               className="bg-emerald-600 hover:bg-emerald-700"
+              disabled={isUpdatingStatus}
             >
-              Sí, cambiar a Entregado
+              {isUpdatingStatus ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Actualizando...
+                </>
+              ) : (
+                'Sí, cambiar a Entregado'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

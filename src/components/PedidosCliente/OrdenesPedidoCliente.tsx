@@ -15,19 +15,16 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   Trash2, 
   Plus, 
   Package, 
-  Edit3, 
   X,
   Calculator,
-  Scale,
   Info
 } from 'lucide-react';
-import { ordenSchema, type OrdenData, type OrdenesData } from '@/schemas/pedidoClienteWizardSchema';
+import { type OrdenData } from '@/schemas/pedidoClienteWizardSchema';
 import { ProductoDto } from '@/types/Productos/productos.types';
 
 // Schema para agregar nueva orden

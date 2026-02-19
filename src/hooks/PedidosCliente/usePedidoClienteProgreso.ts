@@ -40,6 +40,30 @@ export const usePedidoClienteProgreso = () => {
     }
   }, []);
 
+  // Calcular cajas surtidas por orden (optimizado con memoización en el componente)
+  const calcularCajasSurtidasPorOrden = useCallback((): Map<number, number> => {
+    if (!progreso) return new Map<number, number>();
+
+    const cajasPorOrden = new Map<number, number>();
+
+    progreso.ordenes.forEach(orden => {
+      let cajasSurtidas = 0;
+      progreso.tarimas.forEach(tarima => {
+        tarima.tarimasClasificaciones.forEach(clasificacion => {
+          if (clasificacion.tipo === orden.tipo &&
+              clasificacion.producto &&
+              orden.producto &&
+              clasificacion.producto.id === orden.producto.id) {
+            cajasSurtidas += clasificacion.cantidad || 0;
+          }
+        });
+      });
+      cajasPorOrden.set(orden.id, cajasSurtidas);
+    });
+
+    return cajasPorOrden;
+  }, [progreso]);
+
   // Calcular diferencias entre órdenes y tarimas asignadas
   const calcularDiferencias = useCallback((): CalculoDiferencias[] => {
     if (!progreso) return [];
@@ -85,8 +109,8 @@ export const usePedidoClienteProgreso = () => {
 
       const cantidadFaltante = Math.max(0, cantidadRequerida - cantidadAsignada);
       const pesoFaltante = Math.max(0, pesoRequerido - pesoAsignado);
-      const porcentajeCumplimiento = cantidadRequerida > 0 
-        ? Math.round((cantidadAsignada / cantidadRequerida) * 100) 
+      const porcentajeCumplimiento = cantidadRequerida > 0
+        ? Math.round((cantidadAsignada / cantidadRequerida) * 100)
         : 100;
 
       diferencias.push({
@@ -121,6 +145,7 @@ export const usePedidoClienteProgreso = () => {
     error,
     obtenerProgresoPedidoCliente,
     calcularDiferencias,
+    calcularCajasSurtidasPorOrden,
     limpiarProgreso,
     limpiarError,
   };

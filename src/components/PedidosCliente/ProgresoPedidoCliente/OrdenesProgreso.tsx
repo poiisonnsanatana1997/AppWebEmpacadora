@@ -9,22 +9,21 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { 
-  Hash, 
-  Package, 
-  Scale, 
+import {
+  Hash,
+  Package,
+  Scale,
   FileText,
   CheckCircle
 } from 'lucide-react';
 import type { OrdenPedidoClienteResponseDTO } from '@/types/PedidoCliente/ordenPedidoCliente.types';
-import type { TarimaProgresoDTO } from '@/types/PedidoCliente/pedidoCliente.types';
 
 interface OrdenesProgresoProps {
   ordenes: OrdenPedidoClienteResponseDTO[];
-  tarimas: TarimaProgresoDTO[];
+  cajasSurtidasPorOrden: Map<number, number>;
 }
 
-export const OrdenesProgreso: React.FC<OrdenesProgresoProps> = ({ ordenes, tarimas }) => {
+export const OrdenesProgreso: React.FC<OrdenesProgresoProps> = ({ ordenes, cajasSurtidasPorOrden }) => {
   const getTipoBadge = (tipo: string) => {
     return (
       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -37,25 +36,6 @@ export const OrdenesProgreso: React.FC<OrdenesProgresoProps> = ({ ordenes, tarim
         {tipo}
       </span>
     );
-  };
-
-  // Calcular cajas surtidas por orden
-  const calcularCajasSurtidas = (orden: OrdenPedidoClienteResponseDTO) => {
-    let cajasSurtidas = 0;
-    
-    // Sumar todas las cantidades de las tarimas que coincidan con el tipo y producto de la orden
-    tarimas.forEach(tarima => {
-      tarima.tarimasClasificaciones.forEach(clasificacion => {
-        if (clasificacion.tipo === orden.tipo && 
-            clasificacion.producto && 
-            orden.producto && 
-            clasificacion.producto.id === orden.producto.id) {
-          cajasSurtidas += clasificacion.cantidad || 0;
-        }
-      });
-    });
-    
-    return cajasSurtidas;
   };
 
   if (ordenes.length === 0) {
@@ -122,11 +102,11 @@ export const OrdenesProgreso: React.FC<OrdenesProgresoProps> = ({ ordenes, tarim
           </TableHeader>
           <TableBody>
             {ordenes.map((orden) => {
-              const cajasSurtidas = calcularCajasSurtidas(orden);
-              const porcentajeSurtido = orden.cantidad && orden.cantidad > 0 
+              const cajasSurtidas = cajasSurtidasPorOrden.get(orden.id) || 0;
+              const porcentajeSurtido = orden.cantidad && orden.cantidad > 0
                 ? Math.round((cajasSurtidas / orden.cantidad) * 100)
                 : 0;
-              
+
               return (
                 <TableRow key={orden.id}>
                   <TableCell className="font-medium">

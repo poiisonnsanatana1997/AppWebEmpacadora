@@ -127,17 +127,12 @@ export const useOrdenesEntrada = () => {
     try {
       setLoading(true);
       setError(null);
-      const ordenesImportadas = await OrdenesEntradaService.importarOrdenes(archivo);
-      setOrdenes((prev) => {
-        const ordenesActualizadas = [...prev, ...ordenesImportadas];
-        // Mantener el ordenamiento por fecha de registro
-        return ordenesActualizadas.sort((a, b) => 
-          new Date(b.fechaRegistro).getTime() - new Date(a.fechaRegistro).getTime()
-        );
-      });
-      // Actualizar indicadores después de importar
+      const resultado = await OrdenesEntradaService.importarOrdenes(archivo);
+
+      // Recargar todas las órdenes después de la importación
       await cargarOrdenes();
-      return ordenesImportadas;
+
+      return resultado;
     } catch (err: any) {
       console.error('Error al importar las órdenes:', err);
       // No establecer error si es un error de autenticación (401)

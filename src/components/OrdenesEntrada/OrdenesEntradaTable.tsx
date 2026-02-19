@@ -17,6 +17,7 @@ import {
 // Componentes de UI
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Tooltip,
   TooltipContent,
@@ -43,7 +44,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 // Iconos
-import { Edit2, ChevronDown, ChevronUp, ChevronsUpDown, X, Clock, ClipboardX, Eye, ListChecks, CheckCircle, MoreHorizontal, Loader2, ClipboardList } from 'lucide-react';
+import { Edit2, ChevronDown, ChevronUp, ChevronsUpDown, X, Clock, ClipboardX, Eye, ListChecks, CheckCircle, MoreHorizontal, Loader2, ClipboardList, CheckSquare, Square } from 'lucide-react';
 
 // Utilidades y tipos
 import clsx from 'clsx';
@@ -51,6 +52,7 @@ import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { ESTADO_ORDEN, OrdenEntradaDto, estadoOrdenUtils } from '@/types/OrdenesEntrada/ordenesEntrada.types';
 import { OrdenesEntradaTableProps } from '@/types/OrdenesEntrada/ordenesEntradaTable.types';
+import { OrdenesEntradaTableReporteProps } from '@/types/Reportes/reporteOrdenesClasificadas.types';
 import { useOrdenesEntradaTable } from '@/hooks/OrdenesEntrada/useOrdenesEntradaTable';
 import { FilterInput } from './FilterInput';
 import { FilterSelect } from './FilterSelect';
@@ -105,7 +107,17 @@ const formatCellValue = (value: any, fallbackText: string = 'No disponible') => 
  * - Filtrado por fecha: Filtrar por hoy, próximos 7 días, etc.
  * - Diálogos de confirmación: Para acciones destructivas
  */
-export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onRegistrarClasificacion, onFiltersChange }: OrdenesEntradaTableProps) {
+export function OrdenesEntradaTable({ 
+  ordenes, 
+  onEdit, 
+  onDelete, 
+  onRegistrarClasificacion, 
+  onFiltersChange,
+  modoReporte = false,
+  ordenesSeleccionadasReporte = [],
+  onToggleSeleccionReporte,
+  onLimpiarSeleccionReporte
+}: OrdenesEntradaTableProps & Partial<OrdenesEntradaTableReporteProps>) {
   const {
     sorting,
     setSorting,
@@ -133,6 +145,61 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onRegistrarClas
 
   // Definición de columnas con ordenamiento, filtrado y renderizado personalizado
   const columns = React.useMemo<ColumnDef<OrdenEntradaDto>[]>(() => [
+    // Columna de selección para reporte (solo visible en modo reporte)
+    ...(modoReporte ? [{
+      id: 'seleccionReporte',
+      header: () => (
+        <div className="text-center">
+          <span className="text-xs font-medium text-gray-500">Reporte</span>
+        </div>
+      ),
+      cell: ({ row }) => {
+        const orden = row.original;
+        // Solo incluir órdenes que estén en estado "Clasificado"
+        const puedeIncluir = orden.estado === ESTADO_ORDEN.CLASIFICADO;
+        const isSeleccionada = ordenesSeleccionadasReporte.includes(orden.codigo);
+        
+        if (!puedeIncluir) {
+          return (
+            <div className="flex justify-center">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="text-gray-400 cursor-not-allowed">
+                      <Square className="w-4 h-4" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Solo órdenes clasificadas pueden incluirse en reportes</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          );
+        }
+
+        return (
+          <div className="flex justify-center">
+            {onToggleSeleccionReporte ? (
+              <Checkbox
+                checked={isSeleccionada}
+                onChange={(e) => {
+                  onToggleSeleccionReporte(orden.codigo, e.target.checked);
+                }}
+                className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 border-2 border-blue-500 hover:border-blue-600 hover:bg-blue-50 transition-all duration-200"
+              />
+            ) : (
+              <div className="text-gray-400 cursor-not-allowed">
+                <Square className="w-4 h-4" />
+              </div>
+            )}
+          </div>
+        );
+      },
+      enableSorting: false,
+      enableColumnFilter: false,
+      size: 80,
+    }] : []),
     {
       accessorKey: 'codigo',
       header: ({ column }) => {
@@ -557,7 +624,7 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onRegistrarClas
       enableSorting: false,
       enableColumnFilter: false,
     },
-  ], [onEdit, onDelete, onRegistrarClasificacion, fechaFilterValue, setSorting, navigate]);
+  ], [onEdit, onDelete, onRegistrarClasificacion, fechaFilterValue, setSorting, navigate, modoReporte, ordenesSeleccionadasReporte, onToggleSeleccionReporte]);
 
   // Instancia de tabla con todas las características habilitadas
   const table = useReactTable({
@@ -603,12 +670,12 @@ export function OrdenesEntradaTable({ ordenes, onEdit, onDelete, onRegistrarClas
     <div className="space-y-4">
       {/* Tabla con encabezado y cuerpo */}
       <div className="overflow-x-auto border border-gray-200 rounded-lg">
-        <table className="w-full min-w-[800px]">
+        <table className="w-full min-w-[600px] sm:min-w-[800px]">
           <thead className="bg-[#f1f5f9]">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="hover:bg-gray-100">
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} className="p-2 font-semibold text-gray-700 border-b border-[#e2e8f0] min-w-[120px]">
+                  <th key={header.id} className="p-2 font-semibold text-gray-700 border-b border-[#e2e8f0] min-w-[80px] sm:min-w-[120px]">
                     {header.isPlaceholder
                       ? null
                       : flexRender(

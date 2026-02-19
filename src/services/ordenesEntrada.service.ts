@@ -1,5 +1,6 @@
 import { ProveedorDto, ProductoDto, OrdenEntradaDto, PesajeTarimaDto, DetalleOrdenEntradaDto, CrearOrdenEntradaDto, ActualizarOrdenEntradaDto, ESTADO_ORDEN } from '../types/OrdenesEntrada/ordenesEntrada.types';
 import { PedidoCompletoDTO } from '../types/OrdenesEntrada/ordenesEntradaCompleto.types';
+import { ResultadoImportacion } from '../types/OrdenesEntrada/importacion.types';
 // @ts-ignore
 import pdfMake from "pdfmake/build/pdfmake";
 // @ts-ignore
@@ -113,33 +114,94 @@ export const OrdenesEntradaService = {
   },
 
   /**
-   * Importa órdenes de entrada desde un archivo
-   * @param {File} _archivo - Archivo a importar (formato soportado: Excel, CSV)
-   * @returns {Promise<OrdenEntradaDto[]>} Lista de órdenes importadas
+   * Importa órdenes de entrada desde un archivo Excel
+   * @param {File} archivo - Archivo Excel a importar (.xlsx o .xls)
+   * @returns {Promise<ResultadoImportacion>} Resultado de la importación con órdenes creadas y errores
    */
-  async importarOrdenes(_archivo: File): Promise<OrdenEntradaDto[]> {
+  async importarOrdenes(archivo: File): Promise<ResultadoImportacion> {
     try {
+      // Validar extensión del archivo
+      if (!archivo.name.match(/\.(xlsx|xls)$/i)) {
+        throw {
+          message: 'Formato de archivo no válido. Solo se aceptan archivos .xlsx o .xls',
+          code: 'INVALID_FILE_FORMAT'
+        };
+      }
+
+      // Validar tamaño del archivo (máximo 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (archivo.size > maxSize) {
+        throw {
+          message: 'El archivo es demasiado grande. Tamaño máximo: 5MB',
+          code: 'FILE_TOO_LARGE'
+        };
+      }
+
+      // Validar que el archivo no esté vacío
+      if (archivo.size === 0) {
+        throw {
+          message: 'El archivo está vacío',
+          code: 'EMPTY_FILE'
+        };
+      }
+
       const formData = new FormData();
-      formData.append('archivo', _archivo);
-      const { data } = await api.post<OrdenEntradaDto[]>('/OrdenEntrada/importar', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 60000,
-      });
+      formData.append('archivo', archivo);
+
+      const { data } = await api.post<ResultadoImportacion>(
+        '/OrdenEntrada/importar',
+        formData,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 60000, // 60 segundos
+        }
+      );
+
       return data;
     } catch (error: any) {
       if (error.response) {
         const status = error.response.status;
         const data = error.response.data;
-        throw {
-          message: data.message || 'Error al importar las órdenes',
-          code: data.code || 'UNKNOWN_ERROR',
-          status
-        };
+
+        if (status === 400) {
+          throw {
+            message: data.message || 'Formato de archivo inválido o datos incorrectos',
+            code: data.code || 'INVALID_FILE',
+            status
+          };
+        } else if (status === 413) {
+          throw {
+            message: 'El archivo es demasiado grande',
+            code: 'FILE_TOO_LARGE',
+            status
+          };
+        } else if (status === 422) {
+          throw {
+            message: data.message || 'El archivo contiene datos inválidos',
+            code: 'UNPROCESSABLE_ENTITY',
+            status
+          };
+        } else if (status >= 500) {
+          throw {
+            message: 'Error en el servidor. Por favor, intenta más tarde',
+            code: 'SERVER_ERROR',
+            status
+          };
+        } else {
+          throw {
+            message: data.message || 'Error al importar las órdenes',
+            code: data.code || 'UNKNOWN_ERROR',
+            status
+          };
+        }
       } else if (error.request) {
         throw {
           message: 'No se pudo conectar con el servidor. Verifica tu conexión a internet',
           code: 'NETWORK_ERROR'
         };
+      } else if (error.code) {
+        // Error lanzado por nuestras validaciones locales
+        throw error;
       } else {
         throw {
           message: 'Error al procesar la solicitud',
